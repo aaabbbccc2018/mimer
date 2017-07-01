@@ -5,8 +5,9 @@ using namespace std;
 using namespace mqtter;
 int main(int argc, char *argv[])
 {
-    Connect* cn = (Connect*)malloc(sizeof(Connect));
-    MQTTPacket pkt(CONNECT,cn);
+    MQTTPacket pkt(PUBREL);
+    pPubRel cn = (pPubRel)pkt.data();
+    std::cout << pkt;
     cout << "Hello World!" << endl;
     return 0;
 }

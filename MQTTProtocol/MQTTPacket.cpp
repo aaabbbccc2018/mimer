@@ -8,86 +8,85 @@ const char* MQTTPacket::packet_names[] =
    "PINGREQ", "PINGRESP", "DISCONNECT"
 };
 
-MQTTPacket::MQTTPacket(void* packet)
+MQTTPacket::MQTTPacket(int type,int dup,int qos):_ptype(type),_size(1)
 {
-
-}
-
-MQTTPacket::MQTTPacket(int type,void* packet):_ptype(type)
-{
+    printf("Packet Type:%s\n", packet_names[type]);
     switch (_ptype)
     {
     case CONNECT:
-        _size   = sizeof(Connect);
-        _packet = (Connect*)malloc(_size);
-        memcpy(_packet,packet,sizeof(Connect));
+        _packet = (pConnect)malloc(sizeof(Connect));
+        memset(_packet,0,sizeof(Connect));
+        initHeader0(pConnect,CONNECT)
         break;
     case CONNACK:
-        _size   = sizeof(ConnAck);
-        _packet = (ConnAck*)malloc(_size);
-        memcpy(_packet,packet,sizeof(ConnAck));
+        _packet = (pConnAck)malloc(sizeof(ConnAck));
+        memset(_packet,0,sizeof(ConnAck));
+        initHeader0(pConnAck,CONNACK)
         break;
     case PUBLISH:
-        _size   = sizeof(Publish);
-        _packet = (Publish*)malloc(_size);
-        memcpy(_packet,packet,sizeof(Publish));
+        _packet = (pPublish)malloc(sizeof(Publish));
+        memset(_packet,0,sizeof(Publish));
+        initHeader3(pPublish,PUBLISH,dup,qos)
         break;
     case PUBACK:
         _size   = sizeof(PubAck);
-        _packet = (PubAck*)malloc(_size);
-        memcpy(_packet,packet,sizeof(PubAck));
+        _packet = (pPubAck)malloc(sizeof(PubAck));
+        memset(_packet,0,sizeof(PubAck));
+        initHeader0(pPubAck,PUBACK)
         break;
     case PUBREC:
-        _size   = sizeof(PubRec);
-        _packet = (PubRec*)malloc(_size);
-        memcpy(_packet,packet,sizeof(PubRec));
+        _packet = (pPubRec)malloc(sizeof(PubRec));
+        memset(_packet,0,sizeof(PubRec));
+        initHeader0(pPubRec,PUBREC)
         break;
     case PUBREL:
-        _size   = sizeof(PubRel);
-        _packet = (PubRel*)malloc(_size);
-        memcpy(_packet,packet,sizeof(PubRel));
+        _packet = (pPubRel)malloc(sizeof(PubRel));
+        memset(_packet,0,sizeof(PubRel));
+        initHeader1(pPubRel,PUBREL)
         break;
     case PUBCOMP:
-        _size   = sizeof(PubComp);
-        _packet = (PubComp*)malloc(_size);
-        memcpy(_packet,packet,sizeof(PubComp));
+        _packet = (pPubComp)malloc(sizeof(PubComp));
+        memset(_packet,0,sizeof(PubComp));
+        initHeader0(pPubComp,PUBCOMP)
         break;
     case SUBSCRIBE:
         _size   = sizeof(Subscribe);
-        _packet = (Subscribe*)malloc(_size);
-        memcpy(_packet,packet,sizeof(Subscribe));
+        _packet = (pSubscribe)malloc(sizeof(Subscribe));
+        memset(_packet,0,sizeof(Subscribe));
+        initHeader1(pSubscribe,SUBSCRIBE)
         break;
     case SUBACK:
-        _size   = sizeof(SubAck);
-        _packet = (SubAck*)malloc(_size);
-        memcpy(_packet,packet,sizeof(SubAck));
+        _packet = (pSubAck)malloc(sizeof(SubAck));
+        memset(_packet,0,sizeof(SubAck));
+        initHeader0(pSubAck,SUBACK)
         break;
     case UNSUBSCRIBE:
-        _size   = sizeof(Unsubscribe);
-        _packet = (Unsubscribe*)malloc(_size);
-        memcpy(_packet,packet,sizeof(Unsubscribe));
+        _packet = (pUnsubscribe)malloc(sizeof(Unsubscribe));
+        memset(_packet,0,sizeof(Unsubscribe));
+        initHeader1(pUnsubscribe,UNSUBSCRIBE)
         break;
     case UNSUBACK:
-        _size   = sizeof(UnsubAck);
-        _packet = (UnsubAck*)malloc(_size);
-        memcpy(_packet,packet,sizeof(UnsubAck));
+        _packet = (pUnsubAck)malloc(sizeof(UnsubAck));
+        memset(_packet,0,sizeof(UnsubAck));
+        initHeader0(pUnsubAck,UNSUBACK)
         break;
     case PINGREQ:
-        _size   = sizeof(PingReq);
-        _packet = (PingReq*)malloc(_size);
-        memcpy(_packet,packet,sizeof(PingReq));
+        _packet = (pPingReq)malloc(sizeof(PingReq));
+        memset(_packet,0,sizeof(PingReq));
+        initHeader0(pPingReq,PINGREQ)
         break;
     case PINGRESP:
-        _size   = sizeof(PingResp);
-        _packet = (PingResp*)malloc(_size);
-        memcpy(_packet,packet,sizeof(PingResp));
+        _packet = (pPingResp)malloc(sizeof(PingResp));
+        memset(_packet,0,sizeof(PingResp));
+        initHeader0(pPingResp,PINGRESP)
         break;
     case DISCONNECT:
-        _size   = sizeof(Disconnect);
-        _packet = (Disconnect*)malloc(_size);
-        memcpy(_packet,packet,sizeof(Disconnect));
+        _packet = (pDisconnect)malloc(sizeof(Disconnect));
+        memset(_packet,0,sizeof(Disconnect));
+        initHeader0(pDisconnect,DISCONNECT)
         break;
     default:
+        printf("error packet type\n");
         break;
     }
 }
@@ -98,6 +97,12 @@ MQTTPacket::~MQTTPacket()
         free(_packet);
         _packet = NULL;
     }
+}
+
+std::ostream & operator<<(std::ostream &out, const MQTTPacket &mp)
+{
+    return out << "Packet Type: " << mp.packet_names[mp._ptype]
+               << "["<< mp._ptype << "] Packet Size: " << mp._size << std::endl;
 }
 
 }//namespace mqtter
