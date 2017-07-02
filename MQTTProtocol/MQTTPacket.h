@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <iostream>
 #include "List.h"
 using namespace std;
@@ -40,19 +41,24 @@ namespace mqtter {
 #if defined(bsIsBigEndian)
 #define REVERSED 1
 #endif
-#define MQTT_VER   0x04
+
 #define MQTT_NAME  "MQTT"
 #define MQ_byte    unsigned char
+#define MQTT_VER   (0x04)
 #define BAD_MQTT_PACKET -4
-
+#define DEBUG 1
 enum msgTypes
 {
     CONNECT = 1, CONNACK, PUBLISH, PUBACK, PUBREC, PUBREL,
     PUBCOMP, SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK,
     PINGREQ, PINGRESP, DISCONNECT
 };
-
-typedef unsigned int boolean;
+const int encodeStep[16]
+{
+    0,10,3,4,2,2,2,2,4,3,3,2,1,1,1,0
+};
+typedef unsigned int boolean;           /* use at bit-struct */
+typedef unsigned short Int;             /* must 2 byte */
 
 /**
  * Bitfields for the MQTT header byte.
@@ -85,6 +91,7 @@ typedef union
 typedef struct
 {
     Header header;                      /* MQTT header byte */
+    /* Variable header */
     int    packetId;                    /* MQTT packet id */
 } Ack;
 
@@ -109,7 +116,7 @@ typedef struct
     Header        header;               /* MQTT header byte */
     /* Variable header */
     const char*   Protocol;             /* MQTT protocol name */
-    const MQ_byte version;              /* MQTT version number */
+    MQ_byte       version;              /* MQTT version number */
     union
     {
         unsigned char all;              /* all connect flags */
@@ -137,8 +144,9 @@ typedef struct
         } bits;
 #endif
     } flags;                            /* connect flags byte */
-    int           KAT;                  /* keepalive timeout value in seconds */
+    Int           KAT;                  /* keepalive timeout value in seconds */
     /* Payload */
+    /* All fields below here may be invisible characters */
     char*         clientID;             /* string client id 23byte*/
     char*         willTopic;            /* will topic */
     char*         willMsg;              /* will payload */
@@ -170,6 +178,7 @@ typedef struct
         } bits;
 #endif
     } flags;                            /* connack flags byte */
+    /* payload */
     char rc;                            /* connack return code */
 } ConnAck;
 
@@ -180,9 +189,11 @@ typedef ConnAck* pConnAck;
 typedef struct
 {
     Header header;                      /* MQTT header byte */
+    /* Variable header */
     char*  topic;                       /* topic string */
     int    topiclen;
     int    packetId;                    /* MQTT Packets id */
+    /* payload */
     char*  payload;                     /* binary payload, length delimited */
     int    payloadlen;                  /* payload length */
 } Publish;
@@ -218,10 +229,12 @@ typedef PubComp* pPubComp;
 typedef struct
 {
     Header header;                    /* MQTT header byte */
+    /* Variable header */
     int    packetId;                  /* MQTT Packets id */
+    /* payload */
     List*  topics;                    /* list of topic strings */
     List*  qoss;                      /* list of corresponding QoSs */
-    int    noTopics;                  /* topic and qos count */
+    // int    noTopics;               /* topic and qos count */
 } Subscribe;
 
 typedef Subscribe* pSubscribe;
@@ -231,7 +244,9 @@ typedef Subscribe* pSubscribe;
 typedef struct
 {
     Header header;                    /* MQTT header byte */
+    /* Variable header */
     int    packetId;                  /* MQTT Packets id */
+    /* payload */
     List*  qoss;                      /* list of granted QoSs */
 } SubAck;
 typedef SubAck* pSubAck;
@@ -241,9 +256,11 @@ typedef SubAck* pSubAck;
 typedef struct
 {
     Header header;                    /* MQTT header byte */
+    /* Variable header */
     int    packetId;                  /* MQTT Packets id */
+    /* payload */
     List*  topics;                    /* list of topic strings */
-    int    noTopics;                  /* topic count */
+    // int    noTopics;               /* topic count */
 } Unsubscribe;
 
 typedef Unsubscribe* pUnsubscribe;
@@ -272,20 +289,55 @@ typedef header_s Disconnect;
 
 typedef Disconnect* pDisconnect;
 
-#define initHeader0(pTYPE,TYPE)                \
-    ((pTYPE)_packet)->header.byte = 0;         \
-    ((pTYPE)_packet)->header.bits.type = TYPE;
+typedef struct {
+    char* topic;
+    int   qos;
+}TopicQos;
 
-#define initHeader1(pTYPE,TYPE)                \
-    ((pTYPE)_packet)->header.byte = 0;         \
-    ((pTYPE)_packet)->header.bits.type = TYPE; \
-    ((pTYPE)_packet)->header.bits.qos = 1;//default value
+/*
+ *  p* => pConnect,pConnAck,pPublish,
+ *        pPubAck,pPubRec,pPubRel,
+ *        pPubComp,pSubscribe,pSubAck,
+ *        pUnsubscribe,pUnsubAck,pPingReq,
+ *        pPingReq,pPingResp,pDisconnect
+ *  Format void* _packet to p* pointer
+ */
+#define pFMT(pTYPE) ((pTYPE)(_packet))
 
-#define initHeader3(pTYPE,TYPE,DUP,QOS)        \
-    ((pTYPE)_packet)->header.byte = 0;         \
-    ((pTYPE)_packet)->header.bits.type = TYPE; \
-    ((pTYPE)_packet)->header.bits.dup = DUP;   \
-    ((pTYPE)_packet)->header.bits.qos = QOS;
+#define ALLOC0(pTYPE,TYPE)                     \
+    _packet = (pTYPE)malloc(sizeof(TYPE));     \
+    memset(_packet,0,sizeof(TYPE));
+
+#define initHeader0(pTYPE,TYPES)               \
+    pFMT(pTYPE)->header.byte = 0;              \
+    pFMT(pTYPE)->header.bits.type = TYPES;
+
+#define initHeader1(pTYPE,TYPES)               \
+    pFMT(pTYPE)->header.byte = 0;              \
+    pFMT(pTYPE)->header.bits.type = TYPES;     \
+    pFMT(pTYPE)->header.bits.qos = 1;//default value
+
+#define initHeader3(pTYPE,TYPES,DUP,QOS)       \
+    pFMT(pTYPE)->header.byte = 0;              \
+    pFMT(pTYPE)->header.bits.type = TYPES;     \
+    pFMT(pTYPE)->header.bits.dup = DUP;        \
+    pFMT(pTYPE)->header.bits.qos = QOS;
+
+#define HasFlags   ((_ptype == CONNECT)     || \
+                    (_ptype == CONNACK))
+
+#define HasTopic   ((_ptype == PUBLISH)     || \
+                    (_ptype == SUBSCRIBE)   || \
+                    (_ptype == UNSUBSCRIBE))
+
+#define HasPayload ((_ptype == CONNECT)     || \
+                    (_ptype == PUBLISH)     || \
+                    (_ptype == SUBSCRIBE)   || \
+                    (_ptype == SUBACK)      || \
+                    (_ptype == UNSUBSCRIBE))
+
+#define HasPktId   ((_ptype >= PUBLISH)     && \
+                    (_ptype <= UNSUBACK))
 
 /**
  *
@@ -299,17 +351,96 @@ public:
     virtual ~MQTTPacket();
 public:
     friend std::ostream & operator<<(std::ostream &out, const MQTTPacket &c);
-public:
+public://get
+    inline bool finish(){ return (_step == encodeStep[_ptype]);}
     inline int size() {return _size;}
     inline msgTypes type(){return (msgTypes)_ptype;}
     inline const char* types(){return packet_names[_ptype];}
     void*  data(){return _packet;}
+    char* ClientId(){ return pFMT(pConnect)->clientID;}
+    char* willTopic(){return pFMT(pConnect)->willTopic;}
+    char* willMsg(){return pFMT(pConnect)->willMsg;}
+    char* username(){return pFMT(pConnect)->userName;}
+    char* password(){return pFMT(pConnect)->passwd;}
+    char* publish(char* payload, size_t& size)
+    {
+        size = pFMT(pPublish)->payloadlen;
+        memcpy(payload, pFMT(pPublish)->payload, size);
+        return payload;
+    }
+public://set
+    /**
+     * @brief setKAT, use at CONNECT
+     * @param kat
+     */
+    void setKAT(Int kat);
+    /**
+     * @brief setClientId, use at CONNECT
+     * @param clientId
+     * @param size
+     */
+    void setClientId(char* clientId, size_t size);
+    /**
+     * @brief setWill, use at CONNECT
+     * @param willtopic
+     * @param willmsg
+     * @param size
+     */
+    void setWill(char* willtopic, char* willmsg, size_t sizet, size_t sizem);
+    /**
+     * @brief setUserName, use at CONNECT
+     * @param userName
+     * @param size
+     */
+    void setUserName(char* userName, size_t size);
+    /**
+     * @brief setPasswd, use at CONNECT
+     * @param passwd
+     * @param size
+     */
+    void setPasswd(char* passwd, size_t size);
+    /**
+     * @brief setRC, use at CONNACK
+     * @param rc
+     */
+    void setRC(char rc);
+    /**
+     * @brief setFlags, use at CONNECT/CONNACK
+     * @param value
+     * @return
+     */
+    void setFlags(MQ_byte value);
+    /**
+     * @brief setTopics, use at PUBLISH/SUBSCRIBE/UNSUBSCRIBE
+     * @param content (topic and qos)
+     * @param size
+     * @return
+     */
+    void setTopics(void* contents, size_t size);
+    /**
+     * @brief setPayload, use at CONNECT/PUBLISH/SUBSCRIBE/SUBACK/UNSUBSCRIBE
+     * @param payload
+     * @param size
+     * @return
+     */
+    void setPayload(char* payload, size_t size);
+    /**
+     * @brief setPacketId, use at PUBLISH/PUBACK/PUBREC/
+     *                            PUBREL/PUBCOMP/SUBSCRIBE/
+     *                            SUBACK/UNSUBSCRIBE/UNSUBACK
+     * @param packetId
+     * @param size
+     * @return
+     */
+    void setPacketId(int packetId);
+public:
     void encode();
     void decode();
 private:
     void*    _packet;    // packet's data
     int      _ptype;     // packet's type
     int      _size;      // packet's size
+    int      _step;      // measure the encoding / decoding progress
 };
 
 }//namespace mqtter
