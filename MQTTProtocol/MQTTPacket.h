@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <iostream>
 #include "List.h"
+#include "MQTTInt.h"
 using namespace std;
 
 namespace mqtter {
@@ -46,16 +47,29 @@ namespace mqtter {
 #define MQ_byte    unsigned char
 #define MQTT_VER   (0x04)
 #define BAD_MQTT_PACKET -4
-#define DEBUG 1
+#define DEBUG      1
+#define OFFICIAL_MQTT   1
 enum msgTypes
 {
     CONNECT = 1, CONNACK, PUBLISH, PUBACK, PUBREC, PUBREL,
     PUBCOMP, SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK,
     PINGREQ, PINGRESP, DISCONNECT
 };
+
+typedef short int  int16_t;
+typedef int        int32_t;
+
 const int encodeStep[16]
 {
     0,10,3,4,2,2,2,2,4,3,3,2,1,1,1,0
+};
+const int isFixRLPacket[16]
+{
+    0,0,1,0,1,1,1,1,0,0,0,1,1,1,1,0
+};
+const int isDriedPacket[16]
+{
+    0,1,0,1,0,0,0,0,1,1,1,0,0,0,0,0
 };
 typedef unsigned int boolean;           /* use at bit-struct */
 typedef unsigned short Int;             /* must 2 byte */
@@ -85,6 +99,8 @@ typedef union
 #endif
 } Header;
 
+typedef Header* pHeader;
+
 /**
  * Data for one of the ack packets.
  */
@@ -94,6 +110,8 @@ typedef struct
     /* Variable header */
     int    packetId;                    /* MQTT packet id */
 } Ack;
+
+typedef Ack* pAck;
 
 /**
  * Data for a packet with header only.
@@ -114,6 +132,8 @@ typedef struct
 typedef struct
 {
     Header        header;               /* MQTT header byte */
+    /* header.bits.dup == 0 && clientID == 0 : create a new user, will return a clientID
+     * header.bits.dup == 1 && clientID != 0 : try to delete the user: clientID*/
     /* Variable header */
     const char*   Protocol;             /* MQTT protocol name */
     MQ_byte       version;              /* MQTT version number */
@@ -161,6 +181,7 @@ typedef Connect* pConnect;
 typedef struct
 {
     Header header;                      /* MQTT header byte */
+    /* Variable header */
     union
     {
         unsigned char all;              /* all connack flags */
@@ -180,6 +201,7 @@ typedef struct
     } flags;                            /* connack flags byte */
     /* payload */
     char rc;                            /* connack return code */
+    char* clientID;                     /* create a new user, will return a new clientId */
 } ConnAck;
 
 typedef ConnAck* pConnAck;
@@ -294,6 +316,10 @@ typedef struct {
     int   qos;
 }TopicQos;
 
+
+/* Delete the unimportant data in the packet as much as possible, keep the packet dry */
+#define DRIED      (!_dried)
+
 /*
  *  p* => pConnect,pConnAck,pPublish,
  *        pPubAck,pPubRec,pPubRel,
@@ -339,6 +365,30 @@ typedef struct {
 #define HasPktId   ((_ptype >= PUBLISH)     && \
                     (_ptype <= UNSUBACK))
 
+/* Only Header Remaining Length 0,
+ * PINGREQ, PINGRESP, DISCONNECT just a fixed head */
+#define OnlyHeader ((_ptype >= PINGREQ)     && \
+                    (_ptype <= DISCONNECT))
+
+/* fix Remaining Length 2 */
+#define FixRL      (isFixRLPacket[_ptype])
+/*
+#define FixRL      ((_ptype == CONNACK)     || \
+                    (_ptype >= PUBACK       && \
+                     _ptype <= PUBCOMP)     || \
+                    (_ptype >= UNSUBACK     && \
+                     _ptype <= DISCONNECT))
+*/
+
+/* cannot Dried packet type */
+#define CannotDried (isDriedPacket[_ptype])
+/*
+#define CannotDried ((_ptype == CONNECT)    || \
+                     (_ptype == PUBLISH)    || \
+                     (_ptype >= SUBSCRIBE   && \
+                      _ptype <= UNSUBSCRIBE))
+*/
+
 /**
  *
  */
@@ -347,22 +397,30 @@ class MQTTPacket
 public:
     static const char* packet_names[];
 public:
-    MQTTPacket(int type,int dup = 0,int qos = 0);
+    MQTTPacket(int type, int dried = 0, int dup = 0,int qos = 0);
     virtual ~MQTTPacket();
 public:
     friend std::ostream & operator<<(std::ostream &out, const MQTTPacket &c);
+protected:
+    /**
+     * @brief dry: set this packet's DRIED flag. The fixed Header 0 bit is 1
+     * represent this packet is DRIED.
+     */
+    inline void dry(){ pFMT(pHeader)->bits.retain = 1; _dried = 1;}
+    inline bool dried() {return (1 == _dried && 1 == pFMT(pHeader)->bits.retain);}
 public://get
     inline bool finish(){ return (_step == encodeStep[_ptype]);}
     inline int size() {return _size;}
     inline msgTypes type(){return (msgTypes)_ptype;}
     inline const char* types(){return packet_names[_ptype];}
     void*  data(){return _packet;}
-    char* ClientId(){ return pFMT(pConnect)->clientID;}
-    char* willTopic(){return pFMT(pConnect)->willTopic;}
-    char* willMsg(){return pFMT(pConnect)->willMsg;}
-    char* username(){return pFMT(pConnect)->userName;}
-    char* password(){return pFMT(pConnect)->passwd;}
-    char* publish(char* payload, size_t& size)
+public://get
+    char*  clientId(){ return pFMT(pConnect)->clientID;}
+    char*  willTopic(){return pFMT(pConnect)->willTopic;}
+    char*  willMsg(){return pFMT(pConnect)->willMsg;}
+    char*  username(){return pFMT(pConnect)->userName;}
+    char*  password(){return pFMT(pConnect)->passwd;}
+    char*  publish(char* payload, size_t& size)
     {
         size = pFMT(pPublish)->payloadlen;
         memcpy(payload, pFMT(pPublish)->payload, size);
@@ -377,9 +435,9 @@ public://set
     /**
      * @brief setClientId, use at CONNECT
      * @param clientId
-     * @param size
+     * @param size default clientId is 16 byte
      */
-    void setClientId(char* clientId, size_t size);
+    void setClientId(char* clientId, size_t size = 16);
     /**
      * @brief setWill, use at CONNECT
      * @param willtopic
@@ -399,6 +457,16 @@ public://set
      * @param size
      */
     void setPasswd(char* passwd, size_t size);
+    /**
+     * @brief setSignUp, a special CONNECT mode, create a new user,
+     * a special setClientId type
+     */
+    void setSignUp();
+    /**
+     * @brief setSignDel, a special CONNECT mode, delete a exist user,
+     * a special setClientId type
+     */
+    void setSignDel(char* clientId, size_t size = 16);
     /**
      * @brief setRC, use at CONNACK
      * @param rc
@@ -434,13 +502,19 @@ public://set
      */
     void setPacketId(int packetId);
 public:
-    void encode();
-    void decode();
+    /**
+     * @brief encode: a packet to bit-datas packet for send
+     * @param packet
+     * @return
+     */
+    bool encode(char* packet);
+    void decode(char* packet, int size);
 private:
     void*    _packet;    // packet's data
     int      _ptype;     // packet's type
     int      _size;      // packet's size
     int      _step;      // measure the encoding / decoding progress
+    int      _dried;     // packet's DRIED flag
 };
 
 }//namespace mqtter
