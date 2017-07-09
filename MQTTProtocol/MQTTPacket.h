@@ -31,7 +31,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <iostream>
-#include "List.h"
+#include <string.h>
+#include <list>
 #include "MQTTInt.h"
 using namespace std;
 
@@ -58,7 +59,17 @@ enum msgTypes
 
 typedef short int  int16_t;
 typedef int        int32_t;
-
+typedef struct sub_s{
+    size_t _size;
+    char*  _content;
+    sub_s(size_t size,char* content):_size(size){
+        _content = (char*)malloc(_size);
+        memcpy(_content,content,_size);
+    }
+    sub_s():_size(0),_content(NULL){}
+}sub_t;
+typedef list<sub_t> ListSub;
+typedef list<char>  ListQos;
 const int encodeStep[16]
 {
     0,10,3,4,2,2,2,2,4,3,3,2,1,1,1,0
@@ -167,10 +178,15 @@ typedef struct
     Int           KAT;                  /* keepalive timeout value in seconds */
     /* Payload */
     /* All fields below here may be invisible characters */
+    int           clientIDlen;          /* client id's size */
     char*         clientID;             /* string client id 23byte*/
+    int           willTopiclen;         /* will topic's size */
     char*         willTopic;            /* will topic */
-    char*         willMsg;              /* will payload */
+    int           willMsglen;           /* will message's size */
+    char*         willMsg;              /* will message */
+    int           userNamelen;          /* user name's size */
     char*         userName;             /* user name */
+    int           passwdlen;            /* password's size */
     char*         passwd;               /* password */
 } Connect;
 
@@ -201,6 +217,7 @@ typedef struct
     } flags;                            /* connack flags byte */
     /* payload */
     char rc;                            /* connack return code */
+    int   clientIDlen;                  /* ClientId's size */
     char* clientID;                     /* create a new user, will return a new clientId */
 } ConnAck;
 
@@ -212,12 +229,12 @@ typedef struct
 {
     Header header;                      /* MQTT header byte */
     /* Variable header */
-    char*  topic;                       /* topic string */
     int    topiclen;
+    char*  topic;                       /* topic string */
     int    packetId;                    /* MQTT Packets id */
     /* payload */
-    char*  payload;                     /* binary payload, length delimited */
     int    payloadlen;                  /* payload length */
+    char*  payload;                     /* binary payload, length delimited */
 } Publish;
 
 typedef Publish* pPublish;
@@ -254,8 +271,8 @@ typedef struct
     /* Variable header */
     int    packetId;                  /* MQTT Packets id */
     /* payload */
-    List*  topics;                    /* list of topic strings */
-    List*  qoss;                      /* list of corresponding QoSs */
+    ListSub  topics;                  /* list of topic strings */
+    ListQos  qoss;                    /* list of corresponding QoSs */
     // int    noTopics;               /* topic and qos count */
 } Subscribe;
 
@@ -269,7 +286,7 @@ typedef struct
     /* Variable header */
     int    packetId;                  /* MQTT Packets id */
     /* payload */
-    List*  qoss;                      /* list of granted QoSs */
+    ListQos  qoss;                    /* list of granted QoSs */
 } SubAck;
 typedef SubAck* pSubAck;
 /**
@@ -281,7 +298,7 @@ typedef struct
     /* Variable header */
     int    packetId;                  /* MQTT Packets id */
     /* payload */
-    List*  topics;                    /* list of topic strings */
+    ListSub  topics;                  /* list of topic strings */
     // int    noTopics;               /* topic count */
 } Unsubscribe;
 
@@ -484,7 +501,7 @@ public://set
      * @param size
      * @return
      */
-    void setTopics(void* contents, size_t size);
+    void setTopics(char* contents, size_t size, char qos = 0);
     /**
      * @brief setPayload, use at CONNECT/PUBLISH/SUBSCRIBE/SUBACK/UNSUBSCRIBE
      * @param payload
