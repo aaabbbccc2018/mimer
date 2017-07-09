@@ -414,6 +414,7 @@ class MQTTPacket
 public:
     static const char* packet_names[];
 public:
+    MQTTPacket();
     MQTTPacket(int type, int dried = 0, int dup = 0,int qos = 0);
     virtual ~MQTTPacket();
 public:
@@ -525,7 +526,7 @@ public:
      * @return
      */
     bool encode(char* packet);
-    void decode(char* packet, int size);
+    bool decode(char* packet, int size);
 private:
     void*    _packet;    // packet's data
     int      _ptype;     // packet's type

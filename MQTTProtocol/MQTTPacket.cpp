@@ -8,6 +8,9 @@ const char* MQTTPacket::packet_names[] =
    "PINGREQ", "PINGRESP", "DISCONNECT"
 };
 
+MQTTPacket::MQTTPacket():_packet(NULL),_ptype(0),_size(0),_step(0),_dried(0){
+}
+
 MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
     _ptype(type),_size(0),_step(0),_dried(dried)
 {
@@ -623,10 +626,13 @@ bool MQTTPacket::encode(char* packet)
     return true;
 }
 
-void MQTTPacket::decode(char* packet, int size)
+bool MQTTPacket::decode(char* packet, int size)
 {
     if(NULL == packet || 0 <= size){
-        return;
+        return false;
+    }
+    if(NULL == _packet){
+        _packet = (void*)malloc(size);
     }
     Header fixhead;
     int cursor = 0;   /* record byte stream current's position */
@@ -841,6 +847,7 @@ void MQTTPacket::decode(char* packet, int size)
         printf("error packet type\n");
         break;
     }
+    return true;
 }
 
 }//namespace mqtter
