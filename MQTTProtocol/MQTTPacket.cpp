@@ -306,7 +306,7 @@ void MQTTPacket::setFlags(MQ_byte flags)
     }
 }
 
-void MQTTPacket::setTopics(char* content, size_t size, char qos)
+void MQTTPacket::addTopics(char* content, size_t size, char qos)
 {
     assert(HasTopic);
     _size += size;

@@ -72,7 +72,128 @@ typedef list<sub_t> ListSub;
 typedef list<char>  ListQos;
 const int encodeStep[16]
 {
-    0,10,3,4,2,2,2,2,4,3,3,2,1,1,1,0
+    /*  Reserved */
+    0,
+    /*  CONNECT
+     *    Fix header
+     *  1. set Fix header
+     *    Variable header
+     *  2. set Protocol name
+     *  3. set Protocol Level
+     *  4. set Connect flags
+     *  5. set Keep alive time(KAT)
+     *    Payload
+     *  6. set Client ID
+     *  7. set Will Topic
+     *  8. set Will Message
+     *  9. set User name
+     *  10. set Password
+     */
+    10,
+    /*  CONNACK
+     *   Fix header
+     *  1. set Fix header
+     *   Variable header
+     *  2. set Connect Ack flags
+     *  3. set return code
+     *   Payload: NULL
+     */
+    3,
+    /*  PUBLISH
+     *   Fix header
+     *  1. set Fix header
+     *   Variable header
+     *  2. Set Topic Name
+     *  3. set Packet ID
+     *   Payload
+     *  4. set payload message
+     */
+    4,
+    /*  PUBACK
+     *    Fix header
+     *  1. set Fix header
+     *   Variable header
+     *  2. set Packet ID
+     *   Payload: NULL
+     */
+    2,
+    /*  PUBREC
+     *  1. set Fix header
+     *   Variable header
+     *  2. set Packet ID
+     *   Payload: NULL
+     */
+    2,
+    /*  PUBREL
+     *  1. set Fix header
+     *   Variable header
+     *  2. set Packet ID
+     *   Payload: NULL
+     */
+    2,
+    /*  PUBCOMP
+     *  1. set Fix header
+     *   Variable header
+     *  2. set Packet ID
+     *   Payload: NULL
+     */
+    2,
+    /*  SUBSCRIBE
+     *    Fix header
+     *  1. set Fix header
+     *   Variable header
+     *  2. set Packet ID
+     *   Payload
+     *  3. set Topic Filter
+     *  4. set Topic Qos
+     *  ...(if not only a topic Filter)
+     */
+    4,
+    /*  SUBACK
+     *    Fix header
+     *  1. set Fix header
+     *  Variable header
+     *  2. set Packet ID
+     *   Payload
+     *  3. set return code
+     *  ...(if not only a topic Filter)
+     */
+    3,
+    /*  UNSUBSCRIBE
+     *    Fix header
+     *  1. set Fix header
+     *  Variable header
+     *  2. set Packet ID
+     *   Payload
+     *  3. set Topic Filter
+     * ...(if not only a topic Filter)
+     */
+    3,
+    /*  UNSUBACK
+     *    Fix header
+     *  1. set Fix header
+     *  Variable header
+     *  2. set Packet ID
+     *   Payload: NULL
+     */
+    2,
+    /*  PINGREQ
+     *    Fix header
+     *  1. set Fix header
+     */
+    1,
+    /*  PINGRESP
+     *    Fix header
+     *  1. set Fix header
+     */
+    1,
+    /*  DISCONNECT
+     *    Fix header
+     *  1. set Fix header
+     */
+    1,
+    /*  Reserved */
+    0
 };
 const int isFixRLPacket[16]
 {
@@ -502,7 +623,7 @@ public://set
      * @param size
      * @return
      */
-    void setTopics(char* contents, size_t size, char qos = 0);
+    void addTopics(char* contents, size_t size, char qos = 0);
     /**
      * @brief setPayload, use at CONNECT/PUBLISH/SUBSCRIBE/SUBACK/UNSUBSCRIBE
      * @param payload

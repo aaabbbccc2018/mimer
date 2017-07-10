@@ -7,10 +7,12 @@ SOURCES += main.cpp \
     MQTTProtocol.cpp \
     MQTTPacket.cpp \
     MQTTInt.cpp \
-    List.cpp
+    List.cpp \
+    Stream.cpp
 
 HEADERS += \
     MQTTProtocol.h \
     MQTTPacket.h \
     MQTTInt.h \
-    List.h
+    List.h \
+    Stream.h
