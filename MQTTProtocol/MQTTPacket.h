@@ -70,7 +70,7 @@ typedef struct sub_s{
 }sub_t;
 typedef list<sub_t> ListSub;
 typedef list<char>  ListQos;
-const int encodeStep[16]
+const int encodeStep[16] =
 {
     /*  Reserved */
     0,
@@ -195,11 +195,11 @@ const int encodeStep[16]
     /*  Reserved */
     0
 };
-const int isFixRLPacket[16]
+const int isFixRLPacket[16] =
 {
     0,0,1,0,1,1,1,1,0,0,0,1,1,1,1,0
 };
-const int isDriedPacket[16]
+const int isDriedPacket[16] =
 {
     0,1,0,1,0,0,0,0,1,1,1,0,0,0,0,0
 };
