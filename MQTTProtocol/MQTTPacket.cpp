@@ -196,6 +196,7 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
         break;
     }
     pFMT(pHeader)->bits.retain = _dried; // dried flag
+    _size += 1;
 }
 
 MQTTPacket::~MQTTPacket()
@@ -578,6 +579,17 @@ bool MQTTPacket::encode(char* packet)
         /* Variable header */
          packet[cursor++] = pFMT(pConnAck)->flags.all;
          packet[cursor++] = pFMT(pConnAck)->rc;
+         /* payload */
+         if(isSignin()){
+             prefixSize = MQTTInt::encode(prefixBytes, pFMT(pConnAck)->clientIDlen);
+             prefixByte = sizeof(prefixBytes);
+             memcpy(&packet[cursor], &prefixBytes, prefixByte);
+             cursor += prefixByte;
+             memset(prefixBytes,0,4);
+             /* client ID's content */
+             memcpy(&packet[cursor], &pFMT(pConnAck)->clientID,prefixSize);
+             cursor += prefixSize;
+         }
         break;
     case PUBACK:
     case PUBREC:
@@ -628,7 +640,7 @@ bool MQTTPacket::encode(char* packet)
 
 bool MQTTPacket::decode(char* packet, int size)
 {
-    if(NULL == packet || 0 <= size){
+    if(NULL == packet || 0 >= size){
         return false;
     }
     if(NULL == _packet){

@@ -30,4 +30,40 @@ protected:
     bool    _isOpen;
 };
 
+
+class charStream{
+private:
+    char*  _stream;
+    int    _size;
+public:
+    charStream():_stream(NULL),_size(0){}
+    charStream(char* data){
+        _size = sizeof(data);
+        _stream = (char*)malloc(_size);
+        memcpy(_stream,data,_size);
+    }
+    charStream(char* data, int size):_size(size){
+        _stream = (char*)malloc(_size);
+        memcpy(_stream,data,_size);
+    }
+    ~charStream(){
+        if(_stream){
+            free(_stream);
+            _stream = NULL;
+        }
+    }
+public:
+    friend std::ostream & operator<<(std::ostream &out, const charStream &cs)
+    {
+#define HEXCHAR (unsigned int)(unsigned char)
+        int i = 0;
+        out << "byte stream: ";
+        while (i < cs._size) {
+           out << (HEXCHAR(cs._stream[i++])) << " ";
+        }
+        out << std::endl;
+        return out;
+    }
+};
+
 #endif // Stream.h

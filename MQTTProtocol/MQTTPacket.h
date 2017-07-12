@@ -640,6 +640,21 @@ public://set
      * @return
      */
     void setPacketId(int packetId);
+private:
+    /* header.bits.dup == 0 && clientID == 0 : create a new user, will return a clientID */
+    inline bool isSignin()
+    {
+        return (_ptype == CONNECT &&
+                '\0' == (*pFMT(pConnect)->clientID) &&
+                0 == pFMT(pHeader)->bits.dup);
+    }
+    /* header.bits.dup == 1 && clientID != 0 : try to delete the user: clientID */
+    inline bool isSigndel()
+    {
+        return (_ptype == CONNECT &&
+                '\0' != (*pFMT(pConnect)->clientID) &&
+                1 == pFMT(pHeader)->bits.dup);
+    }
 public:
     /**
      * @brief encode: a packet to bit-datas packet for send
