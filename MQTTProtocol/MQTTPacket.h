@@ -40,10 +40,6 @@ namespace mqtter {
 
 #define bsIsBigEndian ((((const int*)"\0\x1\x2\x3\x4\x5\x6\x7")[0] & 0xff) != 0)
 
-#if defined(bsIsBigEndian)
-#define REVERSED 1
-#endif
-
 #define MQTT_NAME  "MQTT"
 #define MQ_byte    unsigned char
 #define MQTT_VER   (0x04)
@@ -212,7 +208,7 @@ typedef unsigned short Int;             /* must 2 byte */
 typedef union
 {
     /*unsigned*/ char byte;             /* the whole byte */
-#if defined(REVERSED)
+#if REVERSED
     struct
     {
         unsigned int type : 4;          /* message type nibble */
@@ -272,7 +268,7 @@ typedef struct
     union
     {
         unsigned char all;              /* all connect flags */
-#if defined(REVERSED)
+#if REVERSED
         struct
         {
             boolean username : 1;       /* 3.1 user name */
@@ -322,7 +318,7 @@ typedef struct
     union
     {
         unsigned char all;              /* all connack flags */
-#if defined(REVERSED)
+#if REVERSED
         struct
         {
             unsigned int reserved : 7;  /* message type nibble */
@@ -503,6 +499,17 @@ typedef struct {
 #define HasPktId   ((_ptype >= PUBLISH)     && \
                     (_ptype <= UNSUBACK))
 
+#define SER_CLI(T) ((T >= PUBLISH)          && \
+                    (T <= UNSUBACK))
+
+#define SERVERS(T) ((SER_CLI)               || \
+                    (T == CONNACK))
+
+#define CLIENTS(T) ((T == PINGREQ)          || \
+                     (T == CONNECT)         || \
+                     (SER_CLI)              || \
+                     (T == DISCONNECT))
+
 /* Only Header Remaining Length 0,
  * PINGREQ, PINGRESP, DISCONNECT just a fixed head */
 #define OnlyHeader ((_ptype >= PINGREQ)     && \
@@ -553,18 +560,31 @@ public://get
     inline msgTypes type(){return (msgTypes)_ptype;}
     inline const char* types(){return packet_names[_ptype];}
     void*  data(){return _packet;}
-public://get
-    char*  clientId(){ return pFMT(pConnect)->clientID;}
-    char*  willTopic(){return pFMT(pConnect)->willTopic;}
-    char*  willMsg(){return pFMT(pConnect)->willMsg;}
-    char*  username(){return pFMT(pConnect)->userName;}
-    char*  password(){return pFMT(pConnect)->passwd;}
-    char*  publish(char* payload, size_t& size)
+    static msgTypes type(char header)
     {
+#if REVERSED
+        return (msgTypes)(header & 0x0F);
+#else
+        return (msgTypes)((header & 0xF0) >> 4);
+#endif
+    }
+    static const char* types(msgTypes ptype){return packet_names[ptype];}
+    static bool dried(char header){ return (1 == (header & 0x1)); }
+public://get
+    char*  clientId()const{ return pFMT(pConnect)->clientID;}
+    char*  willTopic()const{return pFMT(pConnect)->willTopic;}
+    char*  willMsg()const{return pFMT(pConnect)->willMsg;}
+    char*  username()const{return pFMT(pConnect)->userName;}
+    char*  password()const{return pFMT(pConnect)->passwd;}
+    char*  payload(char* payload, size_t& size)const{
         size = pFMT(pPublish)->payloadlen;
         memcpy(payload, pFMT(pPublish)->payload, size);
         return payload;
     }
+    char*  topic()const{assert(PUBLISH == _ptype); return pFMT(pPublish)->topic;}
+    Int    KAT()const{ assert(CONNECT == _ptype); return pFMT(pConnect)->KAT; }
+    int    packetId()const{assert(HasPktId); return pFMT(pAck)->packetId;}
+    char   RC()const{assert(CONNACK == _ptype); return pFMT(pConnAck)->rc;}
 public://set
     /**
      * @brief setKAT, use at CONNECT
@@ -666,7 +686,7 @@ public:
 private:
     void*    _packet;    // packet's data
     int      _ptype;     // packet's type
-    int      _size;      // packet's size
+    int      _size;      // packet's size, == fix Header's + Remaining Length
     int      _step;      // measure the encoding / decoding progress
     int      _dried;     // packet's DRIED flag
 };

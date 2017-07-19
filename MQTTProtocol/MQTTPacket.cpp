@@ -196,6 +196,9 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
         break;
     }
     pFMT(pHeader)->bits.retain = _dried; // dried flag
+    if(0 == _dried && OnlyHeader){
+        _size += 1;
+    }
     _size += 1;
 }
 
@@ -209,8 +212,61 @@ MQTTPacket::~MQTTPacket()
 
 std::ostream & operator<<(std::ostream &out, const MQTTPacket &mp)
 {
-    return out << "Packet Type: " << mp.packet_names[mp._ptype]
-               << "["<< mp._ptype << "] Packet Size: " << mp._size << std::endl;
+    msgTypes ptype = (msgTypes)mp._ptype;
+    switch (ptype)
+    {
+    case CONNECT:
+        return out << "Packet Type: " << mp.packet_names[mp._ptype]
+                   << "["<< mp._ptype << "] Packet Size: " << mp._size
+                   << " Protocol: " << MQTT_NAME << " version: " << MQTT_VER
+                   << " KAT: " << mp.KAT() << " clientID: " << mp.clientId()
+                   << " willTopic: " << mp.willTopic() << " willMsg: "
+                   << mp.willMsg() << " userName: " << mp.username()
+                   << " passwd:" << mp.password() << std::endl;
+        break;
+    case CONNACK:
+        return out << "Packet Type: " << mp.packet_names[mp._ptype]
+                   << "["<< mp._ptype << "] Packet Size: " << mp._size
+                   << " Return Code: " << mp.RC() << " clientId: "
+                   << mp.clientId() << std::endl;
+        break;
+    case PUBLISH:
+        return out << "Packet Type: " << mp.packet_names[mp._ptype]
+                   << "["<< mp._ptype << "] Packet Size: " << mp._size
+                   << " topic: "  << mp.topic() << " payload: "
+                   /*<< mp.payload()*/ << std::endl;
+        break;
+    case PUBACK:
+    case PUBREC:
+    case PUBREL:
+    case PUBCOMP:
+    case UNSUBACK:
+        return out << "Packet Type: " << mp.packet_names[mp._ptype]
+                   << "["<< mp._ptype << "] Packet Size: " << mp._size
+                   << " packetId: " << mp.packetId() << std::endl;
+        break;
+    case SUBSCRIBE:
+        return out << "Packet Type: " << mp.packet_names[mp._ptype]
+                   << "["<< mp._ptype << "] Packet Size: " << mp._size << std::endl;
+        break;
+    case SUBACK:
+        return out << "Packet Type: " << mp.packet_names[mp._ptype]
+                   << "["<< mp._ptype << "] Packet Size: " << mp._size << std::endl;
+        break;
+    case UNSUBSCRIBE:
+        return out << "Packet Type: " << mp.packet_names[mp._ptype]
+                   << "["<< mp._ptype << "] Packet Size: " << mp._size << std::endl;
+        break;
+    case PINGREQ:
+    case PINGRESP:
+    case DISCONNECT:
+        return out << "Packet Type: " << mp.packet_names[mp._ptype]
+                   << "["<< mp._ptype << "] Packet Size: " << mp._size << std::endl;
+        break;
+    default:
+        printf("error packet type\n");
+        break;
+    }
 }
 
 void MQTTPacket::setKAT(Int kat)
@@ -342,7 +398,10 @@ void MQTTPacket::setPayload(char* payload, size_t size)
 void MQTTPacket::setPacketId(int packetId)
 {
     assert(HasPktId);
-    _size += sizeof(int);
+    _size += sizeof(int16_t); // packetId's size
+    if(!_dried){
+        _size++; //Remaining Length's size
+    }
     _step++;
     switch (_ptype) {
     case PUBLISH://QoS > 0
@@ -599,8 +658,9 @@ bool MQTTPacket::encode(char* packet)
         /* Variable header */
         /* packet ID */
         packetId = (int16_t)pFMT(pAck)->packetId;
-        memcpy(&packet[cursor++], (char*)&packetId, 2);
+        memcpy(&packet[cursor], (char*)&packetId, 2);
         // itoa((int16_t)pFMT(pPubAck)->packetId,&packet[cursor++],10);
+        cursor += 2;
         break;
     case UNSUBSCRIBE:// TODO
         /* Variable header */
@@ -661,6 +721,7 @@ bool MQTTPacket::decode(char* packet, int size)
     int prefixByte = 0;   /* save a content size's byte */
     int prefixSize = 0;   /* save a content size */
     char packetId[2] = {0}; /* save packet Id char[2] */
+    int  packetID = 0;
     /* Remaining Length: packet size */
     if(CannotDried){
         rlSize = MQTTInt::decode(&packet[cursor],prefixByte);
@@ -826,9 +887,14 @@ bool MQTTPacket::decode(char* packet, int size)
     case UNSUBACK:
         /* Variable header */
         /* packet ID */
+        if (!_dried){
+            cursor++;    // Remaining Length's size
+        }
         memcpy(packetId,&packet[cursor],2);
+        _size += 2;  // packetId's size
         cursor += 2;
-        pFMT(pSubscribe)->packetId = atoi(packetId);
+        memcpy(&packetID, packetId, 2);
+        pFMT(pAck)->packetId = packetID;
         break;
     case UNSUBSCRIBE:
         /* Variable header */

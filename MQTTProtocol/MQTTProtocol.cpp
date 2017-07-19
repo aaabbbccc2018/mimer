@@ -2,11 +2,11 @@
 
 namespace mqtter {
 
-MQTTProtocol::MQTTProtocol():_mqData(NULL),_ptype(0)
+MQTTProtocol::MQTTProtocol():_mqData(NULL),_ptype(0),_mtype(CLIENT)
 {
 }
 
-MQTTProtocol::MQTTProtocol(char* content,int size)
+MQTTProtocol::MQTTProtocol(char* content,int size,int mtype):_mtype((Mtype)mtype)
 {
     _mqData = new MQTTPacket();
     if(_mqData->decode(content,size)){
