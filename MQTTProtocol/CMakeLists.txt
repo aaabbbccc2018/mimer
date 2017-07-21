@@ -11,3 +11,11 @@ include_directories(.)
 aux_source_directory(. DIR_SRCS)
 # 指定生成目标
 add_executable(mqtter ${DIR_SRCS})
+
+# 启用测试
+enable_testing()
+# 测试程序是否成功运行
+foreach (index RANGE 1 14)
+	add_test (packet_type_${index}_dried mqtter ${index} 1)
+	add_test (packet_type_${index}_official mqtter ${index} 0)
+endforeach ()
