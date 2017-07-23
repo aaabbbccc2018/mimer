@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <iostream>
 #include <string.h>
+//#include "List.cpp"
 #include <list>
 #include "MQTTInt.h"
 using namespace std;
@@ -52,7 +53,6 @@ enum msgTypes
     PUBCOMP, SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK,
     PINGREQ, PINGRESP, DISCONNECT
 };
-
 typedef short int  int16_t;
 typedef int        int32_t;
 typedef struct sub_s{
@@ -65,7 +65,9 @@ typedef struct sub_s{
     sub_s():_size(0),_content(NULL){}
 }sub_t;
 typedef list<sub_t> ListSub;
+typedef ListSub::iterator Subitor;
 typedef list<char>  ListQos;
+typedef ListQos::iterator Qositor;
 const int encodeStep[16] =
 {
     /*  Reserved */
@@ -92,6 +94,7 @@ const int encodeStep[16] =
      *   Variable header
      *  2. set Connect Ack flags
      *  3. set return code
+     *  4. set return clientID(if sigin a new client)
      *   Payload: NULL
      */
     3,
@@ -154,7 +157,7 @@ const int encodeStep[16] =
      *  3. set return code
      *  ...(if not only a topic Filter)
      */
-    3,
+    4,
     /*  UNSUBSCRIBE
      *    Fix header
      *  1. set Fix header
@@ -164,7 +167,7 @@ const int encodeStep[16] =
      *  3. set Topic Filter
      * ...(if not only a topic Filter)
      */
-    3,
+    4,
     /*  UNSUBACK
      *    Fix header
      *  1. set Fix header
@@ -226,7 +229,6 @@ typedef union
     } bits;
 #endif
 } Header;
-
 typedef Header* pHeader;
 
 /**
@@ -238,7 +240,6 @@ typedef struct
     /* Variable header */
     int    packetId;                    /* MQTT packet id */
 } Ack;
-
 typedef Ack* pAck;
 
 /**
@@ -254,44 +255,47 @@ typedef struct
  *
  */
 
+/* connect flags byte */
+typedef union
+{
+    unsigned char all;              /* all connect flags */
+    /* isregister == 1 && clientID == 0 : create a new user, will return a clientID
+     * isregister == 0 && clientID != 0 : try to delete the user: clientID*/
+#if REVERSED
+    struct
+    {
+        boolean username : 1;       /* 3.1 user name */
+        boolean password : 1;       /* 3.1 password */
+        boolean willRetain : 1;     /* will retain setting */
+        unsigned int willQoS : 2;   /* will QoS value */
+        boolean will : 1;           /* will flag */
+        boolean cleanstart : 1;     /* cleansession flag */
+        boolean isregister : 1;     /* register(1) or delete(0) a user */
+    } bits;
+#else
+    struct
+    {
+        boolean isregister : 1;     /* register(1) or delete(0) a user */
+        boolean cleanstart : 1;     /* cleansession flag */
+        boolean will : 1;           /* will flag */
+        unsigned int willQoS : 2;	/* will QoS value */
+        boolean willRetain : 1;     /* will retain setting */
+        boolean password : 1;       /* 3.1 password */
+        boolean username : 1;       /* 3.1 user name */
+    } bits;
+#endif
+} connflags;
+
 /**
  * Data for a connect packet. 0x1
  */
 typedef struct
 {
     Header        header;               /* MQTT header byte */
-    /* header.bits.dup == 0 && clientID == 0 : create a new user, will return a clientID
-     * header.bits.dup == 1 && clientID != 0 : try to delete the user: clientID*/
     /* Variable header */
     const char*   Protocol;             /* MQTT protocol name */
     MQ_byte       version;              /* MQTT version number */
-    union
-    {
-        unsigned char all;              /* all connect flags */
-#if REVERSED
-        struct
-        {
-            boolean username : 1;       /* 3.1 user name */
-            boolean password : 1;       /* 3.1 password */
-            boolean willRetain : 1;     /* will retain setting */
-            unsigned int willQoS : 2;   /* will QoS value */
-            boolean will : 1;           /* will flag */
-            boolean cleanstart : 1;     /* cleansession flag */
-            int : 1;                    /* unused */
-        } bits;
-#else
-        struct
-        {
-            int : 1;                    /* unused */
-            boolean cleanstart : 1;     /* cleansession flag */
-            boolean will : 1;           /* will flag */
-            unsigned int willQoS : 2;	/* will QoS value */
-            boolean willRetain : 1;     /* will retain setting */
-            boolean password : 1;       /* 3.1 password */
-            boolean username : 1;       /* 3.1 user name */
-        } bits;
-#endif
-    } flags;                            /* connect flags byte */
+    connflags     flags;                /* connect flags byte */
     Int           KAT;                  /* keepalive timeout value in seconds */
     /* Payload */
     /* All fields below here may be invisible characters */
@@ -306,39 +310,44 @@ typedef struct
     int           passwdlen;            /* password's size */
     char*         passwd;               /* password */
 } Connect;
-
 typedef Connect* pConnect;
+
 /**
  * Data for a connack packet. 0x2
  */
+/* connack flags byte */
+typedef union
+{
+    unsigned char all;              /* all connack flags */
+#if REVERSED
+    struct
+    {
+        unsigned int reserved : 6;  /* message type nibble */
+        boolean isregister : 1;     /* register(1) */
+        boolean sessionPresent : 1; /* was a session found on the server? */
+    } bits;
+#else
+    struct
+    {
+        boolean sessionPresent : 1; /* was a session found on the server? */
+        boolean isregister : 1;     /* register(1) */
+        unsigned int reserved : 6;  /* message type nibble */
+    } bits;
+#endif
+} cackflags;                            /* connack flags byte */
+
 typedef struct
 {
     Header header;                      /* MQTT header byte */
     /* Variable header */
-    union
-    {
-        unsigned char all;              /* all connack flags */
-#if REVERSED
-        struct
-        {
-            unsigned int reserved : 7;  /* message type nibble */
-            boolean sessionPresent : 1; /* was a session found on the server? */
-        } bits;
-#else
-        struct
-        {
-            boolean sessionPresent : 1; /* was a session found on the server? */
-            unsigned int reserved : 7;  /* message type nibble */
-        } bits;
-#endif
-    } flags;                            /* connack flags byte */
+    cackflags flags;                    /* connack flags byte */
     /* payload */
-    char rc;                            /* connack return code */
+    char  rc;                           /* connack return code */
     int   clientIDlen;                  /* ClientId's size */
     char* clientID;                     /* create a new user, will return a new clientId */
 } ConnAck;
-
 typedef ConnAck* pConnAck;
+
 /**
  * Data for a publish packet. 0x3
  */
@@ -353,32 +362,32 @@ typedef struct
     int    payloadlen;                  /* payload length */
     char*  payload;                     /* binary payload, length delimited */
 } Publish;
-
 typedef Publish* pPublish;
+
 /**
  * Data for a Puback packet. 0x4
  */
 typedef Ack PubAck;
-
 typedef PubAck* pPubAck;
+
 /**
  * Data for a Pubrec packet. 0x5
  */
 typedef Ack PubRec;
-
 typedef PubRec* pPubRec;
+
 /**
  * Data for a Pubrel packet. 0x6
  */
 typedef Ack PubRel;
-
 typedef PubRel* pPubRel;
+
 /**
  * Data for a Pubrel Pubcomp. 0x7
  */
 typedef Ack PubComp;
-
 typedef PubComp* pPubComp;
+
 /**
  * Data for a subscribe packet. 0x8
  */
@@ -388,12 +397,12 @@ typedef struct
     /* Variable header */
     int    packetId;                  /* MQTT Packets id */
     /* payload */
-    ListSub  topics;                  /* list of topic strings */
-    ListQos  qoss;                    /* list of corresponding QoSs */
+    ListSub*  topics;                 /* list of topic strings */
+    ListQos*  qoss;                   /* list of corresponding QoSs */
     // int    noTopics;               /* topic and qos count */
 } Subscribe;
-
 typedef Subscribe* pSubscribe;
+
 /**
  * Data for a suback packet. 0x9
  */
@@ -403,9 +412,10 @@ typedef struct
     /* Variable header */
     int    packetId;                  /* MQTT Packets id */
     /* payload */
-    ListQos  qoss;                    /* list of granted QoSs */
+    ListQos*  qoss;                   /* list of granted QoSs */
 } SubAck;
 typedef SubAck* pSubAck;
+
 /**
  * Data for an unsubscribe packet. 0x10
  */
@@ -415,34 +425,33 @@ typedef struct
     /* Variable header */
     int    packetId;                  /* MQTT Packets id */
     /* payload */
-    ListSub  topics;                  /* list of topic strings */
+    ListSub*  topics;                 /* list of topic strings */
     // int    noTopics;               /* topic count */
 } Unsubscribe;
-
 typedef Unsubscribe* pUnsubscribe;
+
 /**
  * Data for an Unsuback packet. 0x11
  */
 typedef Ack UnsubAck;
-
 typedef UnsubAck* pUnsubAck;
+
 /**
  * Data for an PingReq packet. 0x12
  */
 typedef header_s PingReq;
-
 typedef PingReq* pPingReq;
+
 /**
  * Data for an PingResp packet. 0x13
  */
 typedef header_s PingResp;
-
 typedef PingResp* pPingResp;
+
 /**
  * Data for an Disconnect packet. 0x14
  */
 typedef header_s Disconnect;
-
 typedef Disconnect* pDisconnect;
 
 typedef struct {
@@ -581,10 +590,18 @@ public://get
         memcpy(payload, pFMT(pPublish)->payload, size);
         return payload;
     }
+    char*  s_payload()const{ return pFMT(pPublish)->payload; }
     char*  topic()const{assert(PUBLISH == _ptype); return pFMT(pPublish)->topic;}
     Int    KAT()const{ assert(CONNECT == _ptype); return pFMT(pConnect)->KAT; }
     int    packetId()const{assert(HasPktId); return pFMT(pAck)->packetId;}
-    char   RC()const{assert(CONNACK == _ptype); return pFMT(pConnAck)->rc;}
+    int    RC()const{assert(CONNACK == _ptype); return (int)pFMT(pConnAck)->rc;}
+    char*  AnewClientId()const
+    {
+        assert(CONNACK == _ptype);
+        if(pFMT(pConnAck)->flags.bits.isregister)
+            return pFMT(pConnAck)->clientID;
+        return "";
+    }
 public://set
     /**
      * @brief setKAT, use at CONNECT
@@ -637,13 +654,18 @@ public://set
      * @return
      */
     void setFlags(MQ_byte value);
+    void setCleanstart(boolean value);
+    void setWillflag(boolean value);
+    void setWillQos(unsigned int value);
+    void setisPassword(boolean value);
+    void setisUsername(boolean value);
     /**
      * @brief setTopics, use at PUBLISH/SUBSCRIBE/UNSUBSCRIBE
      * @param content (topic and qos)
      * @param size
      * @return
      */
-    void addTopics(char* contents, size_t size, char qos = 0);
+    void addTopics(char qos = 0, char* contents = NULL, size_t size = 0);
     /**
      * @brief setPayload, use at CONNECT/PUBLISH/SUBSCRIBE/SUBACK/UNSUBSCRIBE
      * @param payload
@@ -666,14 +688,17 @@ private:
     {
         return (_ptype == CONNECT &&
                 '\0' == (*pFMT(pConnect)->clientID) &&
-                0 == pFMT(pHeader)->bits.dup);
+                1 == pFMT(pConnect)->flags.bits.isregister);
+    }
+    inline bool signOk(){
+        return (_ptype == CONNACK && pFMT(pConnAck)->flags.bits.isregister);
     }
     /* header.bits.dup == 1 && clientID != 0 : try to delete the user: clientID */
     inline bool isSigndel()
     {
         return (_ptype == CONNECT &&
                 '\0' != (*pFMT(pConnect)->clientID) &&
-                1 == pFMT(pHeader)->bits.dup);
+                0 == pFMT(pConnect)->flags.bits.isregister);
     }
 public:
     /**

@@ -2,6 +2,7 @@
 #define _MQTTER_STREAM_H
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "MQTTInt.h"
 
 class Stream
@@ -16,6 +17,7 @@ public:
     virtual size_t	Read(void *buffer, size_t size, size_t count);
     virtual size_t	Write(const void *buffer, size_t size, size_t count);
     virtual bool Seek(int offset, int origin);
+    virtual bool Rewind();
     virtual int Tell();
     virtual int	Size();
     virtual bool Flush();

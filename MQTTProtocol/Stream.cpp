@@ -53,6 +53,13 @@ bool Stream::Seek(int offset, int origin)
     return (bool)(fseek(_fp, offset, origin) == 0);
 }
 
+bool Stream::Rewind()
+{
+    if (!_fp) return false;
+    rewind(_fp);
+    return true;
+}
+
 int Stream::Tell()
 {
     if (!_fp) return 0;

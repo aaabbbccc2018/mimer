@@ -30,6 +30,8 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
         pFMT(pConnect)->Protocol = MQTT_NAME;
         pFMT(pConnect)->version = MQTT_VER;
         _step += 3;
+        /* add CONNECT Variable header, size (2-byte)*/
+        _size += 2 + 4 + 1;
         break;
     case CONNACK:
 #if DEBUG
@@ -111,12 +113,14 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
         _packet = (pSubscribe)malloc(sizeof(Subscribe));
         memset(_packet,0,sizeof(Subscribe));
         pFMT(pSubscribe)->header.byte = 0;
-        pFMT(pSubscribe)->header.bits.type = PUBREL;
+        pFMT(pSubscribe)->header.bits.type = SUBSCRIBE;
         pFMT(pSubscribe)->header.bits.qos = 1;//default value
 #else
         ALLOC0(pSubscribe,Subscribe)
         initHeader1(pSubscribe,SUBSCRIBE)
 #endif
+        pFMT(pSubscribe)->topics = new ListSub();
+        pFMT(pSubscribe)->qoss = new ListQos();
         _step++;
         break;
     case SUBACK:
@@ -129,6 +133,7 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
         ALLOC0(pSubAck,SubAck)
         initHeader0(pSubAck,SUBACK)
 #endif
+        pFMT(pSubAck)->qoss = new ListQos();
         _step++;
         break;
     case UNSUBSCRIBE:
@@ -141,6 +146,7 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
         ALLOC0(pUnsubscribe,Unsubscribe)
         initHeader1(pUnsubscribe,UNSUBSCRIBE)
 #endif
+        pFMT(pUnsubscribe)->topics = new ListSub();
         _step++;
         break;
     case UNSUBACK:
@@ -213,65 +219,79 @@ MQTTPacket::~MQTTPacket()
 std::ostream & operator<<(std::ostream &out, const MQTTPacket &mp)
 {
     msgTypes ptype = (msgTypes)mp._ptype;
+    ListSub* sublist = NULL;
+    Subitor  itlist;
+    ListQos* subqoss = NULL;
+    Qositor  itqoss;
+    out << "Packet Type:\t" << mp.packet_names[mp._ptype]
+        << "["<< mp._ptype << "]\nPacket Size:\t" << mp._size
+        << "\nPacket Dried:\t" << mp._dried;
     switch (ptype)
     {
     case CONNECT:
-        return out << "Packet Type: " << mp.packet_names[mp._ptype]
-                   << "["<< mp._ptype << "] Packet Size: " << mp._size
-                   << " Protocol: " << MQTT_NAME << " version: " << MQTT_VER
-                   << " KAT: " << mp.KAT() << " clientID: " << mp.clientId()
-                   << " willTopic: " << mp.willTopic() << " willMsg: "
-                   << mp.willMsg() << " userName: " << mp.username()
-                   << " passwd:" << mp.password() << std::endl;
+        out << "\nProtocol:\t" << MQTT_NAME << "\nversion:\t" << MQTT_VER
+            << "\nKATIMEOUT:\t" << mp.KAT() << "\nclientID:\t" << mp.clientId()
+            << "\nwillTopic:\t" << mp.willTopic() << "\nwillMsg:\t"
+            << mp.willMsg() << "\nuserName:\t" << mp.username()
+            << "\npassword:\t" << mp.password() << std::endl;
         break;
     case CONNACK:
-        return out << "Packet Type: " << mp.packet_names[mp._ptype]
-                   << "["<< mp._ptype << "] Packet Size: " << mp._size
-                   << " Return Code: " << mp.RC() << " clientId: "
-                   << mp.clientId() << std::endl;
+        out << "\nReturn Code:\t" << mp.RC() << "\nclientId:\t"
+            << mp.AnewClientId() << std::endl;
         break;
     case PUBLISH:
-        return out << "Packet Type: " << mp.packet_names[mp._ptype]
-                   << "["<< mp._ptype << "] Packet Size: " << mp._size
-                   << " topic: "  << mp.topic() << " payload: "
-                   /*<< mp.payload()*/ << std::endl;
+        out << "\ntopic:\t"  << mp.topic() << "\npayload:\t"
+               << mp.s_payload() << std::endl;
         break;
     case PUBACK:
     case PUBREC:
     case PUBREL:
     case PUBCOMP:
     case UNSUBACK:
-        return out << "Packet Type: " << mp.packet_names[mp._ptype]
-                   << "["<< mp._ptype << "] Packet Size: " << mp._size
-                   << " packetId: " << mp.packetId() << std::endl;
+        out << "\npacketId:\t" << mp.packetId() << std::endl;
         break;
     case SUBSCRIBE:
-        return out << "Packet Type: " << mp.packet_names[mp._ptype]
-                   << "["<< mp._ptype << "] Packet Size: " << mp._size << std::endl;
+        sublist = ((pSubscribe)(mp._packet))->topics;
+        subqoss = ((pSubscribe)(mp._packet))->qoss;
+        itlist = sublist->begin();
+        itqoss = subqoss->begin();
+        for(; itlist != sublist->end() && itqoss != subqoss->end(); ++itlist,++itqoss)
+        {
+            out << "\nSubscribe:\t" << itlist->_content << "\tsize:" << itlist->_size
+                << "\nSubQos:\t" << (int)*itqoss;
+        }
         break;
     case SUBACK:
-        return out << "Packet Type: " << mp.packet_names[mp._ptype]
-                   << "["<< mp._ptype << "] Packet Size: " << mp._size << std::endl;
+        subqoss = ((pSubAck)(mp._packet))->qoss;
+        itqoss = subqoss->begin();
+        for(; itqoss != subqoss->end(); ++itqoss)
+        {
+            out << "\nSubAckQos:\t" << (int)*itqoss;
+        }
         break;
     case UNSUBSCRIBE:
-        return out << "Packet Type: " << mp.packet_names[mp._ptype]
-                   << "["<< mp._ptype << "] Packet Size: " << mp._size << std::endl;
+        sublist = ((pUnsubscribe)(mp._packet))->topics;
+        itlist = sublist->begin();
+        for(; itlist != sublist->end(); ++itlist)
+        {
+            out << "\nUnsubscribe:\t" << itlist->_content << "\tsize:" << itlist->_size;
+        }
         break;
     case PINGREQ:
     case PINGRESP:
     case DISCONNECT:
-        return out << "Packet Type: " << mp.packet_names[mp._ptype]
-                   << "["<< mp._ptype << "] Packet Size: " << mp._size << std::endl;
         break;
     default:
-        printf("error packet type\n");
+        out << "error packet type\n";
         break;
     }
+    return out << std::endl;
 }
 
 void MQTTPacket::setKAT(Int kat)
 {
     assert(_ptype == CONNECT);
+    /* KAT size */
     _size += sizeof(int16_t);
     _step++;
     pFMT(pConnect)->KAT = kat;
@@ -279,76 +299,162 @@ void MQTTPacket::setKAT(Int kat)
 
 void MQTTPacket::setClientId(char* clientId, size_t size)
 {
-    assert(_ptype == CONNECT);
-    _size += size;
-    _step++;
-    pFMT(pConnect)->clientIDlen = size;
-    pFMT(pConnect)->clientID = clientId;
+    if(_ptype == CONNECT){
+        if(_dried){
+            // clientIDlen is always 16 byte,so needn't record
+            _size += 16;
+            pFMT(pConnect)->clientIDlen = 16;
+            pFMT(pConnect)->clientID = clientId;
+        }else{
+            // clientIDlen(2 byte) length size
+            _size += (size+2);
+            pFMT(pConnect)->clientIDlen = size;
+            pFMT(pConnect)->clientID = clientId;
+        }
+        if(finish()){
+            _size += MQTTInt::encode_len(_size-1);
+        }
+        _step++;
+    }else if(_ptype == CONNACK){
+        if(signOk()){
+            //_step++;
+            _size += 16;
+            pFMT(pConnAck)->clientIDlen = 16;
+            pFMT(pConnAck)->clientID = clientId;
+            /* clientIDlen is 16, so needn't add 1 Byte to measure clientID */
+        }
+    }else{
+        return;
+    }
 }
 
 void MQTTPacket::setWill(char* willtopic, char* willmsg, size_t sizet, size_t sizem)
 {
     assert(_ptype == CONNECT);
+    if(pFMT(pConnect)->flags.bits.will){
+        if(_dried){
+            if(sizet > 0xff || sizem > 0xff){
+                printf("willtopic or willmsg too long must smaller 256!\n");
+                return;
+            }
+            _size += 2; //willTopiclen(1 byte) & willMsglen(1 byte) length size
+        }else{
+            _size += 4; //willTopiclen(2 byte) & willMsglen(2 byte) length size
+        }
+        _size += sizet;
+        _size += sizem;
+        pFMT(pConnect)->willTopiclen = sizet;
+        pFMT(pConnect)->willTopic = willtopic;
+        pFMT(pConnect)->willMsglen = sizem;
+        pFMT(pConnect)->willMsg = willmsg;
+    }
     _step += 2;
-    assert(pFMT(pConnect)->flags.bits.will);
-    _size += sizet += sizem;
-    pFMT(pConnect)->willTopiclen = sizet;
-    pFMT(pConnect)->willTopic = willtopic;
-    pFMT(pConnect)->willMsglen = sizem;
-    pFMT(pConnect)->willMsg = willmsg;
+    if(finish()){
+        /* add space to save Remaining Length's size */
+        _size += MQTTInt::encode_len(_size-1);
+    }
 }
 
 void MQTTPacket::setUserName(char* userName, size_t size)
 {
     assert(_ptype == CONNECT);
+    if(pFMT(pConnect)->flags.bits.username){
+        if(_dried){
+            if(size > 0xff){
+                printf("user name too long must smaller 256!\n");
+                return;
+            }
+            _size++;    //userNamelen(1 byte) length size
+        }else{
+            _size += 2; //userNamelen(2 byte) length size
+        }
+        _size += size;
+        pFMT(pConnect)->userNamelen = size;
+        pFMT(pConnect)->userName = userName;
+    }
     _step++;
-    assert(pFMT(pConnect)->flags.bits.username);
-    _size += size;
-    pFMT(pConnect)->userNamelen = size;
-    pFMT(pConnect)->userName = userName;
+    if(finish()){
+        /* add space to save Remaining Length's size */
+        _size += MQTTInt::encode_len(_size-1);
+    }
 }
 
 void MQTTPacket::setPasswd(char* passwd, size_t size)
 {
     assert(_ptype == CONNECT);
+    if(pFMT(pConnect)->flags.bits.password){
+        if(_dried){
+            if(size > 0xff){
+                printf("password too long must smaller 256!\n");
+                return;
+            }
+            _size++;    //passwdlen(1 byte) length size
+        }else{
+            _size += 2; //passwdlen(2 byte) length size
+        }
+        _size += size;
+        pFMT(pConnect)->passwdlen = size;
+        pFMT(pConnect)->passwd = passwd;
+    }
     _step++;
-    assert(pFMT(pConnect)->flags.bits.password);
-    _size += size;
-    pFMT(pConnect)->passwdlen = size;
-    pFMT(pConnect)->passwd = passwd;
+    if(finish()){
+        /* add space to save Remaining Length's size */
+        _size += MQTTInt::encode_len(_size-1);
+    }
 }
 
 void MQTTPacket::setSignUp()
 {
-    assert(_ptype == CONNECT && 1 == pFMT(pHeader)->bits.retain);
+    assert(_ptype == CONNECT);
     _step++;
     pFMT(pConnect)->clientIDlen = 16;
     pFMT(pConnect)->clientID = 0;
-    pFMT(pConnect)->header.bits.dup = 0;
+    pFMT(pConnect)->flags.bits.isregister = 1;
     _size += 16;  // default clientID 16 byte
+    if(finish()){
+        /* add space to save Remaining Length's size */
+        _size += MQTTInt::encode_len(_size-1);
+    }
 }
 
 void MQTTPacket::setSignDel(char* clientId, size_t size)
 {
-    assert(_ptype == CONNECT);
+    if(_ptype != CONNECT){
+        printf("%s no clientId!\n", packet_names[_ptype]);
+        return;
+    }
     _step++;
     pFMT(pConnect)->clientIDlen = size;
     pFMT(pConnect)->clientID = clientId;
-    pFMT(pConnect)->header.bits.dup = 1;
+    pFMT(pConnect)->flags.bits.isregister = 0;
     _size += size;
+    if(finish()){
+        /* add space to save Remaining Length's size */
+        _size += MQTTInt::encode_len(_size-1);
+    }
 }
 
 void MQTTPacket::setRC(char rc)
 {
-    assert(_ptype == CONNACK);
+    if(_ptype != CONNACK){
+        printf("%s no RC!\n", packet_names[_ptype]);
+        return;
+    }
     _size += 1;
     _step++;
     pFMT(pConnAck)->rc = rc;
+    if(finish()){
+        /* add space to save Remaining Length's size */
+        _size += MQTTInt::encode_len(_size-1);
+    }
 }
 
 void MQTTPacket::setFlags(MQ_byte flags)
 {
-    assert(HasFlags);
+    if(!HasFlags){
+        printf("%s no flags!\n", packet_names[_ptype]);
+        return;
+    }
     _size++;
     _step++;
     switch (_ptype) {
@@ -361,47 +467,81 @@ void MQTTPacket::setFlags(MQ_byte flags)
     default:
         break;
     }
+    if(finish()){
+        /* add space to save Remaining Length's size */
+        _size += MQTTInt::encode_len(_size-1);
+    }
 }
 
-void MQTTPacket::addTopics(char* content, size_t size, char qos)
+void MQTTPacket::addTopics(char qos, char* content, size_t size)
 {
-    assert(HasTopic);
-    _size += size;
-    _step++;
-    if(_ptype ==  PUBLISH){
+    switch (_ptype) {
+    case PUBLISH:
         pFMT(pPublish)->topiclen = size;
         pFMT(pPublish)->topic = content;
-    }else{
-        switch (_ptype) {
-        case SUBSCRIBE:
-            pFMT(pSubscribe)->topics.push_back(sub_s(size,content));
-            pFMT(pSubscribe)->qoss.push_back(qos);
-            break;
-        case UNSUBSCRIBE:
-            pFMT(pUnsubscribe)->topics.push_back(sub_s(size,content));
-            break;
-        default:
-            break;
+        _size += size;
+        break;
+    case SUBSCRIBE:
+        /* topics length's size */
+        if(_dried){
+            _size++;     // 1 byte
+        }else{
+            _size += 2;  // 2 byte
         }
+        (pFMT(pSubscribe)->topics)->push_back(sub_t(size,content));
+        _size += size;
+        (pFMT(pSubscribe)->qoss)->push_back(qos);
+        /* qos size 1 byte */
+        _size++;
+        break;
+    case SUBACK:
+        /* topics length's size */
+        (pFMT(pSubAck)->qoss)->push_back(qos);
+        /* qos size 1 byte */
+        _size++;
+        break;
+    case UNSUBSCRIBE:
+        /* topics length's size */
+        if(_dried){
+            _size++;     // 1 byte
+        }else{
+            _size += 2;  // 2 byte
+        }
+        (pFMT(pUnsubscribe)->topics)->push_back(sub_t(size,content));
+        _size += size;
+        break;
+    default:
+        printf("%s no topic!\n", packet_names[_ptype]);
+        return;
+        break;
+    }
+    _step++;
+    if(finish()){
+        /* add space to save Remaining Length's size */
+        _size += MQTTInt::encode_len(_size-1);
     }
 }
 
 void MQTTPacket::setPayload(char* payload, size_t size)
 {
-    assert(_ptype == PUBLISH);
+    if(_ptype != PUBLISH){
+        printf("%s no topic!\n", packet_names[_ptype]);
+        return;
+    }
     _size += size;
     _step++;
     pFMT(pPublish)->payloadlen = size;
     pFMT(pPublish)->payload = payload;
+    if(finish()){
+        /* add space to save Remaining Length's size */
+        _size += MQTTInt::encode_len(_size-1);
+    }
 }
 
 void MQTTPacket::setPacketId(int packetId)
 {
     assert(HasPktId);
     _size += sizeof(int16_t); // packetId's size
-    if(!_dried){
-        _size++; //Remaining Length's size
-    }
     _step++;
     switch (_ptype) {
     case PUBLISH://QoS > 0
@@ -434,6 +574,10 @@ void MQTTPacket::setPacketId(int packetId)
     default:
         break;
     }
+    if(finish()){
+        /* add space to save Remaining Length's size */
+        _size += MQTTInt::encode_len(_size-1);
+    }
 }
 
 bool MQTTPacket::encode(char* packet)
@@ -442,20 +586,21 @@ bool MQTTPacket::encode(char* packet)
         printf("packet is not a enough memory!\n");
         return false;
     }
-    int cursor = 0;   /* record byte stream current's position */
-    int prefixByte = 0;   /* save a content size's byte */
-    char prefixBytes[4] = {0};  /* save a content size's byte */
-    int prefixSize = 0;   /* save a content size */
-    int16_t packetId = 0;
-    int16_t commond_size = 0;
-    int     payloadSize = _size;
-    ListSub        sublist;
-    ListQos        subqoss;
-    ListSub::iterator  itlist;
-    ListQos::iterator  itqoss;
-    /* fixed header */
+    int     cursor = 0;            /* record byte stream current's position */
+    int16_t packetId = 0;          /* use to save 2 byte length packet id */
+    int16_t commonshort = 0;       /* use to save 2 byte length while _dried == 0 */
+    char    commonchar = 0;        /* use to save 1 byte length while _dried == 1 */
+
+    /* use at ptype = SUBSCRIBE SUBACK */
+    ListSub* sublist;
+    Subitor itlist;
+    ListQos* subqoss;
+    Qositor itqoss;
+
+    /* part-1 fixed header */
     packet[cursor++] = pFMT(pHeader)->byte;
-    /* Remaining Length: packet size */
+
+    /* part-2 Remaining Length: packet size cannot !!! */
     if(CannotDried){
         /* add packet's size after encode, size MQTTInt::encode's return */
         cursor += MQTTInt::encode(&packet[cursor], _size-1);
@@ -463,92 +608,115 @@ bool MQTTPacket::encode(char* packet)
         if(!_dried){
             if(OnlyHeader){
                 /* Only Header, RL == 0 */
-                packet[cursor++] = 0;
+                packet[cursor++] = 0 + 1;
             }else{
                 /* fix RL, RL == 2 */
-                packet[cursor++] = 2;
+                if(CONNACK == _ptype){
+                    packet[cursor++] = 2 + 1 + pFMT(pConnAck)->clientIDlen;
+                }else{
+                    packet[cursor++] = 2 + 1;
+                }
             }
-        }
-        /*else{
+        }else{
             //1. OnlyHeader: only fix header, delete 1-byte RL
             //2. FixRL:  fix 1-byte RL type, delete 1-byte RL
-        }*/
+            if(OnlyHeader){
+                /* Only Header, RL == 0 */
+                packet[cursor++] = 0 + 1;
+            }else{
+                /* fix RL, RL == 2 */
+                if(CONNACK == _ptype){
+                    packet[cursor++] = 2 + 1 + pFMT(pConnAck)->clientIDlen;
+                }else{
+                    packet[cursor++] = 2 + 1;
+                }
+            }
+        }
     }
-    /* Variable header & payload */
+
+    /* part-3 Variable header & payload */
     switch (_ptype)
     {
     case PUBLISH:// TODO
         /* Variable header */
         /* topic name */
         if(_dried){
-            /* topic name's size */
-            prefixSize = MQTTInt::encode(prefixBytes, pFMT(pPublish)->topiclen);
-            prefixByte = sizeof(prefixBytes);
-            memcpy(&packet[cursor], &prefixBytes, prefixByte);
-            cursor += prefixByte;
-            memset(prefixBytes,0,4);
+            /* topic name's size 1 byte */
+            commonchar = (char)pFMT(pPublish)->topiclen;
+            memcpy(&packet[cursor++], &commonchar, 1);
             /* topic name's content */
-            memcpy(&packet[cursor], &pFMT(pPublish)->topic,prefixSize);
-            cursor += prefixSize;
+            memcpy(&packet[cursor], &pFMT(pPublish)->topic, commonchar);
+            cursor += commonchar;
         }else{
-            /* topic name's size */
-            commond_size = sizeof(pFMT(pPublish)->topic);
-            memcpy(&packet[cursor], (char*)&commond_size, pFMT(pPublish)->topiclen);
-            // memcpy(&packet[cursor], (char*)&commond_size, 2);
-            // itoa((int16_t)sizeof(pFMT(pPublish)->topic),&packet[cursor],10);
+            /* topic name's size 2 byte */
+            commonshort = (int16_t)pFMT(pPublish)->topiclen;
+            memcpy(&packet[cursor], &commonshort, 2);
             cursor += 2;
             /* topic name's content */
-            memcpy(&packet[cursor], &pFMT(pPublish)->topic, prefixByte);
+            memcpy(&packet[cursor], &pFMT(pPublish)->topic, commonshort);
+            cursor += commonshort;
         }
         /* packet ID qos not 0 */
         if(0 != pFMT(pHeader)->bits.qos){
             packetId = (int16_t)pFMT(pPublish)->packetId;
-            memcpy(&packet[cursor++], (char*)&packetId, 2);
+            memcpy(&packet[cursor++], &packetId, 2);
             // itoa((int16_t)pFMT(pPubAck)->packetId,&packet[cursor++],10);
         }
-        /* payload qos */
-        prefixSize = payloadSize - cursor;
-        memcpy(&packet[cursor], &pFMT(pPublish)->payload , pFMT(pPublish)->payloadlen);
+        /* payload qos, NOTE: payloadlen is not save at packet data, can use RL calculation while decode */
+        commonshort = pFMT(pPublish)->payloadlen;
+        memcpy(&packet[cursor], &pFMT(pPublish)->payload , commonshort);
+        cursor += commonshort;
         break;
     case SUBSCRIBE:// TODO
         /* Variable header */
         /* packet ID */
         packetId = (int16_t)pFMT(pSubscribe)->packetId;
-        memcpy(&packet[cursor++], (char*)&packetId, 2);
-        // itoa((int16_t)pFMT(pPubAck)->packetId,&packet[cursor++],10);
+        memcpy(&packet[cursor], (char*)&packetId, 2);
+        cursor += 2;
         /* payload */
         /* List of topic and qos */
         sublist = pFMT(pSubscribe)->topics;
         subqoss = pFMT(pSubscribe)->qoss;
-        itlist = sublist.begin();
-        itqoss = subqoss.begin();
-        for(; itlist != sublist.end() && itqoss != subqoss.end(); ++itlist,++itqoss)
-        {
-            /* each topic's size */
-            prefixSize = MQTTInt::encode(prefixBytes, itlist->_size);
-            //prefixByte = MQTTInt::encode_len(itlist->_size);
-            prefixByte = sizeof(prefixBytes);
-            memcpy(&packet[cursor], &prefixBytes, prefixByte);
-            cursor += prefixByte;
-            memset(prefixBytes,0,4);
-            /* each topic's content */
-            memcpy(&packet[cursor], &itlist + prefixByte,prefixSize);
-            cursor += prefixSize;
-            /* each qos's */
-            packet[cursor++] = *itqoss;
+        itlist = sublist->begin();
+        itqoss = subqoss->begin();
+        if(_dried){
+            for(; itlist != sublist->end() && itqoss != subqoss->end(); ++itlist,++itqoss)
+            {
+                /* each topic's size 1 byte */
+                commonchar = (char)(itlist->_size);
+                memcpy(&packet[cursor++], &commonchar, 1);
+                /* each topic's content */
+                memcpy(&packet[cursor], &itlist->_content,commonchar);
+                cursor += commonchar;
+                /* each qos's */
+                packet[cursor++] = *itqoss;
+            }
+        }else{
+            for(; itlist != sublist->end() && itqoss != subqoss->end(); ++itlist,++itqoss)
+            {
+                /* each topic's size 2 byte */
+                commonshort = (int16_t)(itlist->_size);
+                memcpy(&packet[cursor], &commonshort, 2);
+                cursor += 2;
+                /* each topic's content */
+                memcpy(&packet[cursor], &itlist->_content,commonshort);
+                cursor += commonshort;
+                /* each qos's */
+                packet[cursor++] = *itqoss;
+            }
         }
         break;
     case SUBACK:// TODO
         /* Variable header */
         /* packet ID */
         packetId = (int16_t)pFMT(pSubAck)->packetId;
-        memcpy(&packet[cursor++], (char*)&packetId, 2);
-        // itoa((int16_t)pFMT(pPubAck)->packetId,&packet[cursor++],10);
+        memcpy(&packet[cursor], (char*)&packetId, 2);
+        cursor += 2;
         /* payload */
         /* List of subscribe return qos */
         subqoss = pFMT(pSubAck)->qoss;
-        itqoss = subqoss.begin();
-        for(; itqoss != subqoss.end();++itqoss)
+        itqoss = subqoss->begin();
+        for(; itqoss != subqoss->end();++itqoss)
         {
             /* each qos's */
             packet[cursor++] = *itqoss;
@@ -574,64 +742,89 @@ bool MQTTPacket::encode(char* packet)
             /* 1. client ID */
             memcpy(&packet[cursor], &pFMT(pConnect)->clientID, pFMT(pConnect)->clientIDlen);
             // memcpy(&packet[cursor], &pFMT(pConnect)->clientID, 16);
-            cursor += 16;
+            cursor += pFMT(pConnect)->clientIDlen;
             if(pFMT(pConnect)->flags.bits.will){
                 /* 2. Will Topic */
-                /* Will Topic's szie */
-                prefixSize = MQTTInt::encode(prefixBytes, pFMT(pConnect)->willTopiclen);
-                prefixByte = sizeof(prefixBytes);
-                memcpy(&packet[cursor], &prefixBytes, prefixByte);
-                cursor += prefixByte;
-                memset(prefixBytes,0,4);
+                /* Will Topic's size 1 byte */
+                commonchar = (char)pFMT(pConnect)->willTopiclen;
+                memcpy(&packet[cursor++], &commonchar, 1);
                 /* Will Topic's content */
-                memcpy(&packet[cursor], &pFMT(pConnect)->willTopic,prefixSize);
-                cursor += prefixSize;
+                memcpy(&packet[cursor], &pFMT(pConnect)->willTopic, commonchar);
+                cursor += commonchar;
                 /* 3. Will message */
-                /* Will message's size */
-                prefixSize = MQTTInt::encode(prefixBytes, pFMT(pConnect)->willMsglen);
-                prefixByte = sizeof(prefixBytes);
-                memcpy(&packet[cursor], &prefixBytes, prefixByte);
-                cursor += prefixByte;
-                memset(prefixBytes,0,4);
+                /* Will message's size 1 byte */
+                commonchar = (char)pFMT(pConnect)->willMsglen;
+                memcpy(&packet[cursor++], &commonchar, 1);
                 /* Will message's content */
-                memcpy(&packet[cursor], &pFMT(pConnect)->willMsg,prefixSize);
-                cursor += prefixSize;
+                memcpy(&packet[cursor], &pFMT(pConnect)->willMsg, commonchar);
+                cursor += commonchar;
             }
             if(pFMT(pConnect)->flags.bits.username){
                 /* 4. User Name */
-                /* UserName's size */
-                prefixSize = MQTTInt::encode(prefixBytes, pFMT(pConnect)->userNamelen);
-                prefixByte = sizeof(prefixBytes);
-                memcpy(&packet[cursor], &prefixBytes, prefixByte);
-                cursor += prefixByte;
-                memset(prefixBytes,0,4);
+                /* UserName's size 1 byte */
+                commonchar = (char)pFMT(pConnect)->userNamelen;
+                memcpy(&packet[cursor++], &commonchar, 1);
                 /* UserName's content */
-                memcpy(&packet[cursor], &pFMT(pConnect)->userName,prefixSize);
-                cursor += prefixSize;
+                memcpy(&packet[cursor], &pFMT(pConnect)->userName, commonchar);
+                cursor += commonchar;
                 if(pFMT(pConnect)->flags.bits.password){
                     /* 5. password */
-                    /* password's size */
-                    prefixSize = MQTTInt::encode(prefixBytes, pFMT(pConnect)->passwdlen);
-                    prefixByte = sizeof(prefixBytes);
-                    memcpy(&packet[cursor], &prefixBytes, prefixByte);
-                    cursor += prefixByte;
-                    memset(prefixBytes,0,4);
+                    /* password's size 1 byte */
+                    commonchar = (char)pFMT(pConnect)->passwdlen;
+                    memcpy(&packet[cursor++], &commonchar, 1);
                     /* password's content */
-                    memcpy(&packet[cursor], &pFMT(pConnect)->passwd,prefixSize);
-                    cursor += prefixSize;
+                    memcpy(&packet[cursor], &pFMT(pConnect)->passwd, commonchar);
+                    cursor += commonchar;
                 }
             }
         }else{
             // TODO
-            /* client ID's size */
-            prefixSize = MQTTInt::encode(prefixBytes, pFMT(pConnect)->clientIDlen);
-            prefixByte = sizeof(prefixBytes);
-            memcpy(&packet[cursor], &prefixBytes, prefixByte);
-            cursor += prefixByte;
-            memset(prefixBytes,0,4);
-            /* client ID's content */
-            memcpy(&packet[cursor], &pFMT(pConnect)->clientID,prefixSize);
-            cursor += prefixSize;
+            /* 1. client ID */
+            /* clientIDlen size (2 byte) */
+            commonshort = (int16_t)pFMT(pConnect)->clientIDlen;
+            memcpy(&packet[cursor], &commonshort, 2);
+            cursor += 2;
+            /* clientID's content */
+            memcpy(&packet[cursor], &pFMT(pConnect)->clientID, commonshort);
+            cursor += commonshort;
+            if(pFMT(pConnect)->flags.bits.will){
+                /* 2. Will Topic */
+                commonshort = (int16_t)pFMT(pConnect)->willTopiclen;
+                memcpy(&packet[cursor], &commonshort, 2);
+                /* willTopiclen size (2 byte) */
+                cursor += 2;
+                /* Will Topic's content */
+                memcpy(&packet[cursor], &pFMT(pConnect)->willTopic, commonshort);
+                cursor += commonshort;
+                /* 3. Will message */
+                commonshort = (int16_t)pFMT(pConnect)->willMsglen;
+                memcpy(&packet[cursor], &commonshort, 2);
+                /* willMsglen size (2 byte) */
+                cursor += 2;
+                /* Will message's content */
+                memcpy(&packet[cursor], &pFMT(pConnect)->willMsg,commonshort);
+                cursor += commonshort;
+            }
+            if(pFMT(pConnect)->flags.bits.username){
+                /* 4. User Name */
+                commonshort = (int16_t)pFMT(pConnect)->userNamelen;
+                memcpy(&packet[cursor], &commonshort, 2);
+                /* userNamelen size (2 byte) */
+                cursor += 2;
+                /* UserName's content */
+                memcpy(&packet[cursor], &pFMT(pConnect)->userName,commonshort);
+                cursor += commonshort;
+                if(pFMT(pConnect)->flags.bits.password){
+                    /* 5. password */
+                    commonshort = (int16_t)pFMT(pConnect)->passwdlen;
+                    memcpy(&packet[cursor], &commonshort, 2);
+                    /* passwdlen size (2 byte) */
+                    cursor += 2;
+                    /* password's content */
+                    memcpy(&packet[cursor], &pFMT(pConnect)->passwd,commonshort);
+                    cursor += commonshort;
+                }
+            }
         }
         break;
     case CONNACK:
@@ -639,15 +832,11 @@ bool MQTTPacket::encode(char* packet)
          packet[cursor++] = pFMT(pConnAck)->flags.all;
          packet[cursor++] = pFMT(pConnAck)->rc;
          /* payload */
-         if(isSignin()){
-             prefixSize = MQTTInt::encode(prefixBytes, pFMT(pConnAck)->clientIDlen);
-             prefixByte = sizeof(prefixBytes);
-             memcpy(&packet[cursor], &prefixBytes, prefixByte);
-             cursor += prefixByte;
-             memset(prefixBytes,0,4);
-             /* client ID's content */
-             memcpy(&packet[cursor], &pFMT(pConnAck)->clientID,prefixSize);
-             cursor += prefixSize;
+         if(signOk()){
+             /* 1. client ID */
+             memcpy(&packet[cursor], &pFMT(pConnAck)->clientID, pFMT(pConnAck)->clientIDlen);
+             // memcpy(&packet[cursor], &pFMT(pConnAck)->clientID, 16);
+             cursor += pFMT(pConnAck)->clientIDlen;
          }
         break;
     case PUBACK:
@@ -666,24 +855,34 @@ bool MQTTPacket::encode(char* packet)
         /* Variable header */
         /* packet ID */
         packetId = (int16_t)pFMT(pUnsubscribe)->packetId;
-        memcpy(&packet[cursor++], (char*)&packetId, 2);
+        memcpy(&packet[cursor], (char*)&packetId, 2);
+        cursor += 2;
         // itoa((int16_t)pFMT(pPubAck)->packetId,&packet[cursor++],10);
         /* payload */
         /* List of unsubscribe topic*/
         sublist = pFMT(pUnsubscribe)->topics;
-        itlist = sublist.begin();
-        for(; itlist != sublist.end(); ++itqoss)
-        {
-            /* each topic's size */
-            prefixSize = MQTTInt::encode(prefixBytes, itlist->_size);
-            //prefixByte = MQTTInt::encode_len(itlist->_size);
-            prefixByte = sizeof(prefixBytes);
-            memcpy(&packet[cursor], &prefixBytes, prefixByte);
-            cursor += prefixByte;
-            memset(prefixBytes,0,4);
-            /* each topic's content */
-            memcpy(&packet[cursor], &itlist + prefixByte,prefixSize);
-            cursor += prefixSize;
+        itlist = sublist->begin();
+        if(_dried){
+            for(; itlist != sublist->end(); ++itlist)
+            {
+                /* each topic's size 1 byte */
+                commonchar = (char)(itlist->_size);
+                memcpy(&packet[cursor++], &commonchar, 1);
+                /* each topic's content */
+                memcpy(&packet[cursor], &itlist->_content,commonchar);
+                cursor += commonchar;
+            }
+        }else{
+            for(; itlist != sublist->end(); ++itlist)
+            {
+                /* each topic's size 2 byte */
+                commonshort = (int16_t)(itlist->_size);
+                memcpy(&packet[cursor], &commonshort, 2);
+                cursor += 2;
+                /* each topic's content */
+                memcpy(&packet[cursor], &itlist->_content,commonshort);
+                cursor += commonshort;
+            }
         }
         break;
     case PINGREQ:
@@ -707,22 +906,24 @@ bool MQTTPacket::decode(char* packet, int size)
         _packet = (void*)malloc(size);
     }
     Header fixhead;
-    int cursor = 0;   /* record byte stream current's position */
-    int rlSize = 0;
-    int payloadSize = 0;
-    sub_t cursub;
-    char  curqos = 0;
-    /* fixed header */
+    int    cursor = 0;           /* record byte stream current's position */
+    int    rlSize = 0;           /* Remaining Length + Remaining Length's size */
+    int    payloadSize = 0;      /* payload size if payload is exist */
+    int    commonshort = 0;      /* use to save 2 byte length while _dried == 0 */
+
+    /* use at ptype = SUBSCRIBE SUBACK */
+    sub_t  cursub;
+
+    /* part-1 fixed header */
     fixhead.byte = packet[cursor++];
+    pFMT(pHeader)->byte = fixhead.byte;
     _dried = fixhead.bits.retain;
     _ptype = fixhead.bits.type;
     _step  = 1;
-    /* Remaining Length: packet size */
-    int prefixByte = 0;   /* save a content size's byte */
-    int prefixSize = 0;   /* save a content size */
-    char packetId[2] = {0}; /* save packet Id char[2] */
+
+    /* part-2  Remaining Length: packet size */
+    int  prefixByte = 0;         /* save a content size's byte */
     int  packetID = 0;
-    /* Remaining Length: packet size */
     if(CannotDried){
         rlSize = MQTTInt::decode(&packet[cursor],prefixByte);
         _size = rlSize + 1; /* 1 is fix header's size */
@@ -730,87 +931,109 @@ bool MQTTPacket::decode(char* packet, int size)
     }else{
         if(!_dried){
             if(OnlyHeader){
-                /* Only Header, RL == 0 */
-                _size = 1 + 1; /* 1 is fix header's size */
+                /* Only Header, RL == 0 + RL'size(1 byte) */
+                _size = packet[cursor++];
             }else{
-                /* fix RL, RL == 2 */
-                _size = 1 + 1; /* 1 is fix header's size */
+                /* fix RL, RL == 2 + RL'size(1 byte) */
+                _size = packet[cursor++];
             }
+            _size++; /* 1 is fix header's size */
         }
         else{
             //1. OnlyHeader: only fix header, delete 1-byte RL value = 0
             //2. FixRL:  fix 1-byte RL type, delete 1-byte RL value = 2
-            _size = 1;
+            _size = packet[cursor++] + 1;
         }
     }
     _step++;
-    /* Variable header & payload */
+
+    /* part-3 Variable header & payload */
     switch (_ptype)
     {
     case PUBLISH:
         /* Variable header */
-        /* Variable header */
         /* topic name */
         if(_dried){
             /* topic name  */
-            prefixSize = MQTTInt::decode(&packet[cursor],prefixByte);
-            pFMT(pPublish)->topiclen = prefixSize;
-            memcpy(pFMT(pPublish)->topic,&packet[cursor]+prefixByte, prefixSize);
-            cursor += prefixByte;
+            pFMT(pPublish)->topiclen = packet[cursor++];
+            memcpy(&pFMT(pPublish)->topic,&packet[cursor], pFMT(pPublish)->topiclen);
+            cursor += pFMT(pPublish)->topiclen;
+            _step++;
         }else{
-            /* topic name's size */
-            prefixSize = atoi(&packet[cursor]);
-            pFMT(pPublish)->topiclen = prefixSize;
+            /* topic name's size(2 byte) */
+            memcpy(&commonshort,&packet[cursor],2);
+            pFMT(pPublish)->topiclen = commonshort;
+            cursor += 2;
             /* topic name's content */
-            memcpy(pFMT(pPublish)->topic, &packet[cursor]+2, prefixSize);
+            memcpy(&pFMT(pPublish)->topic, &packet[cursor], commonshort);
+            cursor += commonshort;
+            _step++;
         }
         /* packet ID qos not 0 */
         if(0 != pFMT(pHeader)->bits.qos){
-            memcpy(packetId,&packet[cursor],2);
+            memcpy(&packetID,&packet[cursor],2);
+            pFMT(pPublish)->packetId = packetID;
             cursor += 2;
+            _step++;
         }
         /* payload qos */
-        payloadSize = rlSize - cursor;
+        payloadSize = _size - cursor;
         pFMT(pPublish)->payloadlen = payloadSize;
-        memcpy(pFMT(pPublish)->payload, &packet[cursor], pFMT(pPublish)->payloadlen);
+        memcpy(&pFMT(pPublish)->payload, &packet[cursor], pFMT(pPublish)->payloadlen);
+        cursor += payloadSize;
+        _step++;
         break;
     case SUBSCRIBE:
         /* Variable header */
         /* packet ID */
-        memcpy(packetId,&packet[cursor],2);
+        memcpy(&packetID,&packet[cursor],2);
+        pFMT(pSubscribe)->packetId = packetID;
         cursor += 2;
-        pFMT(pSubscribe)->packetId = atoi(packetId);
         /* payload */
         /* List of topic and qos */
         payloadSize = rlSize - cursor;
-        while(cursor <= rlSize)
-        {
-            /* each topic's size */
-            prefixSize = MQTTInt::decode(&packet[cursor],prefixByte);
-            cursub._size = prefixSize;
-            cursor += prefixByte;
-            memcpy(cursub._content,&packet[cursor],prefixSize);
-            pFMT(pSubscribe)->topics.push_back(cursub);
-            cursor += prefixSize;
-            /* each qos's */
-            curqos = packet[cursor++];
-            pFMT(pSubscribe)->qoss.push_back(curqos);
+        pFMT(pSubscribe)->topics = new ListSub();
+        pFMT(pSubscribe)->qoss = new ListQos();
+        if(_dried){
+            while(cursor <= rlSize)
+            {
+                /* each topic's size */
+                cursub._size = packet[cursor++];
+                memcpy(&cursub._content,&packet[cursor],cursub._size);
+                cursor += cursub._size;
+                (pFMT(pSubscribe)->topics)->push_back(cursub);
+                /* each qos's */
+                (pFMT(pSubscribe)->qoss)->push_back(packet[cursor++]);
+            }
+        }else{
+            while(cursor <= rlSize)
+            {
+                /* each topic's size */
+                memcpy(&commonshort,&packet[cursor],2);
+                cursub._size = commonshort;
+                cursor += 2;
+                memcpy(&(cursub._content),&packet[cursor],cursub._size);
+                cursor += cursub._size;
+                (pFMT(pSubscribe)->topics)->push_back(cursub);
+                /* each qos's */
+                (pFMT(pSubscribe)->qoss)->push_back(packet[cursor++]);
+            }
         }
         break;
     case SUBACK:
         /* Variable header */
         /* packet ID */
-        memcpy(packetId,&packet[cursor],2);
+        memcpy(&packetID,&packet[cursor],2);
+        pFMT(pSubAck)->packetId = packetID;
         cursor += 2;
-        pFMT(pSubscribe)->packetId = atoi(packetId);
         /* payload */
         /* List of subscribe return qos */
+        pFMT(pSubAck)->qoss = new ListQos();
         payloadSize = rlSize - cursor;
         while(cursor <= rlSize)
         {
             /* each qos's */
-            curqos = packet[cursor++];
-            pFMT(pSubAck)->qoss.push_back(curqos);
+            (pFMT(pSubAck)->qoss)->push_back(packet[cursor++]);
         }
         break;
     case CONNECT:
@@ -827,58 +1050,104 @@ bool MQTTPacket::decode(char* packet, int size)
         /* add CONNECT flags, size(1-byte) */
         pFMT(pConnect)->flags.all = packet[cursor++];
         /* add CONNECT KAT, size(2-byte) */
-        memcpy(packetId,&packet[cursor],2);
+        memcpy(&pFMT(pConnect)->KAT,&packet[cursor],2);
         cursor += 2;
-        pFMT(pConnect)->KAT = atoi(packetId);
+        _step += 4;
+        //pFMT(pConnect)->KAT = atoi(packetId);
         /* payload */
         if (_dried){
             /* 1. client ID */
             pFMT(pConnect)->clientIDlen = 16;
             memcpy(&pFMT(pConnect)->clientID, &packet[cursor], 16);
             cursor += 16;
+            _step++;
             if(pFMT(pConnect)->flags.bits.will){
                 /* 2. Will Topic */
-                prefixSize = MQTTInt::decode(&packet[cursor],prefixByte);
-                pFMT(pConnect)->willTopiclen = prefixSize;
-                cursor += prefixByte;
-                memcpy(&pFMT(pConnect)->willTopic,&packet[cursor], prefixSize);
-                cursor += prefixSize;
+                pFMT(pConnect)->willTopiclen = packet[cursor++];
+                memcpy(&pFMT(pConnect)->willTopic,&packet[cursor], pFMT(pConnect)->willTopiclen);
+                cursor += pFMT(pConnect)->willTopiclen;
+                _step++;
                 /* 3. Will message */
-                prefixSize = MQTTInt::decode(&packet[cursor],prefixByte);
-                pFMT(pConnect)->willMsglen = prefixSize;
-                cursor += prefixByte;
-                memcpy(&pFMT(pConnect)->willMsg,&packet[cursor], prefixSize);
-                cursor += prefixSize;
+                pFMT(pConnect)->willMsglen = packet[cursor++];
+                memcpy(&pFMT(pConnect)->willMsg,&packet[cursor], pFMT(pConnect)->willMsglen);
+                cursor += pFMT(pConnect)->willMsglen;
+                _step += 2;
             }
             if(pFMT(pConnect)->flags.bits.username){
                 /* 4. User Name */
-                prefixSize = MQTTInt::decode(&packet[cursor],prefixByte);
-                pFMT(pConnect)->userNamelen = prefixSize;
-                cursor += prefixByte;
-                memcpy(&pFMT(pConnect)->userName,&packet[cursor], prefixSize);
-                cursor += prefixSize;
+                pFMT(pConnect)->userNamelen = packet[cursor++];
+                memcpy(&pFMT(pConnect)->userName,&packet[cursor], pFMT(pConnect)->userNamelen);
+                cursor += pFMT(pConnect)->userNamelen;
+                _step++;
                 if(pFMT(pConnect)->flags.bits.password){
                     /* 5. password */
-                    prefixSize = MQTTInt::decode(&packet[cursor],prefixByte);
-                    pFMT(pConnect)->passwdlen = prefixSize;
-                    cursor += prefixByte;
-                    memcpy(&pFMT(pConnect)->passwd,&packet[cursor], prefixSize);
-                    cursor += prefixSize;
+                    pFMT(pConnect)->passwdlen = packet[cursor++];
+                    memcpy(&pFMT(pConnect)->passwd,&packet[cursor], pFMT(pConnect)->passwdlen);
+                    cursor += pFMT(pConnect)->passwdlen;
+                    _step++;
                 }
             }
         }else{
             // TODO
-            prefixSize = MQTTInt::decode(&packet[cursor],prefixByte);
-            pFMT(pConnect)->clientIDlen = prefixSize;
-            cursor += prefixByte;
-            memcpy(&pFMT(pConnect)->clientID,&packet[cursor], prefixSize);
-            cursor += prefixSize;
+            /* 1. client ID */
+            /* clientIdlen(2 byte) size */
+            memcpy(&commonshort,&packet[cursor],2);
+            pFMT(pConnect)->clientIDlen = commonshort;
+            cursor += 2;
+            memcpy(&pFMT(pConnect)->clientID, &packet[cursor], pFMT(pConnect)->clientIDlen);
+            cursor += pFMT(pConnect)->clientIDlen;
+            _step++;
+            if(pFMT(pConnect)->flags.bits.will){
+                /* 2. Will Topic */
+                /* willTopiclen(2 byte) size */
+                memcpy(&commonshort,&packet[cursor],2);
+                pFMT(pConnect)->willTopiclen = commonshort;
+                cursor += 2;
+                memcpy(&pFMT(pConnect)->willTopic,&packet[cursor], pFMT(pConnect)->willTopiclen);
+                cursor += pFMT(pConnect)->willTopiclen;
+                _step++;
+                /* 3. Will message */
+                /* willMsglen(2 byte) size */
+                memcpy(&commonshort,&packet[cursor],2);
+                pFMT(pConnect)->willMsglen = commonshort;
+                cursor += 2;
+                memcpy(&pFMT(pConnect)->willMsg,&packet[cursor], pFMT(pConnect)->willMsglen);
+                cursor += pFMT(pConnect)->willMsglen;
+                _step++;
+            }
+            if(pFMT(pConnect)->flags.bits.username){
+                /* 4. User Name */
+                /* userNamelen(2 byte) size */
+                memcpy(&commonshort,&packet[cursor],2);
+                pFMT(pConnect)->userNamelen = commonshort;
+                cursor += 2;
+                memcpy(&pFMT(pConnect)->userName,&packet[cursor], pFMT(pConnect)->userNamelen);
+                cursor += pFMT(pConnect)->userNamelen;
+                _step++;
+                if(pFMT(pConnect)->flags.bits.password){
+                    /* 5. password */
+                    /* userNamelen(2 byte) size */
+                    memcpy(&commonshort,&packet[cursor],2);
+                    pFMT(pConnect)->passwdlen = commonshort;
+                    cursor += 2;
+                    memcpy(&pFMT(pConnect)->passwd,&packet[cursor], pFMT(pConnect)->passwdlen);
+                    cursor += pFMT(pConnect)->passwdlen;
+                    _step++;
+                }
+            }
         }
         break;
     case CONNACK:
         /* Variable header */
         pFMT(pConnAck)->flags.all = packet[cursor++];
         pFMT(pConnAck)->rc = packet[cursor++];
+        /* payload */
+        if(signOk()){
+            /* 1. client ID */
+            pFMT(pConnAck)->clientIDlen = 16;
+            memcpy(&pFMT(pConnAck)->clientID, &packet[cursor], 16);
+            cursor += 16;
+        }
         break;
     case PUBACK:
     case PUBREC:
@@ -890,30 +1159,40 @@ bool MQTTPacket::decode(char* packet, int size)
         if (!_dried){
             cursor++;    // Remaining Length's size
         }
-        memcpy(packetId,&packet[cursor],2);
-        _size += 2;  // packetId's size
-        cursor += 2;
-        memcpy(&packetID, packetId, 2);
+        memcpy(&packetID,&packet[cursor],2);
         pFMT(pAck)->packetId = packetID;
+        cursor += 2; // packetId's size
         break;
     case UNSUBSCRIBE:
         /* Variable header */
         /* packet ID */
-        memcpy(packetId,&packet[cursor],2);
+        memcpy(&packetID,&packet[cursor],2);
+        pFMT(pUnsubscribe)->packetId = packetID;
         cursor += 2;
-        pFMT(pSubscribe)->packetId = atoi(packetId);
         /* payload */
         /* List of unsubscribe topic*/
         payloadSize = rlSize - cursor;
-        while(cursor <= rlSize)
-        {
-            /* each topic's size */
-            prefixSize = MQTTInt::decode(&packet[cursor],prefixByte);
-            cursub._size = prefixSize;
-            cursor += prefixByte;
-            memcpy(cursub._content,&packet[cursor],prefixSize);
-            pFMT(pUnsubscribe)->topics.push_back(cursub);
-            cursor += prefixSize;
+        pFMT(pUnsubscribe)->topics = new ListSub();
+        if(_dried){
+            while(cursor <= rlSize)
+            {
+                /* each topic's size */
+                cursub._size = packet[cursor++];
+                memcpy(&cursub._content,&packet[cursor],cursub._size);
+                cursor += cursub._size;
+                (pFMT(pUnsubscribe)->topics)->push_back(cursub);
+            }
+        }else{
+            while(cursor <= rlSize)
+            {
+                /* each topic's size */
+                memcpy(&commonshort,&packet[cursor],2);
+                cursub._size = commonshort;
+                cursor += 2;
+                memcpy(&(cursub._content),&packet[cursor],cursub._size);
+                cursor += cursub._size;
+                (pFMT(pUnsubscribe)->topics)->push_back(cursub);
+            }
         }
         break;
     case PINGREQ:

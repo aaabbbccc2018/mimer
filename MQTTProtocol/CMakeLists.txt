@@ -2,6 +2,8 @@
 cmake_minimum_required (VERSION 2.8)
 # 项目信息
 project (mqtter)
+# 添加宏REVERSED
+ADD_DEFINITIONS(-DREVERSED=0)
 # 指定include 路径
 include_directories(.)
 # 查找当前目录下的所有源文件
