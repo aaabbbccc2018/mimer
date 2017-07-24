@@ -8,9 +8,6 @@ const char* MQTTPacket::packet_names[] =
    "PINGREQ", "PINGRESP", "DISCONNECT"
 };
 
-MQTTPacket::MQTTPacket():_packet(NULL),_ptype(0),_size(0),_step(0),_dried(0){
-}
-
 MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
     _ptype(type),_size(0),_step(0),_dried(dried)
 {

@@ -21,7 +21,7 @@ void test_ACK(msgTypes ptype, int dried)
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
-    MQTTPacket dpkt;
+    MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
     dpkt.decode(sendPacket,packetSize);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
@@ -35,8 +35,8 @@ void test_ACK(msgTypes ptype, int dried)
     MQTTInt::decode(sendPacketf,packetSize);
     dpktf.decode(sendPacketf,packetSize+1);
     std::cout << dpktf;
-    delete sendPacket;
-    delete sendPacketf;
+    free(sendPacket);
+    free(sendPacketf);
 }
 
 void test_onlyHeader(msgTypes ptype, int dried)
@@ -56,7 +56,7 @@ void test_onlyHeader(msgTypes ptype, int dried)
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
-    MQTTPacket dpkt;
+    MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
     dpkt.decode(sendPacket,packetSize);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
@@ -70,8 +70,8 @@ void test_onlyHeader(msgTypes ptype, int dried)
     MQTTInt::decode(sendPacketf,packetSize);
     dpktf.decode(sendPacketf,packetSize+1);
     std::cout << dpktf;
-    delete sendPacket;
-    delete sendPacketf;
+    free(sendPacket);
+    free(sendPacketf);
 }
 
 void test_CONNECT(int dried)
@@ -105,7 +105,7 @@ void test_CONNECT(int dried)
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
-    MQTTPacket dpkt;
+    MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
     dpkt.decode(sendPacket,packetSize);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
@@ -123,9 +123,9 @@ void test_CONNECT(int dried)
     fs.Close();
     dpktf.decode(sendPacket2,packetlen+1);
     std::cout << dpktf;
-    delete sendPacket;
-    delete sendPacketf;
-    delete sendPacket2;
+    free(sendPacket);
+    free(sendPacketf);
+    free(sendPacket2);
 }
 
 void test_CONNACK(int dried)
@@ -152,7 +152,7 @@ void test_CONNACK(int dried)
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
-    MQTTPacket dpkt;
+    MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
     dpkt.decode(sendPacket,packetSize);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
@@ -170,9 +170,9 @@ void test_CONNACK(int dried)
     fs.Close();
     dpktf.decode(sendPacket2,packetlen+1);
     std::cout << dpktf;
-    delete sendPacket;
-    delete sendPacketf;
-    delete sendPacket2;
+    free(sendPacket);
+    free(sendPacketf);
+    free(sendPacket2);
 }
 
 void test_PUBLISH(int dried)
@@ -195,7 +195,7 @@ void test_PUBLISH(int dried)
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
-    MQTTPacket dpkt;
+    MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
     dpkt.decode(sendPacket,packetSize);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
@@ -213,9 +213,9 @@ void test_PUBLISH(int dried)
     fs.Close();
     dpktf.decode(sendPacket2,packetlen+1);
     std::cout << dpktf;
-    delete sendPacket;
-    delete sendPacketf;
-    delete sendPacket2;
+    free(sendPacket);
+    free(sendPacketf);
+    free(sendPacket2);
 }
 
 void test_PUBACK(int dried)
@@ -258,7 +258,7 @@ void test_SUBSCRIBE(int dried)
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
-    MQTTPacket dpkt;
+    MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
     dpkt.decode(sendPacket,packetSize);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
@@ -276,9 +276,9 @@ void test_SUBSCRIBE(int dried)
     fs.Close();
     dpktf.decode(sendPacket2,packetlen+1);
     std::cout << dpktf;
-    delete sendPacket;
-    delete sendPacketf;
-    delete sendPacket2;
+    free(sendPacket);
+    free(sendPacketf);
+    free(sendPacket2);
 }
 
 void test_SUBACK(int dried)
@@ -301,7 +301,7 @@ void test_SUBACK(int dried)
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
-    MQTTPacket dpkt;
+    MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
     dpkt.decode(sendPacket,packetSize);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
@@ -319,9 +319,9 @@ void test_SUBACK(int dried)
     fs.Close();
     dpktf.decode(sendPacket2,packetlen+1);
     std::cout << dpktf;
-    delete sendPacket;
-    delete sendPacketf;
-    delete sendPacket2;
+    free(sendPacket);
+    free(sendPacketf);
+    free(sendPacket2);
 }
 
 void test_UNSUBSCRIBE(int dried)
@@ -344,7 +344,7 @@ void test_UNSUBSCRIBE(int dried)
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
-    MQTTPacket dpkt;
+    MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
     dpkt.decode(sendPacket,packetSize);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
@@ -362,9 +362,9 @@ void test_UNSUBSCRIBE(int dried)
     fs.Close();
     dpktf.decode(sendPacket2,packetlen+1);
     std::cout << dpktf;
-    delete sendPacket;
-    delete sendPacketf;
-    delete sendPacket2;
+    free(sendPacket);
+    free(sendPacketf);
+    free(sendPacket2);
 }
 
 void test_UNSUBACK(int dried)

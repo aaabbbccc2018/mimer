@@ -551,7 +551,6 @@ class MQTTPacket
 public:
     static const char* packet_names[];
 public:
-    MQTTPacket();
     MQTTPacket(int type, int dried = 0, int dup = 0,int qos = 0);
     virtual ~MQTTPacket();
 public:
