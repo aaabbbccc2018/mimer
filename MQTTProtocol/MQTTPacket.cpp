@@ -208,6 +208,60 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
 MQTTPacket::~MQTTPacket()
 {
     if(_packet){
+        switch (_ptype)
+        {
+        case CONNECT:
+            if(pFMT(pConnect)->clientID){
+                free(pFMT(pConnect)->clientID);
+            }
+            if(pFMT(pConnect)->willTopic){
+                free(pFMT(pConnect)->willTopic);
+            }
+            if(pFMT(pConnect)->willMsg){
+                free(pFMT(pConnect)->willMsg);
+            }
+            if(pFMT(pConnect)->userName){
+                free(pFMT(pConnect)->userName);
+            }
+            if(pFMT(pConnect)->passwd){
+                free(pFMT(pConnect)->passwd);
+            }
+//            MQDEL(pConnect, clientID);
+//            MQDEL(pConnect, willTopic);
+//            MQDEL(pConnect, willMsg);
+//            MQDEL(pConnect, userName);
+//            MQDEL(pConnect, passwd);
+            break;
+        case CONNACK:
+            break;
+        case PUBLISH:
+            break;
+        case PUBACK:
+            break;
+        case PUBREC:
+            break;
+        case PUBREL:
+            break;
+        case PUBCOMP:
+            break;
+        case SUBSCRIBE:
+            break;
+        case SUBACK:
+            break;
+        case UNSUBSCRIBE:
+            break;
+        case UNSUBACK:
+            break;
+        case PINGREQ:
+            break;
+        case PINGRESP:
+            break;
+        case DISCONNECT:
+            break;
+        default:
+            printf("error packet type\n");
+            break;
+        }
         free(_packet);
         _packet = NULL;
     }
@@ -894,13 +948,10 @@ bool MQTTPacket::encode(char* packet)
     return true;
 }
 
-bool MQTTPacket::decode(char* packet, int size)
+int   MQTTPacket::decode(char* packet)
 {
-    if(NULL == packet || 0 >= size){
-        return false;
-    }
-    if(NULL == _packet){
-        _packet = (void*)malloc(size);
+    if(NULL == packet || NULL ==  _packet){
+        return 0;
     }
     Header fixhead;
     int    cursor = 0;           /* record byte stream current's position */
@@ -1221,7 +1272,7 @@ bool MQTTPacket::decode(char* packet, int size)
         printf("error packet type\n");
         break;
     }
-    return true;
+    return _size;
 }
 
 }//namespace mqtter

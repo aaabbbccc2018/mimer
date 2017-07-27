@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
 {
     if(argc < 3) {
         printf("usege: %s msgTypes dried\n",argv[0]);
+        return -1;
     }
 
     msgTypes ptype = (msgTypes)atoi(argv[1]);

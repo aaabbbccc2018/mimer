@@ -495,6 +495,9 @@ typedef struct {
 #define MQNEW(PTYPE,KEY,SIZE)                  \
     pFMT(PTYPE)->KEY = (char*)malloc(SIZE)
 
+#define MQDEL(PTYPE,KEY)                  \
+    if(pFMT(PTYPE)->KEY) { free(pFMT(PTYPE)->KEY); pFMT(PTYPE)->KEY = NULL;}
+
 #define HasFlags   ((_ptype == CONNECT)     || \
                     (_ptype == CONNACK))
 
@@ -709,7 +712,7 @@ public:
      * @return
      */
     bool encode(char* packet);
-    bool decode(char* packet, int size);
+    int    decode(char* packet);
 private:
     void*    _packet;    // packet's data
     int      _ptype;     // packet's type

@@ -9,7 +9,7 @@ MQTTProtocol::MQTTProtocol():_mqData(NULL),_ptype(0),_mtype(CLIENT)
 MQTTProtocol::MQTTProtocol(char* content,int size,int mtype):_mtype((Mtype)mtype)
 {
     _mqData = new MQTTPacket(MQTTPacket::type(content[0]));
-    if(_mqData->decode(content,size)){
+    if(_mqData->decode(content)){
         _ptype = _mqData->type();
     }else{
         printf("%s", "MQTTpacket decode error!!!\n");

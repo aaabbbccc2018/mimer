@@ -22,7 +22,7 @@ void test_ACK(msgTypes ptype, int dried)
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
     MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
-    dpkt.decode(sendPacket,packetSize);
+    dpkt.decode(sendPacket);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
     char fixheader = (char)fs.GetC();
@@ -33,7 +33,7 @@ void test_ACK(msgTypes ptype, int dried)
     sendPacketf[0] = fixheader;
     fs.Read(&sendPacketf[1],4,1);
     MQTTInt::decode(sendPacketf,packetSize);
-    dpktf.decode(sendPacketf,packetSize+1);
+    dpktf.decode(sendPacketf);
     std::cout << dpktf;
     free(sendPacket);
     free(sendPacketf);
@@ -57,7 +57,7 @@ void test_onlyHeader(msgTypes ptype, int dried)
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
     MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
-    dpkt.decode(sendPacket,packetSize);
+    dpkt.decode(sendPacket);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
     char fixheader = (char)fs.GetC();
@@ -68,7 +68,7 @@ void test_onlyHeader(msgTypes ptype, int dried)
     sendPacketf[0] = fixheader;
     fs.Read(&sendPacketf[1],4,1);
     MQTTInt::decode(sendPacketf,packetSize);
-    dpktf.decode(sendPacketf,packetSize+1);
+    dpktf.decode(sendPacketf);
     std::cout << dpktf;
     free(sendPacket);
     free(sendPacketf);
@@ -106,7 +106,7 @@ void test_CONNECT(int dried)
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
     MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
-    dpkt.decode(sendPacket,packetSize);
+    dpkt.decode(sendPacket);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
     char fixheader = (char)fs.GetC();
@@ -121,7 +121,7 @@ void test_CONNECT(int dried)
     char* sendPacket2 = (char*)malloc(packetlen+1);
     fs.Read(sendPacket2,packetlen+1,1);
     fs.Close();
-    dpktf.decode(sendPacket2,packetlen+1);
+    dpktf.decode(sendPacket2);
     std::cout << dpktf;
     free(sendPacket);
     free(sendPacketf);
@@ -153,7 +153,7 @@ void test_CONNACK(int dried)
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
     MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
-    dpkt.decode(sendPacket,packetSize);
+    dpkt.decode(sendPacket);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
     char fixheader = (char)fs.GetC();
@@ -168,7 +168,7 @@ void test_CONNACK(int dried)
     char* sendPacket2 = (char*)malloc(packetlen+1);
     fs.Read(sendPacket2,packetlen+1,1);
     fs.Close();
-    dpktf.decode(sendPacket2,packetlen+1);
+    dpktf.decode(sendPacket2);
     std::cout << dpktf;
     free(sendPacket);
     free(sendPacketf);
@@ -196,7 +196,7 @@ void test_PUBLISH(int dried)
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
     MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
-    dpkt.decode(sendPacket,packetSize);
+    dpkt.decode(sendPacket);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
     char fixheader = (char)fs.GetC();
@@ -211,7 +211,7 @@ void test_PUBLISH(int dried)
     char* sendPacket2 = (char*)malloc(packetlen+1);
     fs.Read(sendPacket2,packetlen+1,1);
     fs.Close();
-    dpktf.decode(sendPacket2,packetlen+1);
+    dpktf.decode(sendPacket2);
     std::cout << dpktf;
     free(sendPacket);
     free(sendPacketf);
@@ -259,7 +259,7 @@ void test_SUBSCRIBE(int dried)
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
     MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
-    dpkt.decode(sendPacket,packetSize);
+    dpkt.decode(sendPacket);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
     char fixheader = (char)fs.GetC();
@@ -274,7 +274,7 @@ void test_SUBSCRIBE(int dried)
     char* sendPacket2 = (char*)malloc(packetlen+1);
     fs.Read(sendPacket2,packetlen+1,1);
     fs.Close();
-    dpktf.decode(sendPacket2,packetlen+1);
+    dpktf.decode(sendPacket2);
     std::cout << dpktf;
     free(sendPacket);
     free(sendPacketf);
@@ -302,7 +302,7 @@ void test_SUBACK(int dried)
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
     MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
-    dpkt.decode(sendPacket,packetSize);
+    dpkt.decode(sendPacket);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
     char fixheader = (char)fs.GetC();
@@ -317,7 +317,7 @@ void test_SUBACK(int dried)
     char* sendPacket2 = (char*)malloc(packetlen+1);
     fs.Read(sendPacket2,packetlen+1,1);
     fs.Close();
-    dpktf.decode(sendPacket2,packetlen+1);
+    dpktf.decode(sendPacket2);
     std::cout << dpktf;
     free(sendPacket);
     free(sendPacketf);
@@ -345,7 +345,7 @@ void test_UNSUBSCRIBE(int dried)
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
     MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
-    dpkt.decode(sendPacket,packetSize);
+    dpkt.decode(sendPacket);
     std::cout << dpkt;
     fs.Open("./packet.mq","r");
     char fixheader = (char)fs.GetC();
@@ -360,7 +360,7 @@ void test_UNSUBSCRIBE(int dried)
     char* sendPacket2 = (char*)malloc(packetlen+1);
     fs.Read(sendPacket2,packetlen+1,1);
     fs.Close();
-    dpktf.decode(sendPacket2,packetlen+1);
+    dpktf.decode(sendPacket2);
     std::cout << dpktf;
     free(sendPacket);
     free(sendPacketf);
