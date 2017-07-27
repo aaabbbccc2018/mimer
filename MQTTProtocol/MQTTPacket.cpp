@@ -355,12 +355,11 @@ void MQTTPacket::setClientId(char* clientId, size_t size)
             // clientIDlen is always 16 byte,so needn't record
             _size += 16;
             pFMT(pConnect)->clientIDlen = 16;
-            pFMT(pConnect)->clientID = clientId;
+            MQNEW(pConnect,clientID,clientId,16);
         }else{
             // clientIDlen(2 byte) length size
             _size += (size+2);
-            pFMT(pConnect)->clientIDlen = size;
-            pFMT(pConnect)->clientID = clientId;
+            MQNEW(pConnect,clientID,clientId,size);
         }
         if(finish()){
             _size += MQTTInt::encode_len(_size-1);
@@ -370,8 +369,7 @@ void MQTTPacket::setClientId(char* clientId, size_t size)
         if(signOk()){
             //_step++;
             _size += 16;
-            pFMT(pConnAck)->clientIDlen = 16;
-            pFMT(pConnAck)->clientID = clientId;
+            MQNEW(pConnect,clientID,clientId,16);
             /* clientIDlen is 16, so needn't add 1 Byte to measure clientID */
         }
     }else{
@@ -395,9 +393,9 @@ void MQTTPacket::setWill(char* willtopic, char* willmsg, size_t sizet, size_t si
         _size += sizet;
         _size += sizem;
         pFMT(pConnect)->willTopiclen = sizet;
-        pFMT(pConnect)->willTopic = willtopic;
+        MQNEW(pConnect,willTopic,willtopic,sizet);
         pFMT(pConnect)->willMsglen = sizem;
-        pFMT(pConnect)->willMsg = willmsg;
+        MQNEW(pConnect,willMsg,willmsg,sizem);
     }
     _step += 2;
     if(finish()){
@@ -421,7 +419,7 @@ void MQTTPacket::setUserName(char* userName, size_t size)
         }
         _size += size;
         pFMT(pConnect)->userNamelen = size;
-        pFMT(pConnect)->userName = userName;
+        MQNEW(pConnect,userName,userName,size);
     }
     _step++;
     if(finish()){
@@ -445,7 +443,7 @@ void MQTTPacket::setPasswd(char* passwd, size_t size)
         }
         _size += size;
         pFMT(pConnect)->passwdlen = size;
-        pFMT(pConnect)->passwd = passwd;
+        MQNEW(pConnect,passwd,passwd,size);
     }
     _step++;
     if(finish()){
@@ -582,7 +580,7 @@ void MQTTPacket::setPayload(char* payload, size_t size)
     _size += size;
     _step++;
     pFMT(pPublish)->payloadlen = size;
-    pFMT(pPublish)->payload = payload;
+    MQNEW(pPublish,payload,payload,size);
     if(finish()){
         /* add space to save Remaining Length's size */
         _size += MQTTInt::encode_len(_size-1);
@@ -1004,8 +1002,7 @@ int   MQTTPacket::decode(char* packet)
         if(_dried){
             /* topic name  */
             pFMT(pPublish)->topiclen = packet[cursor++];
-            MQNEW(pPublish, topic, pFMT(pPublish)->topiclen);
-            memcpy(pFMT(pPublish)->topic,&packet[cursor], pFMT(pPublish)->topiclen);
+            MQNEW(pPublish,topic,&packet[cursor],pFMT(pPublish)->topiclen);
             cursor += pFMT(pPublish)->topiclen;
             _step++;
         }else{
@@ -1014,8 +1011,7 @@ int   MQTTPacket::decode(char* packet)
             pFMT(pPublish)->topiclen = commonshort;
             cursor += 2;
             /* topic name's content */
-            MQNEW(pPublish, topic, pFMT(pPublish)->topiclen);
-            memcpy(pFMT(pPublish)->topic, &packet[cursor], commonshort);
+            MQNEW(pPublish,topic,&packet[cursor],pFMT(pPublish)->topiclen);
             cursor += commonshort;
             _step++;
         }
@@ -1029,8 +1025,7 @@ int   MQTTPacket::decode(char* packet)
         /* payload qos */
         payloadSize = _size - cursor;
         pFMT(pPublish)->payloadlen = payloadSize;
-        MQNEW(pPublish, payload, pFMT(pPublish)->payloadlen);
-        memcpy(pFMT(pPublish)->payload, &packet[cursor], pFMT(pPublish)->payloadlen);
+        MQNEW(pPublish,payload,&packet[cursor],pFMT(pPublish)->payloadlen);
         cursor += payloadSize;
         _step++;
         break;
@@ -1097,8 +1092,7 @@ int   MQTTPacket::decode(char* packet)
         cursor += 2;
         /* add CONNECT MQTT Protocol, size(4-byte) */
         //pFMT(pConnect)->Protocol = (char*)malloc(4);
-        MQNEW(pConnect,Protocol,4);
-        memcpy((void*)(pFMT(pConnect)->Protocol),&packet[cursor],4);
+        MQNEW(pConnect,Protocol,&packet[cursor],4);
         cursor += 4;
         /* add CONNECT MQTT version, size(1-byte) */
         pFMT(pConnect)->version = packet[cursor++];
@@ -1113,36 +1107,31 @@ int   MQTTPacket::decode(char* packet)
         if (_dried){
             /* 1. client ID */
             pFMT(pConnect)->clientIDlen = 16;
-            MQNEW(pConnect,clientID,16);
-            memcpy(pFMT(pConnect)->clientID, &packet[cursor], 16);
+            MQNEW(pConnect,clientID,&packet[cursor],16);
             cursor += 16;
             _step++;
             if(pFMT(pConnect)->flags.bits.will){
                 /* 2. Will Topic */
                 pFMT(pConnect)->willTopiclen = packet[cursor++];
-                MQNEW(pConnect,willTopic, pFMT(pConnect)->willTopiclen);
-                memcpy(pFMT(pConnect)->willTopic,&packet[cursor], pFMT(pConnect)->willTopiclen);
+                MQNEW(pConnect,willTopic,&packet[cursor],pFMT(pConnect)->willTopiclen);
                 cursor += pFMT(pConnect)->willTopiclen;
                 _step++;
                 /* 3. Will message */
                 pFMT(pConnect)->willMsglen = packet[cursor++];
-                MQNEW(pConnect,willMsg, pFMT(pConnect)->willMsglen);
-                memcpy(pFMT(pConnect)->willMsg,&packet[cursor], pFMT(pConnect)->willMsglen);
+                MQNEW(pConnect,willMsg,&packet[cursor],pFMT(pConnect)->willMsglen);
                 cursor += pFMT(pConnect)->willMsglen;
                 _step += 2;
             }
             if(pFMT(pConnect)->flags.bits.username){
                 /* 4. User Name */
                 pFMT(pConnect)->userNamelen = packet[cursor++];
-                MQNEW(pConnect,userName, pFMT(pConnect)->userNamelen);
-                memcpy(pFMT(pConnect)->userName,&packet[cursor], pFMT(pConnect)->userNamelen);
+                MQNEW(pConnect,userName,&packet[cursor],pFMT(pConnect)->userNamelen);
                 cursor += pFMT(pConnect)->userNamelen;
                 _step++;
                 if(pFMT(pConnect)->flags.bits.password){
                     /* 5. password */
                     pFMT(pConnect)->passwdlen = packet[cursor++];
-                    MQNEW(pConnect,passwd, pFMT(pConnect)->passwdlen);
-                    memcpy(pFMT(pConnect)->passwd,&packet[cursor], pFMT(pConnect)->passwdlen);
+                    MQNEW(pConnect,passwd,&packet[cursor],pFMT(pConnect)->passwdlen);
                     cursor += pFMT(pConnect)->passwdlen;
                     _step++;
                 }
@@ -1154,8 +1143,7 @@ int   MQTTPacket::decode(char* packet)
             memcpy(&commonshort,&packet[cursor],2);
             pFMT(pConnect)->clientIDlen = commonshort;
             cursor += 2;
-            MQNEW(pConnect, clientID, pFMT(pConnect)->clientIDlen);
-            memcpy(pFMT(pConnect)->clientID, &packet[cursor], pFMT(pConnect)->clientIDlen);
+            MQNEW(pConnect, clientID,&packet[cursor],pFMT(pConnect)->clientIDlen);
             cursor += pFMT(pConnect)->clientIDlen;
             _step++;
             if(pFMT(pConnect)->flags.bits.will){
@@ -1164,8 +1152,7 @@ int   MQTTPacket::decode(char* packet)
                 memcpy(&commonshort,&packet[cursor],2);
                 pFMT(pConnect)->willTopiclen = commonshort;
                 cursor += 2;
-                MQNEW(pConnect,willTopic, pFMT(pConnect)->willTopiclen);
-                memcpy(pFMT(pConnect)->willTopic,&packet[cursor], pFMT(pConnect)->willTopiclen);
+                MQNEW(pConnect,willTopic,&packet[cursor],pFMT(pConnect)->willTopiclen);
                 cursor += pFMT(pConnect)->willTopiclen;
                 _step++;
                 /* 3. Will message */
@@ -1173,8 +1160,7 @@ int   MQTTPacket::decode(char* packet)
                 memcpy(&commonshort,&packet[cursor],2);
                 pFMT(pConnect)->willMsglen = commonshort;
                 cursor += 2;
-                MQNEW(pConnect,willMsg, pFMT(pConnect)->willMsglen);
-                memcpy(pFMT(pConnect)->willMsg,&packet[cursor], pFMT(pConnect)->willMsglen);
+                MQNEW(pConnect,willMsg,&packet[cursor],pFMT(pConnect)->willMsglen);
                 cursor += pFMT(pConnect)->willMsglen;
                 _step++;
             }
@@ -1184,8 +1170,7 @@ int   MQTTPacket::decode(char* packet)
                 memcpy(&commonshort,&packet[cursor],2);
                 pFMT(pConnect)->userNamelen = commonshort;
                 cursor += 2;
-                MQNEW(pConnect,userName, pFMT(pConnect)->userNamelen);
-                memcpy(pFMT(pConnect)->userName,&packet[cursor], pFMT(pConnect)->userNamelen);
+                MQNEW(pConnect,userName,&packet[cursor],pFMT(pConnect)->userNamelen);
                 cursor += pFMT(pConnect)->userNamelen;
                 _step++;
                 if(pFMT(pConnect)->flags.bits.password){
@@ -1194,8 +1179,7 @@ int   MQTTPacket::decode(char* packet)
                     memcpy(&commonshort,&packet[cursor],2);
                     pFMT(pConnect)->passwdlen = commonshort;
                     cursor += 2;
-                    MQNEW(pConnect,passwd, pFMT(pConnect)->passwdlen);
-                    memcpy(pFMT(pConnect)->passwd,&packet[cursor], pFMT(pConnect)->passwdlen);
+                    MQNEW(pConnect,passwd,&packet[cursor],pFMT(pConnect)->passwdlen);
                     cursor += pFMT(pConnect)->passwdlen;
                     _step++;
                 }
@@ -1210,8 +1194,7 @@ int   MQTTPacket::decode(char* packet)
         if(signOk()){
             /* 1. client ID */
             pFMT(pConnAck)->clientIDlen = 16;
-            MQNEW(pConnAck, clientID,16);
-            memcpy(pFMT(pConnAck)->clientID, &packet[cursor], 16);
+            MQNEW(pConnAck,clientID,&packet[cursor],16);
             cursor += 16;
         }
         break;

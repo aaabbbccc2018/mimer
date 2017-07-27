@@ -293,7 +293,7 @@ typedef struct
 {
     Header        header;               /* MQTT header byte */
     /* Variable header */
-    const char*   Protocol;             /* MQTT protocol name */
+    char*         Protocol;             /* MQTT protocol name */
     MQ_byte       version;              /* MQTT version number */
     connflags     flags;                /* connect flags byte */
     Int           KAT;                  /* keepalive timeout value in seconds */
@@ -492,11 +492,18 @@ typedef struct {
     pFMT(pTYPE)->header.bits.dup = DUP;        \
     pFMT(pTYPE)->header.bits.qos = QOS;
 
-#define MQNEW(PTYPE,KEY,SIZE)                  \
-    pFMT(PTYPE)->KEY = (char*)malloc(SIZE)
+#define MQNEW(PTYPE,KEY,VALUEADRR,SIZE)        \
+    pFMT(PTYPE)->KEY = (char*)malloc(SIZE);    \
+    memset(pFMT(PTYPE)->KEY,0,SIZE);           \
+    memcpy(pFMT(PTYPE)->KEY,VALUEADRR,SIZE);
 
-#define MQDEL(PTYPE,KEY)                  \
-    if(pFMT(PTYPE)->KEY) { free(pFMT(PTYPE)->KEY); pFMT(PTYPE)->KEY = NULL;}
+#define MQNEW2(PTYPE,KEY,VALUEADRR,SIZE)       \
+    pFMT(PTYPE)->KEY = (char*)calloc(1,SIZE);  \
+    memcpy(pFMT(PTYPE)->KEY,VALUEADRR,SIZE);
+
+#define MQDEL(PTYPE,KEY) if(pFMT(PTYPE)->KEY){ \
+    free(pFMT(PTYPE)->KEY);                    \
+    pFMT(PTYPE)->KEY = NULL;}
 
 #define HasFlags   ((_ptype == CONNECT)     || \
                     (_ptype == CONNACK))
