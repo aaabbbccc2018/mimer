@@ -492,6 +492,9 @@ typedef struct {
     pFMT(pTYPE)->header.bits.dup = DUP;        \
     pFMT(pTYPE)->header.bits.qos = QOS;
 
+#define MQNEW(PTYPE,KEY,SIZE)                  \
+    pFMT(PTYPE)->KEY = (char*)malloc(SIZE)
+
 #define HasFlags   ((_ptype == CONNECT)     || \
                     (_ptype == CONNACK))
 

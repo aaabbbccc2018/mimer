@@ -642,7 +642,7 @@ bool MQTTPacket::encode(char* packet)
             commonchar = (char)pFMT(pPublish)->topiclen;
             memcpy(&packet[cursor++], &commonchar, 1);
             /* topic name's content */
-            memcpy(&packet[cursor], &pFMT(pPublish)->topic, commonchar);
+            memcpy(&packet[cursor], pFMT(pPublish)->topic, commonchar);
             cursor += commonchar;
         }else{
             /* topic name's size 2 byte */
@@ -650,7 +650,7 @@ bool MQTTPacket::encode(char* packet)
             memcpy(&packet[cursor], &commonshort, 2);
             cursor += 2;
             /* topic name's content */
-            memcpy(&packet[cursor], &pFMT(pPublish)->topic, commonshort);
+            memcpy(&packet[cursor], pFMT(pPublish)->topic, commonshort);
             cursor += commonshort;
         }
         /* packet ID qos not 0 */
@@ -661,7 +661,7 @@ bool MQTTPacket::encode(char* packet)
         }
         /* payload qos, NOTE: payloadlen is not save at packet data, can use RL calculation while decode */
         commonshort = pFMT(pPublish)->payloadlen;
-        memcpy(&packet[cursor], &pFMT(pPublish)->payload , commonshort);
+        memcpy(&packet[cursor], pFMT(pPublish)->payload , commonshort);
         cursor += commonshort;
         break;
     case SUBSCRIBE:// TODO
@@ -683,7 +683,7 @@ bool MQTTPacket::encode(char* packet)
                 commonchar = (char)(itlist->_size);
                 memcpy(&packet[cursor++], &commonchar, 1);
                 /* each topic's content */
-                memcpy(&packet[cursor], &itlist->_content,commonchar);
+                memcpy(&packet[cursor], itlist->_content,commonchar);
                 cursor += commonchar;
                 /* each qos's */
                 packet[cursor++] = *itqoss;
@@ -696,7 +696,7 @@ bool MQTTPacket::encode(char* packet)
                 memcpy(&packet[cursor], &commonshort, 2);
                 cursor += 2;
                 /* each topic's content */
-                memcpy(&packet[cursor], &itlist->_content,commonshort);
+                memcpy(&packet[cursor], itlist->_content,commonshort);
                 cursor += commonshort;
                 /* each qos's */
                 packet[cursor++] = *itqoss;
@@ -725,7 +725,7 @@ bool MQTTPacket::encode(char* packet)
         packet[cursor++] = 0;
         packet[cursor++] = 4;
         /* add CONNECT MQTT Protocol, size(4-byte) */
-        memcpy(&packet[cursor], &pFMT(pConnect)->Protocol,4);
+        memcpy(&packet[cursor], pFMT(pConnect)->Protocol,4);
         cursor += 4;
         /* add CONNECT MQTT version, size(1-byte) */
         packet[cursor++] = pFMT(pConnect)->version;
@@ -737,7 +737,7 @@ bool MQTTPacket::encode(char* packet)
         /* payload */        
         if (_dried){
             /* 1. client ID */
-            memcpy(&packet[cursor], &pFMT(pConnect)->clientID, pFMT(pConnect)->clientIDlen);
+            memcpy(&packet[cursor], pFMT(pConnect)->clientID, pFMT(pConnect)->clientIDlen);
             // memcpy(&packet[cursor], &pFMT(pConnect)->clientID, 16);
             cursor += pFMT(pConnect)->clientIDlen;
             if(pFMT(pConnect)->flags.bits.will){
@@ -746,14 +746,14 @@ bool MQTTPacket::encode(char* packet)
                 commonchar = (char)pFMT(pConnect)->willTopiclen;
                 memcpy(&packet[cursor++], &commonchar, 1);
                 /* Will Topic's content */
-                memcpy(&packet[cursor], &pFMT(pConnect)->willTopic, commonchar);
+                memcpy(&packet[cursor], pFMT(pConnect)->willTopic, commonchar);
                 cursor += commonchar;
                 /* 3. Will message */
                 /* Will message's size 1 byte */
                 commonchar = (char)pFMT(pConnect)->willMsglen;
                 memcpy(&packet[cursor++], &commonchar, 1);
                 /* Will message's content */
-                memcpy(&packet[cursor], &pFMT(pConnect)->willMsg, commonchar);
+                memcpy(&packet[cursor], pFMT(pConnect)->willMsg, commonchar);
                 cursor += commonchar;
             }
             if(pFMT(pConnect)->flags.bits.username){
@@ -762,7 +762,7 @@ bool MQTTPacket::encode(char* packet)
                 commonchar = (char)pFMT(pConnect)->userNamelen;
                 memcpy(&packet[cursor++], &commonchar, 1);
                 /* UserName's content */
-                memcpy(&packet[cursor], &pFMT(pConnect)->userName, commonchar);
+                memcpy(&packet[cursor], pFMT(pConnect)->userName, commonchar);
                 cursor += commonchar;
                 if(pFMT(pConnect)->flags.bits.password){
                     /* 5. password */
@@ -770,7 +770,7 @@ bool MQTTPacket::encode(char* packet)
                     commonchar = (char)pFMT(pConnect)->passwdlen;
                     memcpy(&packet[cursor++], &commonchar, 1);
                     /* password's content */
-                    memcpy(&packet[cursor], &pFMT(pConnect)->passwd, commonchar);
+                    memcpy(&packet[cursor], pFMT(pConnect)->passwd, commonchar);
                     cursor += commonchar;
                 }
             }
@@ -782,7 +782,7 @@ bool MQTTPacket::encode(char* packet)
             memcpy(&packet[cursor], &commonshort, 2);
             cursor += 2;
             /* clientID's content */
-            memcpy(&packet[cursor], &pFMT(pConnect)->clientID, commonshort);
+            memcpy(&packet[cursor], pFMT(pConnect)->clientID, commonshort);
             cursor += commonshort;
             if(pFMT(pConnect)->flags.bits.will){
                 /* 2. Will Topic */
@@ -791,7 +791,7 @@ bool MQTTPacket::encode(char* packet)
                 /* willTopiclen size (2 byte) */
                 cursor += 2;
                 /* Will Topic's content */
-                memcpy(&packet[cursor], &pFMT(pConnect)->willTopic, commonshort);
+                memcpy(&packet[cursor], pFMT(pConnect)->willTopic, commonshort);
                 cursor += commonshort;
                 /* 3. Will message */
                 commonshort = (int16_t)pFMT(pConnect)->willMsglen;
@@ -799,7 +799,7 @@ bool MQTTPacket::encode(char* packet)
                 /* willMsglen size (2 byte) */
                 cursor += 2;
                 /* Will message's content */
-                memcpy(&packet[cursor], &pFMT(pConnect)->willMsg,commonshort);
+                memcpy(&packet[cursor], pFMT(pConnect)->willMsg,commonshort);
                 cursor += commonshort;
             }
             if(pFMT(pConnect)->flags.bits.username){
@@ -809,7 +809,7 @@ bool MQTTPacket::encode(char* packet)
                 /* userNamelen size (2 byte) */
                 cursor += 2;
                 /* UserName's content */
-                memcpy(&packet[cursor], &pFMT(pConnect)->userName,commonshort);
+                memcpy(&packet[cursor], pFMT(pConnect)->userName,commonshort);
                 cursor += commonshort;
                 if(pFMT(pConnect)->flags.bits.password){
                     /* 5. password */
@@ -818,7 +818,7 @@ bool MQTTPacket::encode(char* packet)
                     /* passwdlen size (2 byte) */
                     cursor += 2;
                     /* password's content */
-                    memcpy(&packet[cursor], &pFMT(pConnect)->passwd,commonshort);
+                    memcpy(&packet[cursor], pFMT(pConnect)->passwd,commonshort);
                     cursor += commonshort;
                 }
             }
@@ -831,7 +831,7 @@ bool MQTTPacket::encode(char* packet)
          /* payload */
          if(signOk()){
              /* 1. client ID */
-             memcpy(&packet[cursor], &pFMT(pConnAck)->clientID, pFMT(pConnAck)->clientIDlen);
+             memcpy(&packet[cursor], pFMT(pConnAck)->clientID, pFMT(pConnAck)->clientIDlen);
              // memcpy(&packet[cursor], &pFMT(pConnAck)->clientID, 16);
              cursor += pFMT(pConnAck)->clientIDlen;
          }
@@ -866,7 +866,7 @@ bool MQTTPacket::encode(char* packet)
                 commonchar = (char)(itlist->_size);
                 memcpy(&packet[cursor++], &commonchar, 1);
                 /* each topic's content */
-                memcpy(&packet[cursor], &itlist->_content,commonchar);
+                memcpy(&packet[cursor], itlist->_content,commonchar);
                 cursor += commonchar;
             }
         }else{
@@ -877,7 +877,7 @@ bool MQTTPacket::encode(char* packet)
                 memcpy(&packet[cursor], &commonshort, 2);
                 cursor += 2;
                 /* each topic's content */
-                memcpy(&packet[cursor], &itlist->_content,commonshort);
+                memcpy(&packet[cursor], itlist->_content,commonshort);
                 cursor += commonshort;
             }
         }
@@ -953,7 +953,8 @@ bool MQTTPacket::decode(char* packet, int size)
         if(_dried){
             /* topic name  */
             pFMT(pPublish)->topiclen = packet[cursor++];
-            memcpy(&pFMT(pPublish)->topic,&packet[cursor], pFMT(pPublish)->topiclen);
+            MQNEW(pPublish, topic, pFMT(pPublish)->topiclen);
+            memcpy(pFMT(pPublish)->topic,&packet[cursor], pFMT(pPublish)->topiclen);
             cursor += pFMT(pPublish)->topiclen;
             _step++;
         }else{
@@ -962,7 +963,8 @@ bool MQTTPacket::decode(char* packet, int size)
             pFMT(pPublish)->topiclen = commonshort;
             cursor += 2;
             /* topic name's content */
-            memcpy(&pFMT(pPublish)->topic, &packet[cursor], commonshort);
+            MQNEW(pPublish, topic, pFMT(pPublish)->topiclen);
+            memcpy(pFMT(pPublish)->topic, &packet[cursor], commonshort);
             cursor += commonshort;
             _step++;
         }
@@ -976,7 +978,8 @@ bool MQTTPacket::decode(char* packet, int size)
         /* payload qos */
         payloadSize = _size - cursor;
         pFMT(pPublish)->payloadlen = payloadSize;
-        memcpy(&pFMT(pPublish)->payload, &packet[cursor], pFMT(pPublish)->payloadlen);
+        MQNEW(pPublish, payload, pFMT(pPublish)->payloadlen);
+        memcpy(pFMT(pPublish)->payload, &packet[cursor], pFMT(pPublish)->payloadlen);
         cursor += payloadSize;
         _step++;
         break;
@@ -996,7 +999,8 @@ bool MQTTPacket::decode(char* packet, int size)
             {
                 /* each topic's size */
                 cursub._size = packet[cursor++];
-                memcpy(&cursub._content,&packet[cursor],cursub._size);
+                cursub._content = (char*)malloc(cursub._size);
+                memcpy(cursub._content,&packet[cursor],cursub._size);
                 cursor += cursub._size;
                 (pFMT(pSubscribe)->topics)->push_back(cursub);
                 /* each qos's */
@@ -1009,7 +1013,8 @@ bool MQTTPacket::decode(char* packet, int size)
                 memcpy(&commonshort,&packet[cursor],2);
                 cursub._size = commonshort;
                 cursor += 2;
-                memcpy(&(cursub._content),&packet[cursor],cursub._size);
+                cursub._content = (char*)malloc(cursub._size);
+                memcpy(cursub._content,&packet[cursor],cursub._size);
                 cursor += cursub._size;
                 (pFMT(pSubscribe)->topics)->push_back(cursub);
                 /* each qos's */
@@ -1040,7 +1045,9 @@ bool MQTTPacket::decode(char* packet, int size)
            packet[cursor++] = 4; */
         cursor += 2;
         /* add CONNECT MQTT Protocol, size(4-byte) */
-        memcpy(&pFMT(pConnect)->Protocol,&packet[cursor],4);
+        //pFMT(pConnect)->Protocol = (char*)malloc(4);
+        MQNEW(pConnect,Protocol,4);
+        memcpy((void*)(pFMT(pConnect)->Protocol),&packet[cursor],4);
         cursor += 4;
         /* add CONNECT MQTT version, size(1-byte) */
         pFMT(pConnect)->version = packet[cursor++];
@@ -1055,31 +1062,36 @@ bool MQTTPacket::decode(char* packet, int size)
         if (_dried){
             /* 1. client ID */
             pFMT(pConnect)->clientIDlen = 16;
-            memcpy(&pFMT(pConnect)->clientID, &packet[cursor], 16);
+            MQNEW(pConnect,clientID,16);
+            memcpy(pFMT(pConnect)->clientID, &packet[cursor], 16);
             cursor += 16;
             _step++;
             if(pFMT(pConnect)->flags.bits.will){
                 /* 2. Will Topic */
                 pFMT(pConnect)->willTopiclen = packet[cursor++];
-                memcpy(&pFMT(pConnect)->willTopic,&packet[cursor], pFMT(pConnect)->willTopiclen);
+                MQNEW(pConnect,willTopic, pFMT(pConnect)->willTopiclen);
+                memcpy(pFMT(pConnect)->willTopic,&packet[cursor], pFMT(pConnect)->willTopiclen);
                 cursor += pFMT(pConnect)->willTopiclen;
                 _step++;
                 /* 3. Will message */
                 pFMT(pConnect)->willMsglen = packet[cursor++];
-                memcpy(&pFMT(pConnect)->willMsg,&packet[cursor], pFMT(pConnect)->willMsglen);
+                MQNEW(pConnect,willMsg, pFMT(pConnect)->willMsglen);
+                memcpy(pFMT(pConnect)->willMsg,&packet[cursor], pFMT(pConnect)->willMsglen);
                 cursor += pFMT(pConnect)->willMsglen;
                 _step += 2;
             }
             if(pFMT(pConnect)->flags.bits.username){
                 /* 4. User Name */
                 pFMT(pConnect)->userNamelen = packet[cursor++];
-                memcpy(&pFMT(pConnect)->userName,&packet[cursor], pFMT(pConnect)->userNamelen);
+                MQNEW(pConnect,userName, pFMT(pConnect)->userNamelen);
+                memcpy(pFMT(pConnect)->userName,&packet[cursor], pFMT(pConnect)->userNamelen);
                 cursor += pFMT(pConnect)->userNamelen;
                 _step++;
                 if(pFMT(pConnect)->flags.bits.password){
                     /* 5. password */
                     pFMT(pConnect)->passwdlen = packet[cursor++];
-                    memcpy(&pFMT(pConnect)->passwd,&packet[cursor], pFMT(pConnect)->passwdlen);
+                    MQNEW(pConnect,passwd, pFMT(pConnect)->passwdlen);
+                    memcpy(pFMT(pConnect)->passwd,&packet[cursor], pFMT(pConnect)->passwdlen);
                     cursor += pFMT(pConnect)->passwdlen;
                     _step++;
                 }
@@ -1091,7 +1103,8 @@ bool MQTTPacket::decode(char* packet, int size)
             memcpy(&commonshort,&packet[cursor],2);
             pFMT(pConnect)->clientIDlen = commonshort;
             cursor += 2;
-            memcpy(&pFMT(pConnect)->clientID, &packet[cursor], pFMT(pConnect)->clientIDlen);
+            MQNEW(pConnect, clientID, pFMT(pConnect)->clientIDlen);
+            memcpy(pFMT(pConnect)->clientID, &packet[cursor], pFMT(pConnect)->clientIDlen);
             cursor += pFMT(pConnect)->clientIDlen;
             _step++;
             if(pFMT(pConnect)->flags.bits.will){
@@ -1100,7 +1113,8 @@ bool MQTTPacket::decode(char* packet, int size)
                 memcpy(&commonshort,&packet[cursor],2);
                 pFMT(pConnect)->willTopiclen = commonshort;
                 cursor += 2;
-                memcpy(&pFMT(pConnect)->willTopic,&packet[cursor], pFMT(pConnect)->willTopiclen);
+                MQNEW(pConnect,willTopic, pFMT(pConnect)->willTopiclen);
+                memcpy(pFMT(pConnect)->willTopic,&packet[cursor], pFMT(pConnect)->willTopiclen);
                 cursor += pFMT(pConnect)->willTopiclen;
                 _step++;
                 /* 3. Will message */
@@ -1108,7 +1122,8 @@ bool MQTTPacket::decode(char* packet, int size)
                 memcpy(&commonshort,&packet[cursor],2);
                 pFMT(pConnect)->willMsglen = commonshort;
                 cursor += 2;
-                memcpy(&pFMT(pConnect)->willMsg,&packet[cursor], pFMT(pConnect)->willMsglen);
+                MQNEW(pConnect,willMsg, pFMT(pConnect)->willMsglen);
+                memcpy(pFMT(pConnect)->willMsg,&packet[cursor], pFMT(pConnect)->willMsglen);
                 cursor += pFMT(pConnect)->willMsglen;
                 _step++;
             }
@@ -1118,7 +1133,8 @@ bool MQTTPacket::decode(char* packet, int size)
                 memcpy(&commonshort,&packet[cursor],2);
                 pFMT(pConnect)->userNamelen = commonshort;
                 cursor += 2;
-                memcpy(&pFMT(pConnect)->userName,&packet[cursor], pFMT(pConnect)->userNamelen);
+                MQNEW(pConnect,userName, pFMT(pConnect)->userNamelen);
+                memcpy(pFMT(pConnect)->userName,&packet[cursor], pFMT(pConnect)->userNamelen);
                 cursor += pFMT(pConnect)->userNamelen;
                 _step++;
                 if(pFMT(pConnect)->flags.bits.password){
@@ -1127,7 +1143,8 @@ bool MQTTPacket::decode(char* packet, int size)
                     memcpy(&commonshort,&packet[cursor],2);
                     pFMT(pConnect)->passwdlen = commonshort;
                     cursor += 2;
-                    memcpy(&pFMT(pConnect)->passwd,&packet[cursor], pFMT(pConnect)->passwdlen);
+                    MQNEW(pConnect,passwd, pFMT(pConnect)->passwdlen);
+                    memcpy(pFMT(pConnect)->passwd,&packet[cursor], pFMT(pConnect)->passwdlen);
                     cursor += pFMT(pConnect)->passwdlen;
                     _step++;
                 }
@@ -1142,7 +1159,8 @@ bool MQTTPacket::decode(char* packet, int size)
         if(signOk()){
             /* 1. client ID */
             pFMT(pConnAck)->clientIDlen = 16;
-            memcpy(&pFMT(pConnAck)->clientID, &packet[cursor], 16);
+            MQNEW(pConnAck, clientID,16);
+            memcpy(pFMT(pConnAck)->clientID, &packet[cursor], 16);
             cursor += 16;
         }
         break;
@@ -1175,7 +1193,8 @@ bool MQTTPacket::decode(char* packet, int size)
             {
                 /* each topic's size */
                 cursub._size = packet[cursor++];
-                memcpy(&cursub._content,&packet[cursor],cursub._size);
+                cursub._content = (char*)malloc(cursub._size);
+                memcpy(cursub._content,&packet[cursor],cursub._size);
                 cursor += cursub._size;
                 (pFMT(pUnsubscribe)->topics)->push_back(cursub);
             }
@@ -1186,7 +1205,8 @@ bool MQTTPacket::decode(char* packet, int size)
                 memcpy(&commonshort,&packet[cursor],2);
                 cursub._size = commonshort;
                 cursor += 2;
-                memcpy(&(cursub._content),&packet[cursor],cursub._size);
+                cursub._content = (char*)malloc(cursub._size);
+                memcpy(cursub._content,&packet[cursor],cursub._size);
                 cursor += cursub._size;
                 (pFMT(pUnsubscribe)->topics)->push_back(cursub);
             }
