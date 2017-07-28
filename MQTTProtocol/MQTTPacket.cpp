@@ -24,7 +24,8 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
         ALLOC0(pConnect,Connect)
         initHeader0(pConnect,CONNECT)
 #endif
-        pFMT(pConnect)->Protocol = MQTT_NAME;
+        //pFMT(pConnect)->Protocol = MQTT_NAME;
+        MQNEW(pConnect,Protocol,MQTT_NAME,4);
         pFMT(pConnect)->version = MQTT_VER;
         _step += 3;
         /* add CONNECT Variable header, size (2-byte)*/
@@ -116,8 +117,6 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
         ALLOC0(pSubscribe,Subscribe)
         initHeader1(pSubscribe,SUBSCRIBE)
 #endif
-        pFMT(pSubscribe)->topics = new ListSub();
-        pFMT(pSubscribe)->qoss = new ListQos();
         _step++;
         break;
     case SUBACK:
@@ -130,7 +129,6 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
         ALLOC0(pSubAck,SubAck)
         initHeader0(pSubAck,SUBACK)
 #endif
-        pFMT(pSubAck)->qoss = new ListQos();
         _step++;
         break;
     case UNSUBSCRIBE:
@@ -143,7 +141,6 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
         ALLOC0(pUnsubscribe,Unsubscribe)
         initHeader1(pUnsubscribe,UNSUBSCRIBE)
 #endif
-        pFMT(pUnsubscribe)->topics = new ListSub();
         _step++;
         break;
     case UNSUBACK:
@@ -211,6 +208,9 @@ MQTTPacket::~MQTTPacket()
         switch (_ptype)
         {
         case CONNECT:
+            if(pFMT(pConnect)->Protocol){
+                free(pFMT(pConnect)->Protocol);
+            }
             if(pFMT(pConnect)->clientID){
                 free(pFMT(pConnect)->clientID);
             }
@@ -226,6 +226,7 @@ MQTTPacket::~MQTTPacket()
             if(pFMT(pConnect)->passwd){
                 free(pFMT(pConnect)->passwd);
             }
+//            MQDEL(pConnect, Protocol);
 //            MQDEL(pConnect, clientID);
 //            MQDEL(pConnect, willTopic);
 //            MQDEL(pConnect, willMsg);
@@ -233,30 +234,47 @@ MQTTPacket::~MQTTPacket()
 //            MQDEL(pConnect, passwd);
             break;
         case CONNACK:
+            if(pFMT(pConnAck)->clientID){
+                free(pFMT(pConnAck)->clientID);
+            }
+//            MQDEL(pConnAck, clientID);
             break;
         case PUBLISH:
-            break;
-        case PUBACK:
-            break;
-        case PUBREC:
-            break;
-        case PUBREL:
-            break;
-        case PUBCOMP:
+            if(pFMT(pPublish)->topic){
+                free(pFMT(pPublish)->topic);
+            }
+//            MQDEL(pPublish, topic);
+            if(pFMT(pPublish)->payload){
+                free(pFMT(pPublish)->payload);
+            }
+//            MQDEL(pPublish, payload);
             break;
         case SUBSCRIBE:
+            if(pFMT(pSubscribe)->topics){
+                delete pFMT(pSubscribe)->topics;
+            }
+            if(pFMT(pSubscribe)->qoss){
+                delete pFMT(pSubscribe)->qoss;
+            }
             break;
         case SUBACK:
+            if(pFMT(pSubAck)->qoss){
+                delete pFMT(pSubAck)->qoss;
+            }
             break;
         case UNSUBSCRIBE:
+            if(pFMT(pUnsubscribe)->topics){
+                delete pFMT(pUnsubscribe)->topics;
+            }
             break;
         case UNSUBACK:
-            break;
         case PINGREQ:
-            break;
         case PINGRESP:
-            break;
         case DISCONNECT:
+        case PUBACK:
+        case PUBREC:
+        case PUBREL:
+        case PUBCOMP:
             break;
         default:
             printf("error packet type\n");
@@ -369,7 +387,7 @@ void MQTTPacket::setClientId(char* clientId, size_t size)
         if(signOk()){
             //_step++;
             _size += 16;
-            MQNEW(pConnect,clientID,clientId,16);
+            MQNEW(pConnAck,clientID,clientId,16);
             /* clientIDlen is 16, so needn't add 1 Byte to measure clientID */
         }
     }else{
@@ -527,7 +545,7 @@ void MQTTPacket::addTopics(char qos, char* content, size_t size)
     switch (_ptype) {
     case PUBLISH:
         pFMT(pPublish)->topiclen = size;
-        pFMT(pPublish)->topic = content;
+        MQNEW(pPublish,topic,content,size);
         _size += size;
         break;
     case SUBSCRIBE:
@@ -537,6 +555,12 @@ void MQTTPacket::addTopics(char qos, char* content, size_t size)
         }else{
             _size += 2;  // 2 byte
         }
+        if(NULL == pFMT(pSubscribe)->topics){
+            pFMT(pSubscribe)->topics = new ListSub();
+        }
+        if(NULL == pFMT(pSubscribe)->qoss){
+            pFMT(pSubscribe)->qoss = new ListQos();
+        }
         (pFMT(pSubscribe)->topics)->push_back(sub_t(size,content));
         _size += size;
         (pFMT(pSubscribe)->qoss)->push_back(qos);
@@ -545,6 +569,9 @@ void MQTTPacket::addTopics(char qos, char* content, size_t size)
         break;
     case SUBACK:
         /* topics length's size */
+        if(NULL == pFMT(pSubAck)->qoss){
+            pFMT(pSubAck)->qoss = new ListQos();
+        }
         (pFMT(pSubAck)->qoss)->push_back(qos);
         /* qos size 1 byte */
         _size++;
@@ -555,6 +582,9 @@ void MQTTPacket::addTopics(char qos, char* content, size_t size)
             _size++;     // 1 byte
         }else{
             _size += 2;  // 2 byte
+        }
+        if(NULL == pFMT(pUnsubscribe)->topics){
+            pFMT(pUnsubscribe)->topics = new ListSub();
         }
         (pFMT(pUnsubscribe)->topics)->push_back(sub_t(size,content));
         _size += size;
@@ -956,9 +986,10 @@ int   MQTTPacket::decode(char* packet)
     int    rlSize = 0;           /* Remaining Length + Remaining Length's size */
     int    payloadSize = 0;      /* payload size if payload is exist */
     int    commonshort = 0;      /* use to save 2 byte length while _dried == 0 */
+    int    commonchar  = 0;
 
     /* use at ptype = SUBSCRIBE SUBACK */
-    sub_t  cursub;
+    char*  content = NULL;
 
     /* part-1 fixed header */
     fixhead.byte = packet[cursor++];
@@ -1044,11 +1075,12 @@ int   MQTTPacket::decode(char* packet)
             while(cursor <= rlSize)
             {
                 /* each topic's size */
-                cursub._size = packet[cursor++];
-                cursub._content = (char*)malloc(cursub._size);
-                memcpy(cursub._content,&packet[cursor],cursub._size);
-                cursor += cursub._size;
-                (pFMT(pSubscribe)->topics)->push_back(cursub);
+                commonchar = packet[cursor++];
+                content = (char*)malloc(commonchar);
+                memcpy(content,&packet[cursor],commonchar);
+                cursor += commonchar;
+                (pFMT(pSubscribe)->topics)->push_back(sub_s(commonchar,content));
+                free(content);
                 /* each qos's */
                 (pFMT(pSubscribe)->qoss)->push_back(packet[cursor++]);
             }
@@ -1057,12 +1089,12 @@ int   MQTTPacket::decode(char* packet)
             {
                 /* each topic's size */
                 memcpy(&commonshort,&packet[cursor],2);
-                cursub._size = commonshort;
                 cursor += 2;
-                cursub._content = (char*)malloc(cursub._size);
-                memcpy(cursub._content,&packet[cursor],cursub._size);
-                cursor += cursub._size;
-                (pFMT(pSubscribe)->topics)->push_back(cursub);
+                content = (char*)malloc(commonshort);
+                memcpy(content,&packet[cursor],commonshort);
+                cursor += commonshort;
+                (pFMT(pSubscribe)->topics)->push_back(sub_s(commonshort,content));
+                free(content);
                 /* each qos's */
                 (pFMT(pSubscribe)->qoss)->push_back(packet[cursor++]);
             }
@@ -1226,23 +1258,24 @@ int   MQTTPacket::decode(char* packet)
             while(cursor <= rlSize)
             {
                 /* each topic's size */
-                cursub._size = packet[cursor++];
-                cursub._content = (char*)malloc(cursub._size);
-                memcpy(cursub._content,&packet[cursor],cursub._size);
-                cursor += cursub._size;
-                (pFMT(pUnsubscribe)->topics)->push_back(cursub);
+                commonchar = packet[cursor++];
+                content = (char*)malloc(commonchar);
+                memcpy(content,&packet[cursor],commonchar);
+                cursor += commonchar;
+                (pFMT(pUnsubscribe)->topics)->push_back(sub_s(commonchar,content));
+                free(content);
             }
         }else{
             while(cursor <= rlSize)
             {
                 /* each topic's size */
                 memcpy(&commonshort,&packet[cursor],2);
-                cursub._size = commonshort;
                 cursor += 2;
-                cursub._content = (char*)malloc(cursub._size);
-                memcpy(cursub._content,&packet[cursor],cursub._size);
-                cursor += cursub._size;
-                (pFMT(pUnsubscribe)->topics)->push_back(cursub);
+                content = (char*)malloc(commonshort);
+                memcpy(content,&packet[cursor],commonshort);
+                cursor += commonshort;
+                (pFMT(pUnsubscribe)->topics)->push_back(sub_s(commonshort,content));
+                free(content);
             }
         }
         break;

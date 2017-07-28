@@ -63,6 +63,11 @@ typedef struct sub_s{
         memcpy(_content,content,_size);
     }
     sub_s():_size(0),_content(NULL){}
+    sub_s(const sub_s& rhs):_size(rhs._size){
+        _content = (char*)malloc(_size);
+        memcpy(_content,rhs._content,_size);
+	}
+    ~sub_s(){if(_content){free(_content);_content = NULL;}}
 }sub_t;
 typedef list<sub_t> ListSub;
 typedef ListSub::iterator Subitor;
