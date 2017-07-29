@@ -24,8 +24,8 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
         ALLOC0(pConnect,Connect)
         initHeader0(pConnect,CONNECT)
 #endif
-        //pFMT(pConnect)->Protocol = MQTT_NAME;
-        MQNEW(pConnect,Protocol,MQTT_NAME,4);
+        pFMT(pConnect)->Protocol = MQTT_NAME;
+        //MQNEW(pConnect,Protocol,MQTT_NAME,4);
         pFMT(pConnect)->version = MQTT_VER;
         _step += 3;
         /* add CONNECT Variable header, size (2-byte)*/
@@ -208,9 +208,9 @@ MQTTPacket::~MQTTPacket()
         switch (_ptype)
         {
         case CONNECT:
-            if(pFMT(pConnect)->Protocol){
-                free(pFMT(pConnect)->Protocol);
-            }
+            //if(pFMT(pConnect)->Protocol){
+            //    free(pFMT(pConnect)->Protocol);
+            //}
             if(pFMT(pConnect)->clientID){
                 free(pFMT(pConnect)->clientID);
             }
@@ -1000,7 +1000,7 @@ int   MQTTPacket::decode(char* packet)
 
     /* part-2  Remaining Length: packet size */
     int  prefixByte = 0;         /* save a content size's byte */
-    int  packetID = 0;
+    int16_t  packetID = 0;
     if(CannotDried){
         rlSize = MQTTInt::decode(&packet[cursor],prefixByte);
         _size = rlSize + 1; /* 1 is fix header's size */
@@ -1123,8 +1123,8 @@ int   MQTTPacket::decode(char* packet)
            packet[cursor++] = 4; */
         cursor += 2;
         /* add CONNECT MQTT Protocol, size(4-byte) */
-        //pFMT(pConnect)->Protocol = (char*)malloc(4);
-        MQNEW(pConnect,Protocol,&packet[cursor],4);
+        pFMT(pConnect)->Protocol = MQTT_NAME;
+        //MQNEW(pConnect,Protocol,&packet[cursor],4);
         cursor += 4;
         /* add CONNECT MQTT version, size(1-byte) */
         pFMT(pConnect)->version = packet[cursor++];

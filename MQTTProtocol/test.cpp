@@ -65,6 +65,7 @@ void test_onlyHeader(msgTypes ptype, int dried)
     // printf("%s",MQTTPacket::types(MQTTPacket::type((char)fs.GetC())));
     char* sendPacketf = NULL;
     sendPacketf = (char*)malloc(4);
+    memset(sendPacketf,0,4);
     sendPacketf[0] = fixheader;
     fs.Read(&sendPacketf[1],4,1);
     MQTTInt::decode(sendPacketf,packetSize);
