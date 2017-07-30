@@ -201,11 +201,11 @@ const int encodeStep[16] =
 };
 const int isFixRLPacket[16] =
 {
-    0,0,1,0,1,1,1,1,0,0,0,1,1,1,1,0
+    0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,0
 };
 const int isDriedPacket[16] =
 {
-    0,1,0,1,0,0,0,0,1,1,1,0,0,0,0,0
+    0,1,1,1,0,0,0,0,1,1,1,0,0,0,0,0
 };
 typedef unsigned int boolean;           /* use at bit-struct */
 typedef unsigned short Int;             /* must 2 byte */
@@ -560,7 +560,8 @@ typedef struct {
                      (_ptype >= SUBSCRIBE   && \
                       _ptype <= UNSUBSCRIBE))
 */
-
+/* Quantity(Length) determination */
+#define QND         -1
 /**
  *
  */
@@ -581,7 +582,7 @@ protected:
     inline void dry(){ pFMT(pHeader)->bits.retain = 1; _dried = 1;}
     inline bool dried() {return (1 == _dried && 1 == pFMT(pHeader)->bits.retain);}
 public://get
-    inline bool finish(){ return (_step == encodeStep[_ptype]);}
+    inline bool finish(){ return ( QND == _step || _step == encodeStep[_ptype]);}
     inline int size() {return _size;}
     inline msgTypes type(){return (msgTypes)_ptype;}
     inline const char* types(){return packet_names[_ptype];}
@@ -701,21 +702,28 @@ public://set
     void setPacketId(int packetId);
 private:
     /* header.bits.dup == 0 && clientID == 0 : create a new user, will return a clientID */
-    inline bool isSignin()
-    {
+    inline bool isSignin() const {
         return (_ptype == CONNECT &&
                 '\0' == (*pFMT(pConnect)->clientID) &&
                 1 == pFMT(pConnect)->flags.bits.isregister);
     }
-    inline bool signOk(){
+    inline bool signOk() const {
         return (_ptype == CONNACK && pFMT(pConnAck)->flags.bits.isregister);
     }
     /* header.bits.dup == 1 && clientID != 0 : try to delete the user: clientID */
-    inline bool isSigndel()
-    {
+    inline bool isSigndel() const {
         return (_ptype == CONNECT &&
                 '\0' != (*pFMT(pConnect)->clientID) &&
                 0 == pFMT(pConnect)->flags.bits.isregister);
+    }
+    /* add space to save Remaining Length's size */
+    inline void addRLsize()
+    {
+        if(!_setrl && finish()){
+            /* add space to save Remaining Length's size */
+            _size += MQTTInt::encode_len(_size-1);
+            _setrl = true;
+        }
     }
 public:
     /**
@@ -731,6 +739,7 @@ private:
     int      _size;      // packet's size, == fix Header's + Remaining Length
     int      _step;      // measure the encoding / decoding progress
     int      _dried;     // packet's DRIED flag
+    bool     _setrl;     // Remaining Length is set
 };
 
 }//namespace mqtter

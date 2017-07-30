@@ -10,11 +10,11 @@ void test_ACK(msgTypes ptype, int dried)
     pAck cn = (pAck)pkt.data();
     char* sendPacket = NULL;
     int packetSize = 0;
-    if(pkt.finish()){
-        packetSize = pkt.size();
-        sendPacket = (char*)malloc(packetSize);
-        memset(sendPacket,0,packetSize);
-        pkt.encode(sendPacket);
+    packetSize = pkt.size();
+    sendPacket = (char*)malloc(packetSize);
+    memset(sendPacket,0,packetSize);
+    if(!pkt.encode(sendPacket)){
+        return;
     }
     std::cout << pkt;
     std::cout << charStream(sendPacket,packetSize);
@@ -45,11 +45,11 @@ void test_onlyHeader(msgTypes ptype, int dried)
     pPingReq cn = (pPingReq)pkt.data();
     char* sendPacket = NULL;
     int packetSize = 0;
-    if(pkt.finish()){
-        packetSize = pkt.size();
-        sendPacket = (char*)malloc(packetSize);
-        memset(sendPacket,0,packetSize);
-        pkt.encode(sendPacket);
+    packetSize = pkt.size();
+    sendPacket = (char*)malloc(packetSize);
+    memset(sendPacket,0,packetSize);
+    if(!pkt.encode(sendPacket)){
+        return;
     }
     std::cout << pkt;
     std::cout << charStream(sendPacket,packetSize);
@@ -95,14 +95,14 @@ void test_CONNECT(int dried)
     pConnect cn = (pConnect)pkt.data();
     char* sendPacket = NULL;
     int packetSize = 0;
-    if(pkt.finish()){
-        packetSize = pkt.size();
-        sendPacket = (char*)malloc(packetSize);
-        memset(sendPacket,0,packetSize);
-        pkt.encode(sendPacket);
+    packetSize = pkt.size();
+    sendPacket = (char*)malloc(packetSize);
+    memset(sendPacket,0,packetSize);
+    if(!pkt.encode(sendPacket)){
+        return;
     }
     std::cout << pkt;
-    // std::cout << charStream(sendPacket,packetSize);
+    std::cout << charStream(sendPacket,packetSize);
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
@@ -142,14 +142,14 @@ void test_CONNACK(int dried)
     pConnAck cn = (pConnAck)pkt.data();
     char* sendPacket = NULL;
     int packetSize = 0;
-    if(pkt.finish()){
-        packetSize = pkt.size();
-        sendPacket = (char*)malloc(packetSize);
-        memset(sendPacket,0,packetSize);
-        pkt.encode(sendPacket);
+    packetSize = pkt.size();
+    sendPacket = (char*)malloc(packetSize);
+    memset(sendPacket,0,packetSize);
+    if(!pkt.encode(sendPacket)){
+        return;
     }
     std::cout << pkt;
-    // std::cout << charStream(sendPacket,packetSize);
+    std::cout << charStream(sendPacket,packetSize);
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
@@ -185,14 +185,14 @@ void test_PUBLISH(int dried)
     pPublish cn = (pPublish)pkt.data();
     char* sendPacket = NULL;
     int packetSize = 0;
-    if(pkt.finish()){
-        packetSize = pkt.size();
-        sendPacket = (char*)malloc(packetSize);
-        memset(sendPacket,0,packetSize);
-        pkt.encode(sendPacket);
+    packetSize = pkt.size();
+    sendPacket = (char*)malloc(packetSize);
+    memset(sendPacket,0,packetSize);
+    if(!pkt.encode(sendPacket)){
+        return;
     }
     std::cout << pkt;
-    // std::cout << charStream(sendPacket,packetSize);
+    std::cout << charStream(sendPacket,packetSize);
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
@@ -244,15 +244,19 @@ void test_SUBSCRIBE(int dried)
     MQTTPacket pkt(SUBSCRIBE,dried);
     pkt.setPacketId(1);
     pkt.addTopics(0,"hello",6);
-    pkt.addTopics(0,"world",6);
+    pkt.addTopics(0,"world",5);
+    pkt.addTopics(0,"This ",5);
+    pkt.addTopics(0,"is ",3);
+    pkt.addTopics(0,"a ",2);
+    pkt.addTopics(1,"Test!",5);
     pSubscribe cn = (pSubscribe)pkt.data();
     char* sendPacket = NULL;
     int packetSize = 0;
-    if(pkt.finish()){
-        packetSize = pkt.size();
-        sendPacket = (char*)malloc(packetSize);
-        memset(sendPacket,0,packetSize);
-        pkt.encode(sendPacket);
+    packetSize = pkt.size();
+    sendPacket = (char*)malloc(packetSize);
+    memset(sendPacket,0,packetSize);
+    if(!pkt.encode(sendPacket)){
+        return;
     }
     std::cout << pkt;
     // std::cout << charStream(sendPacket,packetSize);
@@ -291,11 +295,11 @@ void test_SUBACK(int dried)
     pSubAck cn = (pSubAck)pkt.data();
     char* sendPacket = NULL;
     int packetSize = 0;
-    if(pkt.finish()){
-        packetSize = pkt.size();
-        sendPacket = (char*)malloc(packetSize);
-        memset(sendPacket,0,packetSize);
-        pkt.encode(sendPacket);
+    packetSize = pkt.size();
+    sendPacket = (char*)malloc(packetSize);
+    memset(sendPacket,0,packetSize);
+    if(!pkt.encode(sendPacket)){
+        return;
     }
     std::cout << pkt;
     // std::cout << charStream(sendPacket,packetSize);
@@ -334,11 +338,11 @@ void test_UNSUBSCRIBE(int dried)
     pUnsubscribe cn = (pUnsubscribe)pkt.data();
     char* sendPacket = NULL;
     int packetSize = 0;
-    if(pkt.finish()){
-        packetSize = pkt.size();
-        sendPacket = (char*)malloc(packetSize);
-        memset(sendPacket,0,packetSize);
-        pkt.encode(sendPacket);
+    packetSize = pkt.size();
+    sendPacket = (char*)malloc(packetSize);
+    memset(sendPacket,0,packetSize);
+    if(!pkt.encode(sendPacket)){
+        return;
     }
     std::cout << pkt;
     // std::cout << charStream(sendPacket,packetSize);
