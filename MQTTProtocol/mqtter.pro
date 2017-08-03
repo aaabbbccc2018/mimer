@@ -17,4 +17,5 @@ HEADERS += \
     MQTTPacket.h \
     MQTTInt.h \
     List.h \
-    Stream.h
+    Stream.h \
+    MQErr.h

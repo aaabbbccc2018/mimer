@@ -125,7 +125,7 @@ MQTTPacket::MQTTPacket(int type,int dried, int dup,int qos):
         printf("error packet type\n");
         break;
     }
-    pFMT(pHeader)->bits.retain = _dried; // dried flag
+    FixHeaderbits.retain = _dried; // dried flag
     if(0 == _dried && OnlyHeader){
         _size += 1;
     }
@@ -232,7 +232,8 @@ std::ostream & operator<<(std::ostream &out, const MQTTPacket &mp)
             << "\nKATIMEOUT:\t" << mp.KAT() << "\nclientID:\t" << mp.clientId()
             << "\nwillTopic:\t" << mp.willTopic() << "\nwillMsg:\t"
             << mp.willMsg() << "\nuserName:\t" << mp.username()
-            << "\npassword:\t" << mp.password() << std::endl;
+            << "\npassword:\t" << mp.password() << "\nMultiClient:\t"
+            << mp.MultiConnect() << std::endl;
         break;
     case CONNACK:
         out << "\nReturn Code:\t" << mp.RC() << "\nis register:\t"
@@ -278,6 +279,8 @@ std::ostream & operator<<(std::ostream &out, const MQTTPacket &mp)
         }
         break;
     case PINGREQ:
+        out << "\nClientStatus:\t" << mp.ClientStatus() << std::endl;
+        break;
     case PINGRESP:
     case DISCONNECT:
         break;
@@ -418,6 +421,15 @@ void MQTTPacket::setSignDel(char* clientId, size_t size)
     pFMT(pConnect)->flags.bits.isregister = 0;
     _size += size;
     this->addRLsize();
+}
+
+void MQTTPacket::setMultiConnect()
+{
+    if(_ptype != CONNECT){
+        printf("%s no clientId!\n", packet_names[_ptype]);
+        return;
+    }
+    FixHeaderbits.dup = 1;
 }
 
 void MQTTPacket::setRC(char rc)
@@ -566,6 +578,15 @@ void MQTTPacket::setPacketId(int packetId)
     this->addRLsize();
 }
 
+void MQTTPacket::setPingStatus(int pstatus)
+{
+    if(_ptype != PINGREQ){
+        printf("%s no ping status!\n", packet_names[_ptype]);
+        return;
+    }
+    pFMT(pPingReq)->header.bits.qos = pstatus;
+}
+
 bool MQTTPacket::encode(char* packet)
 {
     if(NULL == packet){
@@ -589,7 +610,7 @@ bool MQTTPacket::encode(char* packet)
     Qositor itqoss;
 
     /* part-1 fixed header */
-    packet[cursor++] = pFMT(pHeader)->byte;
+    packet[cursor++] = FixHeaderbyte;
 
     /* part-2 Remaining Length: packet size cannot !!! */
     if(CannotDried){
@@ -609,10 +630,10 @@ bool MQTTPacket::encode(char* packet)
             //2. FixRL:  fix 1-byte RL type, delete 1-byte RL
             if(OnlyHeader){
                 /* Only Header, RL == 0 */
-                packet[cursor++] = 0 + 1;
+                // packet[cursor++] = 0 + 1;
             }else{
                 /* fix RL, RL == 2 */
-                packet[cursor++] = 2 + 1;
+                // packet[cursor++] = 2 + 1;
             }
         }
     }
@@ -641,7 +662,7 @@ bool MQTTPacket::encode(char* packet)
             cursor += commonshort;
         }
         /* packet ID qos not 0 */
-        if(0 != pFMT(pHeader)->bits.qos){
+        if(0 != FixHeaderbits.qos){
             packetId = (int16_t)pFMT(pPublish)->packetId;
             memcpy(&packet[cursor++], &packetId, 2);
             // itoa((int16_t)pFMT(pPubAck)->packetId,&packet[cursor++],10);
@@ -910,7 +931,7 @@ int   MQTTPacket::decode(char* packet)
 
     /* part-1 fixed header */
     fixhead.byte = packet[cursor++];
-    pFMT(pHeader)->byte = fixhead.byte;
+    FixHeaderbyte = fixhead.byte;
     _dried = fixhead.bits.retain;
     _ptype = fixhead.bits.type;
     _step  = 1;
@@ -936,7 +957,15 @@ int   MQTTPacket::decode(char* packet)
         else{
             //1. OnlyHeader: only fix header, delete 1-byte RL value = 0
             //2. FixRL:  fix 1-byte RL type, delete 1-byte RL value = 2
-            _size = packet[cursor++] + 1;
+            if(OnlyHeader){
+                /* Only Header, RL == 0 */
+                // packet[cursor++] = 0 + 1;
+                _size = 1;
+            }else{
+                /* fix RL, RL == 2 */
+                // packet[cursor++] = 2 + 1;
+                _size = 1;
+            }
         }
     }
     _step++;
@@ -964,7 +993,7 @@ int   MQTTPacket::decode(char* packet)
             _step++;
         }
         /* packet ID qos not 0 */
-        if(0 != pFMT(pHeader)->bits.qos){
+        if(0 != FixHeaderbits.qos){
             memcpy(&packetID,&packet[cursor],2);
             pFMT(pPublish)->packetId = packetID;
             cursor += 2;

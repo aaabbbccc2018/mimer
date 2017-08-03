@@ -35,6 +35,7 @@
 //#include "List.cpp"
 #include <list>
 #include "MQTTInt.h"
+#include "MQErr.h"
 using namespace std;
 
 namespace mqtter {
@@ -476,7 +477,10 @@ typedef struct {
  *        pPingReq,pPingResp,pDisconnect
  *  Format void* _packet to p* pointer
  */
-#define pFMT(pTYPE) ((pTYPE)(_packet))
+#define pFMT(pTYPE)     ((pTYPE)(_packet))
+#define FixHeader       (pFMT(pHeader))
+#define FixHeaderbits   (FixHeader->bits)
+#define FixHeaderbyte   (FixHeader->byte)
 
 #define ALLOC0(pTYPE,TYPE)                     \
     _packet = (pTYPE)malloc(sizeof(TYPE));     \
@@ -579,8 +583,8 @@ protected:
      * @brief dry: set this packet's DRIED flag. The fixed Header 0 bit is 1
      * represent this packet is DRIED.
      */
-    inline void dry(){ pFMT(pHeader)->bits.retain = 1; _dried = 1;}
-    inline bool dried() {return (1 == _dried && 1 == pFMT(pHeader)->bits.retain);}
+    inline void dry(){ FixHeader->bits.retain = 1; _dried = 1;}
+    inline bool dried() {return (1 == _dried && 1 == FixHeaderbits.retain);}
 public://get
     inline bool finish(){ return ( QND == _step || _step == encodeStep[_ptype]);}
     inline int size() {return _size;}
@@ -598,27 +602,29 @@ public://get
     static const char* types(msgTypes ptype){return packet_names[ptype];}
     static bool dried(char header){ return (1 == (header & 0x1)); }
 public://get
-    char*  clientId()const{ return pFMT(pConnect)->clientID;}
-    char*  willTopic()const{return pFMT(pConnect)->willTopic;}
-    char*  willMsg()const{return pFMT(pConnect)->willMsg;}
-    char*  username()const{return pFMT(pConnect)->userName;}
-    char*  password()const{return pFMT(pConnect)->passwd;}
-    char*  payload(char* payload, size_t& size)const{
-        size = pFMT(pPublish)->payloadlen;
-        memcpy(payload, pFMT(pPublish)->payload, size);
-        return payload;
-    }
-    char*  s_payload()const{ return pFMT(pPublish)->payload; }
-    char*  topic()const{assert(PUBLISH == _ptype); return pFMT(pPublish)->topic;}
-    Int    KAT()const{ assert(CONNECT == _ptype); return pFMT(pConnect)->KAT; }
-    int    packetId()const{assert(HasPktId); return pFMT(pAck)->packetId;}
-    int    RC()const{assert(CONNACK == _ptype); return (int)pFMT(pConnAck)->rc;}
+    inline char*  clientId()const{ return pFMT(pConnect)->clientID;}
+    inline char*  willTopic()const{return pFMT(pConnect)->willTopic;}
+    inline char*  willMsg()const{return pFMT(pConnect)->willMsg;}
+    inline char*  username()const{return pFMT(pConnect)->userName;}
+    inline char*  password()const{return pFMT(pConnect)->passwd;}
+    inline char*  s_payload()const{ return pFMT(pPublish)->payload; }
+    inline char*  topic()const{assert(PUBLISH == _ptype); return pFMT(pPublish)->topic;}
+    inline Int    KAT()const{ assert(CONNECT == _ptype); return pFMT(pConnect)->KAT; }
+    inline bool   MultiConnect()const { assert(CONNECT == _ptype); return (1 == FixHeaderbits.dup); }
+    inline int    packetId()const{assert(HasPktId); return pFMT(pAck)->packetId;}
+    inline int    RC()const{assert(CONNACK == _ptype); return (int)pFMT(pConnAck)->rc;}
+    inline bool   ClientStatus()const { assert(PINGREQ == _ptype); return FixHeaderbits.qos; }
     char*  AnewClientId()const
     {
         assert(CONNACK == _ptype);
         if(pFMT(pConnAck)->flags.bits.isregister)
             return pFMT(pConnAck)->clientID;
         return "";
+    }
+    char*  payload(char* payload, size_t& size)const{
+        size = pFMT(pPublish)->payloadlen;
+        memcpy(payload, pFMT(pPublish)->payload, size);
+        return payload;
     }
 public://set
     /**
@@ -662,6 +668,10 @@ public://set
      */
     void setSignDel(char* clientId, size_t size = 16);
     /**
+     * @brief setMultiConnect: make the Multi-client device connect the server
+     */
+    void setMultiConnect();
+    /**
      * @brief setRC, use at CONNACK
      * @param rc
      */
@@ -700,6 +710,11 @@ public://set
      * @return
      */
     void setPacketId(int packetId);
+    /**
+     * @brief setPingStatus set current user's status, will send will PINGREQ
+     * @param pstatus
+     */
+    void setPingStatus(int pstatus);
 private:
     /* header.bits.dup == 0 && clientID == 0 : create a new user, will return a clientID */
     inline bool isSignin() const {
@@ -732,7 +747,7 @@ public:
      * @return
      */
     bool encode(char* packet);
-    int    decode(char* packet);
+    int  decode(char* packet);
 private:
     void*    _packet;    // packet's data
     int      _ptype;     // packet's type

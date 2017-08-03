@@ -92,6 +92,7 @@ void test_CONNECT(int dried)
     pkt.setWill("test","test",4,4);
     pkt.setUserName("skybosi",7);
     pkt.setPasswd("skybosi",7);
+    pkt.setMultiConnect();
     pConnect cn = (pConnect)pkt.data();
     char* sendPacket = NULL;
     int packetSize = 0;
@@ -379,12 +380,44 @@ void test_UNSUBACK(int dried)
 
 void test_PINGREQ(int dried)
 {
-   test_onlyHeader(PINGREQ, dried);
+    MQTTPacket pkt(PINGREQ,dried);
+    pPingReq cn = (pPingReq)pkt.data();
+    pkt.setPingStatus(PING_WRITING);
+    char* sendPacket = NULL;
+    int packetSize = 0;
+    packetSize = pkt.size();
+    sendPacket = (char*)malloc(packetSize);
+    memset(sendPacket,0,packetSize);
+    if(!pkt.encode(sendPacket)){
+        return;
+    }
+    std::cout << pkt;
+    std::cout << charStream(sendPacket,packetSize);
+    Stream fs("./packet.mq","w");
+    fs.Write(sendPacket,packetSize,1);
+    fs.Close();
+    MQTTPacket dpkt(MQTTPacket::type(sendPacket[0]));
+    dpkt.decode(sendPacket);
+    std::cout << dpkt;
+    fs.Open("./packet.mq","r");
+    char fixheader = (char)fs.GetC();
+    MQTTPacket dpktf(MQTTPacket::type(fixheader));
+    // printf("%s",MQTTPacket::types(MQTTPacket::type((char)fs.GetC())));
+    char* sendPacketf = NULL;
+    sendPacketf = (char*)malloc(4);
+    memset(sendPacketf,0,4);
+    sendPacketf[0] = fixheader;
+    fs.Read(&sendPacketf[1],4,1);
+    MQTTInt::decode(sendPacketf,packetSize);
+    dpktf.decode(sendPacketf);
+    std::cout << dpktf;
+    free(sendPacket);
+    free(sendPacketf);
 }
 
 void test_PINGRESP(int dried)
 {
-   test_onlyHeader(PINGRESP, dried);
+    test_onlyHeader(PINGRESP, dried);
 }
 
 void test_DISCONNECT(int dried)
