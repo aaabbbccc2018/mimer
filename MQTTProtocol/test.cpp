@@ -1,5 +1,6 @@
 #include "Stream.h"
 #include "MQTTPacket.h"
+#include "MQTTProtocol.h"
 using namespace std;
 using namespace mqtter;
 
@@ -8,6 +9,7 @@ void test_ACK(msgTypes ptype, int dried)
     MQTTPacket pkt(ptype,dried);
     pkt.setPacketId(1000);
     pAck cn = (pAck)pkt.data();
+    std::cout << cn << std::endl;
     char* sendPacket = NULL;
     int packetSize = 0;
     packetSize = pkt.size();
@@ -17,6 +19,8 @@ void test_ACK(msgTypes ptype, int dried)
         return;
     }
     std::cout << pkt;
+    MQTTProtocol p(sendPacket,ptype);
+    std::cout << p;
     std::cout << charStream(sendPacket,packetSize);
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
@@ -43,6 +47,7 @@ void test_onlyHeader(msgTypes ptype, int dried)
 {
     MQTTPacket pkt(ptype,dried);
     pPingReq cn = (pPingReq)pkt.data();
+    std::cout << cn << std::endl;
     char* sendPacket = NULL;
     int packetSize = 0;
     packetSize = pkt.size();
@@ -52,6 +57,8 @@ void test_onlyHeader(msgTypes ptype, int dried)
         return;
     }
     std::cout << pkt;
+    MQTTProtocol p(sendPacket,ptype);
+    std::cout << p;
     std::cout << charStream(sendPacket,packetSize);
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
@@ -94,6 +101,7 @@ void test_CONNECT(int dried)
     pkt.setPasswd("skybosi",7);
     pkt.setMultiConnect();
     pConnect cn = (pConnect)pkt.data();
+    std::cout << cn << std::endl;
     char* sendPacket = NULL;
     int packetSize = 0;
     packetSize = pkt.size();
@@ -103,6 +111,8 @@ void test_CONNECT(int dried)
         return;
     }
     std::cout << pkt;
+    MQTTProtocol p(sendPacket,CONNECT);
+    std::cout << p;
     std::cout << charStream(sendPacket,packetSize);
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
@@ -141,6 +151,7 @@ void test_CONNACK(int dried)
     pkt.setRC(1);
     pkt.setClientId("123456789",9);
     pConnAck cn = (pConnAck)pkt.data();
+    std::cout << cn << std::endl;
     char* sendPacket = NULL;
     int packetSize = 0;
     packetSize = pkt.size();
@@ -150,6 +161,8 @@ void test_CONNACK(int dried)
         return;
     }
     std::cout << pkt;
+    MQTTProtocol p(sendPacket,CONNACK);
+    std::cout << p;
     std::cout << charStream(sendPacket,packetSize);
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
@@ -179,11 +192,13 @@ void test_CONNACK(int dried)
 
 void test_PUBLISH(int dried)
 {
-    MQTTPacket pkt(PUBLISH,dried);
+    MQTTPacket pkt(PUBLISH,dried,0,1);
     pkt.addTopics(0,"hello",6);
     pkt.setPacketId(1);
-    pkt.setPayload("This is a test",15);
+    // pkt.setPayload("This is a test",15); //???? why crash
+    pkt.setPayload("This is a test!",16);
     pPublish cn = (pPublish)pkt.data();
+    std::cout << cn << std::endl;
     char* sendPacket = NULL;
     int packetSize = 0;
     packetSize = pkt.size();
@@ -193,6 +208,8 @@ void test_PUBLISH(int dried)
         return;
     }
     std::cout << pkt;
+    MQTTProtocol p(sendPacket,PUBLISH);
+    std::cout << p;
     std::cout << charStream(sendPacket,packetSize);
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
@@ -251,6 +268,7 @@ void test_SUBSCRIBE(int dried)
     pkt.addTopics(0,"a ",2);
     pkt.addTopics(1,"Test!",5);
     pSubscribe cn = (pSubscribe)pkt.data();
+    std::cout << cn << std::endl;
     char* sendPacket = NULL;
     int packetSize = 0;
     packetSize = pkt.size();
@@ -260,7 +278,9 @@ void test_SUBSCRIBE(int dried)
         return;
     }
     std::cout << pkt;
-    // std::cout << charStream(sendPacket,packetSize);
+    MQTTProtocol p(sendPacket,SUBSCRIBE);
+    std::cout << p;
+    std::cout << charStream(sendPacket,packetSize);
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
@@ -294,6 +314,7 @@ void test_SUBACK(int dried)
     pkt.addTopics(1);
     pkt.addTopics(2);
     pSubAck cn = (pSubAck)pkt.data();
+    std::cout << cn << std::endl;
     char* sendPacket = NULL;
     int packetSize = 0;
     packetSize = pkt.size();
@@ -303,7 +324,9 @@ void test_SUBACK(int dried)
         return;
     }
     std::cout << pkt;
-    // std::cout << charStream(sendPacket,packetSize);
+    MQTTProtocol p(sendPacket,SUBACK);
+    std::cout << p;
+    std::cout << charStream(sendPacket,packetSize);
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
@@ -337,6 +360,7 @@ void test_UNSUBSCRIBE(int dried)
     pkt.addTopics(0,"good",5);
     pkt.addTopics(0,"bye",4);
     pUnsubscribe cn = (pUnsubscribe)pkt.data();
+    std::cout << cn << std::endl;
     char* sendPacket = NULL;
     int packetSize = 0;
     packetSize = pkt.size();
@@ -346,7 +370,9 @@ void test_UNSUBSCRIBE(int dried)
         return;
     }
     std::cout << pkt;
-    // std::cout << charStream(sendPacket,packetSize);
+    MQTTProtocol p(sendPacket,UNSUBSCRIBE);
+    std::cout << p;
+    std::cout << charStream(sendPacket,packetSize);
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);
     fs.Close();
@@ -382,6 +408,7 @@ void test_PINGREQ(int dried)
 {
     MQTTPacket pkt(PINGREQ,dried);
     pPingReq cn = (pPingReq)pkt.data();
+    std::cout << cn << std::endl;
     pkt.setPingStatus(PING_WRITING);
     char* sendPacket = NULL;
     int packetSize = 0;
@@ -392,6 +419,8 @@ void test_PINGREQ(int dried)
         return;
     }
     std::cout << pkt;
+    MQTTProtocol p(sendPacket,PINGREQ);
+    std::cout << p;
     std::cout << charStream(sendPacket,packetSize);
     Stream fs("./packet.mq","w");
     fs.Write(sendPacket,packetSize,1);

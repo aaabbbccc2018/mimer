@@ -245,8 +245,9 @@ std::ostream & operator<<(std::ostream &out, const MQTTPacket &mp)
             << std::endl;
         break;
     case PUBLISH:
-        out << "\ntopic:\t"   << FMT(pPublish,pData)->topic
-            << "\npayload:\t" << FMT(pPublish,pData)->payload << std::endl;
+        out << "\nPub topic:\t"   << FMT(pPublish,pData)->topic
+            << "\npacketID:\t"    << FMT(pPublish,pData)->packetId
+            << "\npayload:\t"     << FMT(pPublish,pData)->payload << std::endl;
         break;
     case PUBACK:
     case PUBREC:
@@ -356,6 +357,8 @@ void MQTTPacket::setWill(const char* willtopic, const char* willmsg, size_t size
         MQNEW(pConnect,willTopic,willtopic,sizet);
         pFMT(pConnect)->willMsglen = sizem;
         MQNEW(pConnect,willMsg,willmsg,sizem);
+    }else{
+        pFMT(pConnect)->flags.bits.willRetain = 0;
     }
     _step += 2;
     this->addRLsize();
@@ -482,6 +485,12 @@ void MQTTPacket::addTopics(char qos, const char* content, size_t size)
 {
     switch (_ptype) {
     case PUBLISH:
+        /* topics length's size */
+        if(OFFICIAL_MQTT){
+            _size += 2;  // 2 byte
+        }else{
+            _size++;     // 1 byte
+        }
         pFMT(pPublish)->topiclen = size;
         MQNEW(pPublish,topic,content,size);
         _size += size;
@@ -559,7 +568,11 @@ void MQTTPacket::setPacketId(int packetId)
     _step++;
     switch (_ptype) {
     case PUBLISH://QoS > 0
-        pFMT(pPublish)->packetId = packetId;
+        if(FixHeaderbits.qos > 0){
+            pFMT(pPublish)->packetId = packetId;
+        }else{
+            _size -= sizeof(int16_t);
+        }
         break;
     case PUBACK :
         pFMT(pPubAck)->packetId = packetId;
@@ -657,27 +670,28 @@ bool MQTTPacket::encode(char* packet)
     case PUBLISH:// TODO
         /* Variable header */
         /* topic name */
-        if(_dried){
-            /* topic name's size 1 byte */
-            commonchar = (char)pFMT(pPublish)->topiclen;
-            //memcpy(&packet[cursor++], &commonchar, 1);
-            packet[cursor++] = commonchar;
-            /* topic name's content */
-            memcpy(&packet[cursor], pFMT(pPublish)->topic, commonchar);
-            cursor += commonchar;
-        }else{
+        if(OFFICIAL_MQTT){
             /* topic name's size 2 byte */
             commonshort = (int16_t)pFMT(pPublish)->topiclen;
             memcpy(&packet[cursor], &commonshort, 2);
             cursor += 2;
-            /* topic name's content */
+            /* topic's content */
             memcpy(&packet[cursor], pFMT(pPublish)->topic, commonshort);
             cursor += commonshort;
+        }else{
+            /* topic name's size 1 byte */
+            commonchar = (char)pFMT(pPublish)->topiclen;
+            //memcpy(&packet[cursor++], &commonchar, 1);
+            packet[cursor++] = commonchar;
+            /* topic's content */
+            memcpy(&packet[cursor], pFMT(pPublish)->topic, commonchar);
+            cursor += commonchar;
         }
         /* packet ID qos not 0 */
         if(0 != FixHeaderbits.qos){
             packetId = (int16_t)pFMT(pPublish)->packetId;
-            memcpy(&packet[cursor++], &packetId, 2);
+            memcpy(&packet[cursor], &packetId, 2);
+            cursor += 2;
             // itoa((int16_t)pFMT(pPubAck)->packetId,&packet[cursor++],10);
         }
         /* payload qos, NOTE: payloadlen is not save at packet data, can use RL calculation while decode */
@@ -989,20 +1003,20 @@ int   MQTTPacket::decode(char* packet)
     case PUBLISH:
         /* Variable header */
         /* topic name */
-        if(_dried){
-            /* topic name  */
-            commonchar = pFMT(pPublish)->topiclen = packet[cursor++];
-            MQNEW(pPublish,topic,&packet[cursor],commonchar);
-            cursor += commonchar;
-            _step++;
-        }else{
+        if(OFFICIAL_MQTT){
             /* topic name's size(2 byte) */
             memcpy(&commonshort,&packet[cursor],2);
             pFMT(pPublish)->topiclen = commonshort;
             cursor += 2;
             /* topic name's content */
-            MQNEW(pPublish,topic,&packet[cursor],pFMT(pPublish)->topiclen);
+            MQNEW(pPublish,topic,&packet[cursor],commonshort);
             cursor += commonshort;
+            _step++;
+        }else{
+            /* topic name  */
+            commonchar = pFMT(pPublish)->topiclen = packet[cursor++];
+            MQNEW(pPublish,topic,&packet[cursor],commonchar);
+            cursor += commonchar;
             _step++;
         }
         /* packet ID qos not 0 */

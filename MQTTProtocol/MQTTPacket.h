@@ -573,6 +573,7 @@ typedef struct {
  */
 class MQTTPacket
 {
+    friend class MQTTProtocol;
 public:
     static const char* packet_names[];
 public:
