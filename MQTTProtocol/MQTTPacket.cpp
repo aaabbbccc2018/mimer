@@ -222,38 +222,42 @@ std::ostream & operator<<(std::ostream &out, const MQTTPacket &mp)
     Subitor  itlist;
     ListQos* subqoss = NULL;
     Qositor  itqoss;
+    void*    pData = mp._packet;
     out << "Packet Type:\t" << mp.packet_names[mp._ptype]
         << "["<< mp._ptype << "]\nPacket Size:\t" << mp._size
         << "\nPacket Dried:\t" << mp._dried;
     switch (ptype)
     {
     case CONNECT:
-        out << "\nProtocol:\t" << MQTT_NAME << "\nversion:\t" << MQTT_VER
-            << "\nKATIMEOUT:\t" << mp.KAT() << "\nclientID:\t" << mp.clientId()
-            << "\nwillTopic:\t" << mp.willTopic() << "\nwillMsg:\t"
-            << mp.willMsg() << "\nuserName:\t" << mp.username()
-            << "\npassword:\t" << mp.password() << "\nMultiClient:\t"
-            << mp.MultiConnect() << std::endl;
+        out << "\nProtocol:\t"  << MQTT_NAME << "\nversion:\t" << MQTT_VER
+            << "\nKATIMEOUT:\t" << FMT(pConnect,pData)->KAT
+            << "\nclientID:\t"  << FMT(pConnect,pData)->clientID
+            << "\nwillTopic:\t" << FMT(pConnect,pData)->willTopic
+            << "\nwillMsg:\t"   << FMT(pConnect,pData)->willMsg
+            << "\nuserName:\t"  << FMT(pConnect,pData)->userName
+            << "\npassword:\t"  << FMT(pConnect,pData)->passwd
+            << "\nMultiClient:\t" << mp.MultiConnect() << std::endl;
         break;
     case CONNACK:
-        out << "\nReturn Code:\t" << mp.RC() << "\nis register:\t"
-            << mp.signOk() << "\nReturn CID:\t" << mp.AnewClientId()
+        out << "\nReturn Code:\t" << FMT(pConnAck,pData)->rc
+            << "\nis register:\t" << mp.signOk()
+            << "\nReturn CID:\t"  << FMT(pConnAck,pData)->clientID
             << std::endl;
         break;
     case PUBLISH:
-        out << "\ntopic:\t"  << mp.topic() << "\npayload:\t"
-            << mp.s_payload() << std::endl;
+        out << "\ntopic:\t"   << FMT(pPublish,pData)->topic
+            << "\npayload:\t" << FMT(pPublish,pData)->payload << std::endl;
         break;
     case PUBACK:
     case PUBREC:
     case PUBREL:
     case PUBCOMP:
     case UNSUBACK:
-        out << "\npacketId:\t" << mp.packetId() << std::endl;
+        out << "\npacketId:\t" << FMT(pAck,pData)->packetId << std::endl;
         break;
     case SUBSCRIBE:
-        sublist = ((pSubscribe)(mp._packet))->topics;
-        subqoss = ((pSubscribe)(mp._packet))->qoss;
+        sublist = FMT(pSubscribe,pData)->topics;
+        subqoss = FMT(pSubscribe,pData)->qoss;
         itlist = sublist->begin();
         itqoss = subqoss->begin();
         for(; itlist != sublist->end() && itqoss != subqoss->end(); ++itlist,++itqoss)
@@ -263,7 +267,7 @@ std::ostream & operator<<(std::ostream &out, const MQTTPacket &mp)
         }
         break;
     case SUBACK:
-        subqoss = ((pSubAck)(mp._packet))->qoss;
+        subqoss = FMT(pSubAck,pData)->qoss;
         itqoss = subqoss->begin();
         for(; itqoss != subqoss->end(); ++itqoss)
         {
@@ -271,7 +275,7 @@ std::ostream & operator<<(std::ostream &out, const MQTTPacket &mp)
         }
         break;
     case UNSUBSCRIBE:
-        sublist = ((pUnsubscribe)(mp._packet))->topics;
+        sublist = FMT(pUnsubscribe,pData)->topics;
         itlist = sublist->begin();
         for(; itlist != sublist->end(); ++itlist)
         {
@@ -301,7 +305,7 @@ void MQTTPacket::setKAT(Int kat)
     this->addRLsize();
 }
 
-void MQTTPacket::setClientId(char* clientId, size_t size)
+void MQTTPacket::setClientId(const char* clientId, size_t size)
 {
     if(_ptype == CONNECT){
         if(_dried){
@@ -312,6 +316,7 @@ void MQTTPacket::setClientId(char* clientId, size_t size)
         }else{
             // clientIDlen(2 byte) length size
             _size += (size+2);
+            pFMT(pConnect)->clientIDlen = size;
             MQNEW(pConnect,clientID,clientId,size);
         }
         _step++;
@@ -332,7 +337,7 @@ void MQTTPacket::setClientId(char* clientId, size_t size)
     this->addRLsize();
 }
 
-void MQTTPacket::setWill(char* willtopic, char* willmsg, size_t sizet, size_t sizem)
+void MQTTPacket::setWill(const char* willtopic, const char* willmsg, size_t sizet, size_t sizem)
 {
     assert(_ptype == CONNECT);
     if(pFMT(pConnect)->flags.bits.will){
@@ -356,7 +361,7 @@ void MQTTPacket::setWill(char* willtopic, char* willmsg, size_t sizet, size_t si
     this->addRLsize();
 }
 
-void MQTTPacket::setUserName(char* userName, size_t size)
+void MQTTPacket::setUserName(const char* userName, size_t size)
 {
     assert(_ptype == CONNECT);
     if(pFMT(pConnect)->flags.bits.username){
@@ -377,7 +382,7 @@ void MQTTPacket::setUserName(char* userName, size_t size)
     this->addRLsize();
 }
 
-void MQTTPacket::setPasswd(char* passwd, size_t size)
+void MQTTPacket::setPasswd(const char* passwd, size_t size)
 {
     assert(_ptype == CONNECT);
     if(pFMT(pConnect)->flags.bits.password){
@@ -409,17 +414,25 @@ void MQTTPacket::setSignUp()
     this->addRLsize();
 }
 
-void MQTTPacket::setSignDel(char* clientId, size_t size)
+void MQTTPacket::setSignDel(const char* clientId, size_t size)
 {
     if(_ptype != CONNECT){
         printf("%s no clientId!\n", packet_names[_ptype]);
         return;
     }
     _step++;
-    pFMT(pConnect)->clientIDlen = size;
-    pFMT(pConnect)->clientID = clientId;
+    if(_dried){
+        // clientIDlen is always 16 byte,so needn't record
+        _size += 16;
+        pFMT(pConnect)->clientIDlen = 16;
+        MQNEW(pConnect,clientID,clientId,16);
+    }else{
+        // clientIDlen(2 byte) length size
+        _size += (size+2);
+        pFMT(pConnect)->clientIDlen = size;
+        MQNEW(pConnect,clientID,clientId,size);
+    }
     pFMT(pConnect)->flags.bits.isregister = 0;
-    _size += size;
     this->addRLsize();
 }
 
@@ -465,7 +478,7 @@ void MQTTPacket::setFlags(MQ_byte flags)
     this->addRLsize();
 }
 
-void MQTTPacket::addTopics(char qos, char* content, size_t size)
+void MQTTPacket::addTopics(char qos, const char* content, size_t size)
 {
     switch (_ptype) {
     case PUBLISH:
@@ -526,7 +539,7 @@ void MQTTPacket::addTopics(char qos, char* content, size_t size)
     this->addRLsize();
 }
 
-void MQTTPacket::setPayload(char* payload, size_t size)
+void MQTTPacket::setPayload(const char* payload, size_t size)
 {
     if(_ptype != PUBLISH){
         printf("%s no topic!\n", packet_names[_ptype]);

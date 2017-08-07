@@ -59,7 +59,7 @@ typedef int        int32_t;
 typedef struct sub_s{
     size_t _size;
     char*  _content;
-    sub_s(size_t size,char* content):_size(size){
+    sub_s(size_t size,const char* content):_size(size){
         _content = (char*)malloc(_size);
         memcpy(_content,content,_size);
     }
@@ -255,6 +255,7 @@ typedef struct
 {
     Header header;                      /* MQTT header byte */
 } header_s;
+typedef header_s* pHeaders;
 
 /*
  * Packets
@@ -299,7 +300,7 @@ typedef struct
 {
     Header        header;               /* MQTT header byte */
     /* Variable header */
-    char*         Protocol;             /* MQTT protocol name */
+    const char*   Protocol;             /* MQTT protocol name */
     MQ_byte       version;              /* MQTT version number */
     connflags     flags;                /* connect flags byte */
     Int           KAT;                  /* keepalive timeout value in seconds */
@@ -477,10 +478,11 @@ typedef struct {
  *        pPingReq,pPingResp,pDisconnect
  *  Format void* _packet to p* pointer
  */
-#define pFMT(pTYPE)     ((pTYPE)(_packet))
-#define FixHeader       (pFMT(pHeader))
-#define FixHeaderbits   (FixHeader->bits)
-#define FixHeaderbyte   (FixHeader->byte)
+#define FMT(pTYPE,pDT)  ((pTYPE)(pDT))
+#define pFMT(pTYPE)     (FMT(pTYPE,_packet))
+#define FixHeader       (pFMT(pHeaders)->header)
+#define FixHeaderbits   (FixHeader.bits)
+#define FixHeaderbyte   (FixHeader.byte)
 
 #define ALLOC0(pTYPE,TYPE)                     \
     _packet = (pTYPE)malloc(sizeof(TYPE));     \
@@ -583,7 +585,7 @@ protected:
      * @brief dry: set this packet's DRIED flag. The fixed Header 0 bit is 1
      * represent this packet is DRIED.
      */
-    inline void dry(){ FixHeader->bits.retain = 1; _dried = 1;}
+    inline void dry(){ FixHeaderbits.retain = 1; _dried = 1;}
     inline bool dried() {return (1 == _dried && 1 == FixHeaderbits.retain);}
 public://get
     inline bool finish(){ return ( QND == _step || _step == encodeStep[_ptype]);}
@@ -614,7 +616,7 @@ public://get
     inline int    packetId()const{assert(HasPktId); return pFMT(pAck)->packetId;}
     inline int    RC()const{assert(CONNACK == _ptype); return (int)pFMT(pConnAck)->rc;}
     inline bool   ClientStatus()const { assert(PINGREQ == _ptype); return FixHeaderbits.qos; }
-    char*  AnewClientId()const
+    const char*  AnewClientId()const
     {
         assert(CONNACK == _ptype);
         if(pFMT(pConnAck)->flags.bits.isregister)
@@ -637,26 +639,26 @@ public://set
      * @param clientId
      * @param size default clientId is 16 byte
      */
-    void setClientId(char* clientId, size_t size = 16);
+    void setClientId(const char* clientId, size_t size = 16);
     /**
      * @brief setWill, use at CONNECT
      * @param willtopic
      * @param willmsg
      * @param size
      */
-    void setWill(char* willtopic, char* willmsg, size_t sizet, size_t sizem);
+    void setWill(const char* willtopic, const char* willmsg, size_t sizet, size_t sizem);
     /**
      * @brief setUserName, use at CONNECT
      * @param userName
      * @param size
      */
-    void setUserName(char* userName, size_t size);
+    void setUserName(const char* userName, size_t size);
     /**
      * @brief setPasswd, use at CONNECT
      * @param passwd
      * @param size
      */
-    void setPasswd(char* passwd, size_t size);
+    void setPasswd(const char* passwd, size_t size);
     /**
      * @brief setSignUp, a special CONNECT mode, create a new user,
      * a special setClientId type
@@ -666,7 +668,7 @@ public://set
      * @brief setSignDel, a special CONNECT mode, delete a exist user,
      * a special setClientId type
      */
-    void setSignDel(char* clientId, size_t size = 16);
+    void setSignDel(const char* clientId, size_t size = 16);
     /**
      * @brief setMultiConnect: make the Multi-client device connect the server
      */
@@ -693,14 +695,14 @@ public://set
      * @param size
      * @return
      */
-    void addTopics(char qos = 0, char* contents = NULL, size_t size = 0);
+    void addTopics(char qos = 0, const char* contents = NULL, size_t size = 0);
     /**
      * @brief setPayload, use at CONNECT/PUBLISH/SUBSCRIBE/SUBACK/UNSUBSCRIBE
      * @param payload
      * @param size
      * @return
      */
-    void setPayload(char* payload, size_t size);
+    void setPayload(const char* payload, size_t size);
     /**
      * @brief setPacketId, use at PUBLISH/PUBACK/PUBREC/
      *                            PUBREL/PUBCOMP/SUBSCRIBE/
