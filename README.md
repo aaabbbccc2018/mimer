@@ -1,6 +1,6 @@
-# mqtter
+# mimer
 A IM tool that use MQTT protocol
-### MQTTER 数据包的详细及其修改
+### MIMER 数据包的详细及其修改
 
 1. CONNECT:
 	- 固定报头(fixed header):
