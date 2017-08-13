@@ -95,7 +95,7 @@ void test_CONNECT(int dried)
     cf.bits.willRetain = 0;
     pkt.setFlags(cf.all);
     pkt.setKAT(10);
-    pkt.setClientId("123456789",9);
+    pkt.setClientId();
     pkt.setWill("test","test",4,4);
     pkt.setUserName("skybosi",7);
     pkt.setPasswd("skybosi",7);
@@ -149,7 +149,7 @@ void test_CONNACK(int dried)
     caf.bits.isregister = 1;
     pkt.setFlags(caf.all);
     pkt.setRC(1);
-    pkt.setClientId("123456789",9);
+    pkt.setClientId();
     pConnAck cn = (pConnAck)pkt.data();
     std::cout << cn << std::endl;
     char* sendPacket = NULL;

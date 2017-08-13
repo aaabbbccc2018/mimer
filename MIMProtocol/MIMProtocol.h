@@ -34,6 +34,14 @@ public:
     MIMProtocol(int type, int dried = 0, int dup = 0,int qos = 0);
     ~MIMProtocol();
 public:
+    inline const void* operator[](const char* key)
+    {
+        if(NULL != key){
+            return _ctrler[key];
+        }else{
+            return NULL;
+        }
+    }
     friend std::ostream & operator<<(std::ostream &out, const MIMProtocol &mp)
     {
         out << *(mp._mqData);
@@ -44,12 +52,11 @@ public:
         }
         return out;
     }
-
 private:
     bool analyzer();
     bool controller();
 private:
-    MIMPacket* _mqData;    // packet's data
+    MIMPacket*  _mqData;    // packet's data
     int         _ptype;     // packet's type
     Mtype       _mtype;     // mechine type
     Analyzer    _ctrler;    // save each packet's controller

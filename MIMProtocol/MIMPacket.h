@@ -28,14 +28,23 @@
 #define _MIMER_PACKET_H
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <assert.h>
 #include <iostream>
 #include <string.h>
 //#include "List.cpp"
 #include <list>
 #include "MIMInt.h"
-#include "MQErr.h"
+#include "MIMErr.h"
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
+#include "memUtil.h"
+#include "timeUtil.h"
+#ifdef  __cplusplus
+}
+#endif  /* end of __cplusplus */
+
 using namespace std;
 
 namespace mimer {
@@ -43,8 +52,8 @@ namespace mimer {
 #define bsIsBigEndian ((((const int*)"\0\x1\x2\x3\x4\x5\x6\x7")[0] & 0xff) != 0)
 
 #define MIM_NAME  "MIM1"
-#define MQ_byte    unsigned char
-#define MIM_VER   (0x04)
+#define _ubyte    unsigned char
+#define MIM_VER   (0x00)
 #define BAD_MIM_PACKET -4
 #define DEBUG      1
 #define OFFICIAL_MIM   1
@@ -60,15 +69,15 @@ typedef struct sub_s{
     size_t _size;
     char*  _content;
     sub_s(size_t size,const char* content):_size(size){
-        _content = (char*)malloc(_size);
+        _content = (char*)_malloc(_size);
         memcpy(_content,content,_size);
     }
     sub_s():_size(0),_content(NULL){}
     sub_s(const sub_s& rhs):_size(rhs._size){
-        _content = (char*)malloc(_size);
+        _content = (char*)_malloc(_size);
         memcpy(_content,rhs._content,_size);
-	}
-    ~sub_s(){if(_content){free(_content);_content = NULL;}}
+    }
+    ~sub_s(){if(_content){_free(_content);_content = NULL;}}
 }sub_t;
 typedef list<sub_t> ListSub;
 typedef ListSub::iterator Subitor;
@@ -301,7 +310,7 @@ typedef struct
     Header        header;               /* MIM header byte */
     /* Variable header */
     const char*   Protocol;             /* MIM protocol name */
-    MQ_byte       version;              /* MIM version number */
+    _ubyte        version;              /* MIM version number */
     connflags     flags;                /* connect flags byte */
     Int           KAT;                  /* keepalive timeout value in seconds */
     /* Payload */
@@ -485,7 +494,7 @@ typedef struct {
 #define FixHeaderbyte   (FixHeader.byte)
 
 #define ALLOC0(pTYPE,TYPE)                     \
-    _packet = (pTYPE)malloc(sizeof(TYPE));     \
+    _packet = (pTYPE)_malloc(sizeof(TYPE));   \
     memset(_packet,0,sizeof(TYPE));
 
 #define initHeader0(pTYPE,TYPES)               \
@@ -504,16 +513,16 @@ typedef struct {
     pFMT(pTYPE)->header.bits.qos = QOS;
 
 #define MQNEW(PTYPE,KEY,VALUEADRR,SIZE)        \
-    pFMT(PTYPE)->KEY = (char*)malloc(SIZE);    \
+    pFMT(PTYPE)->KEY = (char*)_malloc(SIZE);   \
     memset(pFMT(PTYPE)->KEY,0,SIZE);           \
     memcpy(pFMT(PTYPE)->KEY,VALUEADRR,SIZE);
 
 #define MQNEW2(PTYPE,KEY,VALUEADRR,SIZE)       \
-    pFMT(PTYPE)->KEY = (char*)calloc(1,SIZE);  \
+    pFMT(PTYPE)->KEY = (char*)_calloc(1,SIZE); \
     memcpy(pFMT(PTYPE)->KEY,VALUEADRR,SIZE);
 
 #define MQDEL(PTYPE,KEY) if(pFMT(PTYPE)->KEY){ \
-    free(pFMT(PTYPE)->KEY);                    \
+    _free(pFMT(PTYPE)->KEY);                   \
     pFMT(PTYPE)->KEY = NULL;}
 
 #define HasFlags   ((_ptype == CONNECT)     || \
@@ -640,7 +649,7 @@ public://set
      * @param clientId
      * @param size default clientId is 16 byte
      */
-    void setClientId(const char* clientId, size_t size = 16);
+    void setClientId(size_t size = 16);
     /**
      * @brief setWill, use at CONNECT
      * @param willtopic
@@ -673,7 +682,7 @@ public://set
     /**
      * @brief setMultiConnect: make the Multi-client device connect the server
      */
-    void setMultiConnect();
+    void setMultiConnect(int mc = 1);
     /**
      * @brief setRC, use at CONNACK
      * @param rc
@@ -684,7 +693,7 @@ public://set
      * @param value
      * @return
      */
-    void setFlags(MQ_byte value);
+    void setFlags(_ubyte value);
     void setCleanstart(boolean value);
     void setWillflag(boolean value);
     void setWillQos(unsigned int value);

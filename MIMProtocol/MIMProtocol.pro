@@ -10,7 +10,9 @@ SOURCES += main.cpp \
     MIMInt.cpp \
     List.cpp \
     Stream.cpp \
-    test.cpp
+    test.cpp \
+    memUtil.c \
+    timeUtil.c
 
 HEADERS += \
     MIMProtocol.h \
@@ -18,4 +20,7 @@ HEADERS += \
     MIMInt.h \
     List.h \
     Stream.h \
-    MQErr.h
+    MIMErr.h \
+    memUtil.h \
+    version.h \
+    timeUtil.h

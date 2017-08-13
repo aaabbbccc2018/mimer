@@ -11,7 +11,7 @@ MIMProtocol::MIMProtocol(char* content,int mtype):_mtype((Mtype)mtype),_dried(0)
     _mqData = new MIMPacket(MIMPacket::type(content[0]));
     if(_mqData->decode(content)){
         _ptype = _mqData->type();
-        _dried = tFMT(pHeader)->bits.retain;
+        _dried = tFMT(pHeaders)->header.bits.retain;
     }else{
         printf("%s", "MIMpacket decode error!!!\n");
     }
@@ -91,6 +91,7 @@ bool MIMProtocol::analyzer()
             // create a new comer
             _ctrler["newer"] = "1111111111111111";
         }
+        _ctrler["multicon"] = pVoid(tFMT(pHeaders)->header.bits.dup);
         break;
     case CONNACK:
         if(CONAFLAG.isregister){
@@ -113,6 +114,8 @@ bool MIMProtocol::analyzer()
         _ctrler["topics"]   = (tFMT(pUnsubscribe)->topics);
         break;
     case PINGREQ:
+        _ctrler["cstatus"] =  pVoid(_mqData->ClientStatus());
+        break;
     case PINGRESP:
     case DISCONNECT:
         //_ctrler["header"] = (tFMT(pHeaders)->header);

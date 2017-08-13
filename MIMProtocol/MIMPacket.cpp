@@ -15,7 +15,7 @@ MIMPacket::MIMPacket(int type,int dried, int dup,int qos):
     switch (_ptype)
     {
     case CONNECT:
-        _packet = (pConnect)malloc(sizeof(Connect));
+        _packet = (pConnect)_malloc(sizeof(Connect));
         memset(_packet,0,sizeof(Connect));
         pFMT(pConnect)->header.byte = 0;
         pFMT(pConnect)->header.bits.type = CONNECT;
@@ -27,14 +27,14 @@ MIMPacket::MIMPacket(int type,int dried, int dup,int qos):
         _size += 2 + 4 + 1;
         break;
     case CONNACK:
-        _packet = (pConnAck)malloc(sizeof(ConnAck));
+        _packet = (pConnAck)_malloc(sizeof(ConnAck));
         memset(_packet,0,sizeof(ConnAck));
         pFMT(pConnAck)->header.byte = 0;
         pFMT(pConnAck)->header.bits.type = CONNACK;
         _step++;
         break;
     case PUBLISH:
-        _packet = (pPublish)malloc(sizeof(Publish));
+        _packet = (pPublish)_malloc(sizeof(Publish));
         memset(_packet,0,sizeof(Publish));
         pFMT(pPublish)->header.byte = 0;
         pFMT(pPublish)->header.bits.type = PUBLISH;
@@ -43,21 +43,21 @@ MIMPacket::MIMPacket(int type,int dried, int dup,int qos):
         _step++;
         break;
     case PUBACK:
-        _packet = (pPubAck)malloc(sizeof(PubAck));
+        _packet = (pPubAck)_malloc(sizeof(PubAck));
         memset(_packet,0,sizeof(PubAck));
         pFMT(pPubAck)->header.byte = 0;
         pFMT(pPubAck)->header.bits.type = PUBACK;
         _step++;
         break;
     case PUBREC:
-        _packet = (pPubRec)malloc(sizeof(PubRec));
+        _packet = (pPubRec)_malloc(sizeof(PubRec));
         memset(_packet,0,sizeof(PubRec));
         pFMT(pPubRec)->header.byte = 0;
         pFMT(pPubRec)->header.bits.type = PUBREC;
         _step++;
         break;
     case PUBREL:
-        _packet = (pPubRel)malloc(sizeof(PubRel));
+        _packet = (pPubRel)_malloc(sizeof(PubRel));
         memset(_packet,0,sizeof(PubRel));
         pFMT(pPubRel)->header.byte = 0;
         pFMT(pPubRel)->header.bits.type = PUBREL;
@@ -65,14 +65,14 @@ MIMPacket::MIMPacket(int type,int dried, int dup,int qos):
         _step++;
         break;
     case PUBCOMP:
-        _packet = (pPubComp)malloc(sizeof(PubComp));
+        _packet = (pPubComp)_malloc(sizeof(PubComp));
         memset(_packet,0,sizeof(PubComp));
         pFMT(pPubComp)->header.byte = 0;
         pFMT(pPubComp)->header.bits.type = PUBCOMP;
         _step++;
         break;
     case SUBSCRIBE:
-        _packet = (pSubscribe)malloc(sizeof(Subscribe));
+        _packet = (pSubscribe)_malloc(sizeof(Subscribe));
         memset(_packet,0,sizeof(Subscribe));
         pFMT(pSubscribe)->header.byte = 0;
         pFMT(pSubscribe)->header.bits.type = SUBSCRIBE;
@@ -80,42 +80,42 @@ MIMPacket::MIMPacket(int type,int dried, int dup,int qos):
         _step++;
         break;
     case SUBACK:
-        _packet = (pSubAck)malloc(sizeof(SubAck));
+        _packet = (pSubAck)_malloc(sizeof(SubAck));
         memset(_packet,0,sizeof(SubAck));
         pFMT(pSubAck)->header.byte = 0;
         pFMT(pSubAck)->header.bits.type = SUBACK;
         _step++;
         break;
     case UNSUBSCRIBE:
-        _packet = (pUnsubscribe)malloc(sizeof(Unsubscribe));
+        _packet = (pUnsubscribe)_malloc(sizeof(Unsubscribe));
         memset(_packet,0,sizeof(Unsubscribe));
         pFMT(pUnsubscribe)->header.byte = 0;
         pFMT(pUnsubscribe)->header.bits.type = UNSUBSCRIBE;
         _step++;
         break;
     case UNSUBACK:
-        _packet = (pUnsubAck)malloc(sizeof(UnsubAck));
+        _packet = (pUnsubAck)_malloc(sizeof(UnsubAck));
         memset(_packet,0,sizeof(UnsubAck));
         pFMT(pUnsubAck)->header.byte = 0;
         pFMT(pUnsubAck)->header.bits.type = UNSUBACK;
         _step++;
         break;
     case PINGREQ:
-        _packet = (pPingReq)malloc(sizeof(PingReq));
+        _packet = (pPingReq)_malloc(sizeof(PingReq));
         memset(_packet,0,sizeof(PingReq));
         pFMT(pPingReq)->header.byte = 0;
         pFMT(pPingReq)->header.bits.type = PINGREQ;
         _step++;
         break;
     case PINGRESP:
-        _packet = (pPingResp)malloc(sizeof(PingResp));
+        _packet = (pPingResp)_malloc(sizeof(PingResp));
         memset(_packet,0,sizeof(PingResp));
         pFMT(pPingResp)->header.byte = 0;
         pFMT(pPingResp)->header.bits.type = PINGRESP;
         _step++;
         break;
     case DISCONNECT:
-        _packet = (pDisconnect)malloc(sizeof(Disconnect));
+        _packet = (pDisconnect)_malloc(sizeof(Disconnect));
         memset(_packet,0,sizeof(Disconnect));
         pFMT(pDisconnect)->header.byte = 0;
         pFMT(pDisconnect)->header.bits.type = DISCONNECT;
@@ -139,22 +139,22 @@ MIMPacket::~MIMPacket()
         {
         case CONNECT:
             //if(pFMT(pConnect)->Protocol){
-            //    free(pFMT(pConnect)->Protocol);
+            //    _free(pFMT(pConnect)->Protocol);
             //}
             if(pFMT(pConnect)->clientID){
-                free(pFMT(pConnect)->clientID);
+                _free(pFMT(pConnect)->clientID);
             }
             if(pFMT(pConnect)->willTopic){
-                free(pFMT(pConnect)->willTopic);
+                _free(pFMT(pConnect)->willTopic);
             }
             if(pFMT(pConnect)->willMsg){
-                free(pFMT(pConnect)->willMsg);
+                _free(pFMT(pConnect)->willMsg);
             }
             if(pFMT(pConnect)->userName){
-                free(pFMT(pConnect)->userName);
+                _free(pFMT(pConnect)->userName);
             }
             if(pFMT(pConnect)->passwd){
-                free(pFMT(pConnect)->passwd);
+                _free(pFMT(pConnect)->passwd);
             }
 //            MQDEL(pConnect, Protocol);
 //            MQDEL(pConnect, clientID);
@@ -165,17 +165,17 @@ MIMPacket::~MIMPacket()
             break;
         case CONNACK:
             if(pFMT(pConnAck)->clientID){
-                free(pFMT(pConnAck)->clientID);
+                _free(pFMT(pConnAck)->clientID);
             }
 //            MQDEL(pConnAck, clientID);
             break;
         case PUBLISH:
             if(pFMT(pPublish)->topic){
-                free(pFMT(pPublish)->topic);
+                _free(pFMT(pPublish)->topic);
             }
 //            MQDEL(pPublish, topic);
             if(pFMT(pPublish)->payload){
-                free(pFMT(pPublish)->payload);
+                _free(pFMT(pPublish)->payload);
             }
 //            MQDEL(pPublish, payload);
             break;
@@ -210,7 +210,7 @@ MIMPacket::~MIMPacket()
             printf("error packet type\n");
             break;
         }
-        free(_packet);
+        _free(_packet);
         _packet = NULL;
     }
 }
@@ -306,8 +306,9 @@ void MIMPacket::setKAT(Int kat)
     this->addRLsize();
 }
 
-void MIMPacket::setClientId(const char* clientId, size_t size)
+void MIMPacket::setClientId(size_t size)
 {
+    char* clientId = uids(size);
     if(_ptype == CONNECT){
         if(_dried){
             // clientIDlen is always 16 byte,so needn't record
@@ -335,6 +336,7 @@ void MIMPacket::setClientId(const char* clientId, size_t size)
     }else{
         return;
     }
+    _free(clientId);
     this->addRLsize();
 }
 
@@ -439,13 +441,13 @@ void MIMPacket::setSignDel(const char* clientId, size_t size)
     this->addRLsize();
 }
 
-void MIMPacket::setMultiConnect()
+void MIMPacket::setMultiConnect(int mc)
 {
     if(_ptype != CONNECT){
         printf("%s no clientId!\n", packet_names[_ptype]);
         return;
     }
-    FixHeaderbits.dup = 1;
+    FixHeaderbits.dup = mc;
 }
 
 void MIMPacket::setRC(char rc)
@@ -460,7 +462,7 @@ void MIMPacket::setRC(char rc)
     this->addRLsize();
 }
 
-void MIMPacket::setFlags(MQ_byte flags)
+void MIMPacket::setFlags(_ubyte flags)
 {
     if(!HasFlags){
         printf("%s no flags!\n", packet_names[_ptype]);
@@ -1049,11 +1051,11 @@ int   MIMPacket::decode(char* packet)
             {
                 /* each topic's size */
                 commonchar = packet[cursor++];
-                content = (char*)malloc(commonchar);
+                content = (char*)_malloc(commonchar);
                 memcpy(content,&packet[cursor],commonchar);
                 cursor += commonchar;
                 (pFMT(pSubscribe)->topics)->push_back(sub_s(commonchar,content));
-                free(content);
+                _free(content);
                 /* each qos's */
                 (pFMT(pSubscribe)->qoss)->push_back(packet[cursor++]);
             }
@@ -1063,11 +1065,11 @@ int   MIMPacket::decode(char* packet)
                 /* each topic's size */
                 memcpy(&commonshort,&packet[cursor],2);
                 cursor += 2;
-                content = (char*)malloc(commonshort);
+                content = (char*)_malloc(commonshort);
                 memcpy(content,&packet[cursor],commonshort);
                 cursor += commonshort;
                 (pFMT(pSubscribe)->topics)->push_back(sub_s(commonshort,content));
-                free(content);
+                _free(content);
                 /* each qos's */
                 (pFMT(pSubscribe)->qoss)->push_back(packet[cursor++]);
             }
@@ -1229,11 +1231,11 @@ int   MIMPacket::decode(char* packet)
             {
                 /* each topic's size */
                 commonchar = packet[cursor++];
-                content = (char*)malloc(commonchar);
+                content = (char*)_malloc(commonchar);
                 memcpy(content,&packet[cursor],commonchar);
                 cursor += commonchar;
                 (pFMT(pUnsubscribe)->topics)->push_back(sub_s(commonchar,content));
-                free(content);
+                _free(content);
             }
         }else{
             while(cursor <= rlSize)
@@ -1241,11 +1243,11 @@ int   MIMPacket::decode(char* packet)
                 /* each topic's size */
                 memcpy(&commonshort,&packet[cursor],2);
                 cursor += 2;
-                content = (char*)malloc(commonshort);
+                content = (char*)_malloc(commonshort);
                 memcpy(content,&packet[cursor],commonshort);
                 cursor += commonshort;
                 (pFMT(pUnsubscribe)->topics)->push_back(sub_s(commonshort,content));
-                free(content);
+                _free(content);
             }
         }
         break;
