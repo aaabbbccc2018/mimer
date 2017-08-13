@@ -1,5 +1,7 @@
 # mimer
+<div align=center><img width="80" height="80" src="./icon/mimer.gif" alt="mimier" /></div>
 A IM tool that use MQTT protocol
+
 ### MIMER 数据包的详细及其修改
 
 1. CONNECT:
