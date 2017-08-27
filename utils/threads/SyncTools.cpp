@@ -1,6 +1,4 @@
 #include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
 #include "SyncTools.h"
 
 SyncTools::SyncTools(TYPE type,int initv):
@@ -41,79 +39,6 @@ SyncTools::~SyncTools()
     }
 }
 
-typedef struct _error
-{
-#define ERR_MAX_STRLEN 256
-#define ERR_MAX_ARGS   10
-    /* This is a numeric value corresponding to the current error */
-    int error;
-    int argc;
-    union
-    {
-        void *value_ptr;
-        unsigned char value_c;
-        int value_i;
-        double value_f;
-        char buf[ERR_MAX_STRLEN];
-    } args[ERR_MAX_ARGS];
-} Error;
-
-int   SyncTools::SetError(const char *fmt,...)
-{
-    va_list ap;
-    Error* error = (Error*)malloc(sizeof(Error));
-    /* Ignore call if invalid format pointer was passed */
-    if (fmt == NULL) return -1;
-    error->error = 1;
-    va_start(ap, fmt);
-    error->argc = 0;
-    while (*fmt) {
-        if (*fmt++ == '%') {
-            while (*fmt == '.' || (*fmt >= '0' && *fmt <= '9')) {
-                ++fmt;
-            }
-            switch (*fmt++) {
-            case 0:            /* Malformed format string.. */
-                --fmt;
-                break;
-            case 'c':
-            case 'i':
-            case 'd':
-            case 'u':
-            case 'o':
-            case 'x':
-            case 'X':
-                error->args[error->argc++].value_i = va_arg(ap, int);
-                break;
-            case 'f':
-                error->args[error->argc++].value_f = va_arg(ap, double);
-                break;
-            case 'p':
-                error->args[error->argc++].value_ptr = va_arg(ap, void *);
-                break;
-            case 's':
-            {
-                int i = error->argc;
-                const char *str = va_arg(ap, const char *);
-                if (str == NULL)
-                    str = "(null)";
-                strcpy((char *) error->args[i].buf, str);
-                error->argc++;
-            }
-                break;
-            default:
-                break;
-            }
-            if (error->argc >= ERR_MAX_ARGS) {
-                break;
-            }
-        }
-    }
-    va_end(ap);
-    free(error);
-    error = NULL;
-    return -1;
-}
 /* Mutex */
 
 Mutex* SyncTools::createMutex(void)
@@ -196,7 +121,7 @@ void   SyncTools::destroyMutex(Mutex * mutex)
 #endif
 }
 
-int    SyncTools::lockMutex(Mutex * mutex)
+int    SyncTools::_lockMutex(Mutex * mutex)
 {
 #ifdef OS_LINUX
 
@@ -252,7 +177,7 @@ int    SyncTools::lockMutex(Mutex * mutex)
 #endif
 }
 
-int    SyncTools::tryLockMutex(Mutex * mutex)
+int    SyncTools::_tryLockMutex(Mutex * mutex)
 {
 #ifdef OS_LINUX
     int retval;
@@ -319,7 +244,7 @@ int    SyncTools::tryLockMutex(Mutex * mutex)
 #endif
 }
 
-int    SyncTools::unlockMutex(Mutex * mutex)
+int    SyncTools::_unlockMutex(Mutex * mutex)
 {
 #ifdef OS_LINUX
     if (mutex == NULL) {
@@ -402,7 +327,7 @@ Cond* SyncTools::createCond(void)
 #endif
 
 #ifdef OS_MSWIN
-		SetError("Not support Cond");
+    SetError("Not support Cond");
     return NULL;
 #endif
 }
@@ -423,12 +348,12 @@ void  SyncTools::destroyCond(Cond * cond)
 #endif
 
 #ifdef OS_MSWIN
-		return SetError("Not support Cond");
+    SetError("Not support Cond");
     return;
 #endif
 }
 
-int   SyncTools::condSignal(Cond * cond)
+int   SyncTools::_condSignal(Cond * cond)
 {
 #ifdef OS_LINUX
     int retval;
@@ -454,11 +379,11 @@ int   SyncTools::condSignal(Cond * cond)
 #endif
 
 #ifdef OS_MSWIN
-		return SetError("Not support Cond");
+    return SetError("Not support Cond");
 #endif
 }
 
-int   SyncTools::condBroadcast(Cond * cond)
+int   SyncTools::_condBroadcast(Cond * cond)
 {
 #ifdef OS_LINUX
     int retval;
@@ -484,11 +409,11 @@ int   SyncTools::condBroadcast(Cond * cond)
 #endif
 
 #ifdef OS_MSWIN
-		return SetError("Not support Cond");
+    return SetError("Not support Cond");
 #endif
 }
 
-int   SyncTools::condWaitTimeout(Cond * cond, Mutex * mutex, int ms)
+int   SyncTools::_condWaitTimeout(Cond * cond, Mutex * mutex, int ms)
 {
 #ifdef OS_LINUX
     int retval;
@@ -569,11 +494,11 @@ tryagain:
 #endif
 
 #ifdef OS_MSWIN
-		return SetError("Not support Cond");
+    return SetError("Not support Cond");
 #endif
 }
 
-int   SyncTools::condWait(Cond * cond, Mutex * mutex)
+int   SyncTools::_condWait(Cond * cond, Mutex * mutex)
 {
 #ifdef OS_LINUX
     if (!cond) {
@@ -589,7 +514,7 @@ int   SyncTools::condWait(Cond * cond, Mutex * mutex)
 #endif
 
 #ifdef OS_MSWIN
-		return SetError("Not support Cond");
+    return SetError("Not support Cond");
 #endif
 }
 
@@ -611,7 +536,7 @@ Sem* SyncTools::createSemaphore(int initial_value)
 #endif
 
 #ifdef STD_THREAD
-		SetError("Not support Cond");
+    SetError("Not support Cond");
     return NULL;
 #endif
 
@@ -664,7 +589,7 @@ void  SyncTools::destroySemaphore(Sem * sem)
 #endif
 }
 
-int   SyncTools::semTryWait(Sem * sem)
+int   SyncTools::_semTryWait(Sem * sem)
 {
 #ifdef OS_LINUX
     int retval;
@@ -680,15 +605,15 @@ int   SyncTools::semTryWait(Sem * sem)
 #endif
 
 #ifdef STD_THREAD
-		return SetError("Not support semaphore");
+    return SetError("Not support semaphore");
 #endif
 
 #ifdef OS_MSWIN
-    return semWaitTimeout(sem, 0);
+    return _semWaitTimeout(sem, 0);
 #endif
 }
 
-int   SyncTools::semWait(Sem * sem)
+int   SyncTools::_semWait(Sem * sem)
 {
 #ifdef OS_LINUX
     int retval;
@@ -705,15 +630,15 @@ int   SyncTools::semWait(Sem * sem)
 #endif
 
 #ifdef STD_THREAD
-		return SetError("Not support semaphore");
+    return SetError("Not support semaphore");
 #endif
 
 #ifdef OS_MSWIN
-    return semWaitTimeout(sem, MUTEX_MAXWAIT);
+    return _semWaitTimeout(sem, MUTEX_MAXWAIT);
 #endif
 }
 
-int   SyncTools::semWaitTimeout(Sem * sem, int timeout)
+int   SyncTools::_semWaitTimeout(Sem * sem, int timeout)
 {
 #ifdef OS_LINUX
     int retval;
@@ -734,15 +659,15 @@ int   SyncTools::semWaitTimeout(Sem * sem, int timeout)
     /* Try the easy cases first */
     if (timeout == 0)
     {
-        return semTryWait(sem);
+        return _semTryWait(sem);
     }
     if (timeout == MUTEX_MAXWAIT)
     {
-        return semWait(sem);
+        return _semWait(sem);
     }
 
 #ifdef HAVE_SEM_TIMEDWAIT
-/* Setup the timeout. sem_timedwait doesn't wait for
+    /* Setup the timeout. sem_timedwait doesn't wait for
     * a lapse of time, but until we reach a certain time.
     * This time is now plus the timeout.
     */
@@ -788,7 +713,7 @@ int   SyncTools::semWaitTimeout(Sem * sem, int timeout)
 #endif
 
 #ifdef STD_THREAD
-		return SetError("Not support semaphore");
+    return SetError("Not support semaphore");
 #endif
 
 #ifdef OS_MSWIN
@@ -824,7 +749,7 @@ int   SyncTools::semWaitTimeout(Sem * sem, int timeout)
 #endif
 }
 
-int   SyncTools::semValue(Sem * sem)
+int   SyncTools::_semValue(Sem * sem)
 {
 #ifdef OS_LINUX
     int ret = 0;
@@ -838,7 +763,7 @@ int   SyncTools::semValue(Sem * sem)
 #endif
 
 #ifdef STD_THREAD
-		return SetError("Not support semaphore");
+    return SetError("Not support semaphore");
 #endif
 
 #ifdef OS_MSWIN
@@ -850,7 +775,7 @@ int   SyncTools::semValue(Sem * sem)
 #endif
 }
 
-int   SyncTools::semPost(Sem * sem)
+int   SyncTools::_semPost(Sem * sem)
 {
 #ifdef OS_LINUX
     int retval;
@@ -867,7 +792,7 @@ int   SyncTools::semPost(Sem * sem)
 #endif
 
 #ifdef STD_THREAD
-		return SetError("Not support semaphore");
+    return SetError("Not support semaphore");
 #endif
 
 #ifdef OS_MSWIN

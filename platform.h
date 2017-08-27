@@ -43,5 +43,14 @@
 #  endif
 #endif
 
+/* By default C calling convention */
+#ifndef UTIL_CALL
+#if (defined(__WIN32__) || defined(__WINRT__)) && !defined(__GNUC__)
+#define UTIL_CALL __cdecl
+#else
+#define UTIL_CALL
+#endif
+#endif /* UTIL_CALL */
+
 #endif // PLATFORM_H
 
