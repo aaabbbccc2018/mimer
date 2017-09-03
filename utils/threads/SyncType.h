@@ -3,11 +3,14 @@
 #include "../../platform.h"
 #include "utilException.h"
 
+#define STD_THREAD
 #ifdef STD_THREAD
 #undef OS_MSWIN
 #undef OS_LINUX
     #include <mutex>
     #include <condition_variable>
+    #include <functional>
+    #include <thread>
     typedef void * SYS_ThreadHandle;
     struct Mutex
     {

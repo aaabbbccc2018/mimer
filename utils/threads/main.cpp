@@ -5,6 +5,11 @@
 
 using namespace std;
 
+#ifdef STD_THREAD
+#undef OS_MSWIN
+#undef OS_LINUX
+void*  ThreadFunc(void* args)
+#endif
 #ifdef OS_LINUX
 void*  ThreadFunc(void* args)
 #endif
@@ -31,7 +36,7 @@ unsigned  __stdcall ThreadFunc(void* args)
 	}
 	return 0;
 }
-#define NUM 1000
+#define NUM 100
 int main(int argc, char *argv[])
 {
     cout << "Hello World!" << endl;
@@ -41,7 +46,6 @@ int main(int argc, char *argv[])
 			th[i].ThreadCreate(ThreadFunc,(void*)"hello");
 			th[i].run();
 			i++;
-			usleep(100);
 		}
     return 0;
 }

@@ -6,6 +6,17 @@
 
 typedef unsigned int threadID;
 typedef unsigned int TLSID;
+
+#ifdef STD_THREAD
+#undef OS_MSWIN
+#undef OS_LINUX
+    #include <mutex>
+    #include <condition_variable>
+    #include <functional>
+    #include <iostream>
+    typedef void* SYS_ThreadHandle;
+    typedef std::function< void*(void*)> ThreadFunction;
+#endif
 #ifdef OS_LINUX
 typedef void* (UTIL_CALL * ThreadFunction) (void *args);
 #endif
@@ -24,7 +35,7 @@ class threads
     } ThreadState;
     typedef unsigned int TLSID;
     typedef enum {
-        THREAD_PRI_LOW,
+        THREAD_PRI_LOW = 0,
         THREAD_PRI_NORMAL,
         THREAD_PRI_HIGH
     } THREAD_PRI;

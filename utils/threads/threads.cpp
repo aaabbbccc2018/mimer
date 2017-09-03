@@ -74,7 +74,8 @@ UTIL_API int  UTIL_CALL threads::ThreadCreate(ThreadFunction RunThread,void *arg
 #endif
     /* Set the thread attributes */
     if (pthread_attr_init(&type) != 0) {
-        return utilException::SetError("Couldn't initialize pthread attributes");
+        utilException::SetError("Couldn't initialize pthread attributes");
+        return -1;
     }
     pthread_attr_setdetachstate(&type, PTHREAD_CREATE_JOINABLE);
     /* Set caller-requested stack size. Otherwise: use the system default. */
@@ -83,7 +84,8 @@ UTIL_API int  UTIL_CALL threads::ThreadCreate(ThreadFunction RunThread,void *arg
     }
     /* Create the thread and go! */
     if (pthread_create(&_handle, &type, _fn, _args) != 0) {
-        return utilException::SetError("Not enough resources to create thread");
+        utilException::SetError("Not enough resources to create thread");
+        return -1;
     }
     return 0;
 #endif
@@ -97,8 +99,8 @@ UTIL_API int  UTIL_CALL threads::ThreadCreate(ThreadFunction RunThread,void *arg
     } catch (std::system_error & ex) {
         utilException::SetError("unable to start a C++ thread: code=%d; %s", ex.code(), ex.what());
         return -1;
-    } catch (std::bad_alloc &) {
-        OutOfMemory();
+    } catch (std::bad_alloc & ex) {
+        utilException::SetError("unable to alloc a C++ thread: %s", ex.what());
         return -1;
     }
 #endif
@@ -160,7 +162,8 @@ UTIL_API int UTIL_CALL threads::setPRI(THREAD_PRI priority)
     pthread_t thread = pthread_self();
 
     if (pthread_getschedparam(thread, &policy, &sched) < 0) {        
-        return utilException::SetError("pthread_getschedparam() failed");
+        utilException::SetError("pthread_getschedparam() failed");
+        return -1;
     }
     if (priority == THREAD_PRI_LOW) {
         sched.sched_priority = sched_get_priority_min(policy);
@@ -172,13 +175,15 @@ UTIL_API int UTIL_CALL threads::setPRI(THREAD_PRI priority)
         sched.sched_priority = (min_priority + (max_priority - min_priority) / 2);
     }
     if (pthread_setschedparam(thread, policy, &sched) < 0) {        
-        return utilException::SetError("pthread_setschedparam() failed");
+        utilException::SetError("pthread_setschedparam() failed");
+        return -1;
     }
     return 0;
 #endif
 
 #ifdef STD_THREAD
-    return (0);
+    priority = THREAD_PRI(0);
+    return (priority);
 #endif
 
 #ifdef OS_MSWIN
@@ -191,7 +196,8 @@ UTIL_API int UTIL_CALL threads::setPRI(THREAD_PRI priority)
         value = THREAD_PRIORITY_NORMAL;
     }
     if (!SetThreadPriority(GetCurrentThread(), value)) {
-        //return utilException::SetError("SetThreadPriority()");
+        utilException::SetError("SetThreadPriority()");
+        return -1;
     }
     return 0;
 #endif
@@ -204,16 +210,16 @@ UTIL_API void UTIL_CALL threads::waitThread(int *status)
 #endif
 
 #ifdef STD_THREAD
-    if ( ! thread) {
+    if ( ! _handle) {
         return;
     }
     try {
         std::thread * cpp_thread = (std::thread *) _handle;
-        if (cpp__joinable()) {
-            cpp__join();
+        if (cpp_thread->joinable()) {
+            cpp_thread->join();
         }
     } catch (std::system_error &) {
-        // An error occurred when joining the thread.  THREAD_PRI_HIGHWaitThread does not,
+        // An error occurred when joining the thread.  SDL_WaitThread does not,
         // however, seem to provide a means to report errors to its callers
         // though!
     }
@@ -236,17 +242,17 @@ UTIL_API void UTIL_CALL threads::detachThread()
 #endif
 
 #ifdef STD_THREAD
-    if ( ! thread) {
+    if ( ! _handle) {
         return;
     }
 
     try {
         std::thread * cpp_thread = (std::thread *) _handle;
-        if (cpp__joinable()) {
-            cpp__detach();
+        if (cpp_thread->joinable()) {
+            cpp_thread->detach();
         }
     } catch (std::system_error &) {
-        // An error occurred when detaching the thread.  THREAD_PRI_HIGHDetachThread does not,
+        // An error occurred when detaching the thread.  SDL_DetachThread does not,
         // however, seem to provide a means to report errors to its callers
         // though!
     }
