@@ -2,14 +2,14 @@
 #include "threads.h"
 
 threads::threads():
-    _handle(0),_threadid(0),_status(0),
+    _handle(0),_tid(0),_status(0),
     _name(NULL),_stacksize(0),_args(NULL)
 {
     _sync = new SyncTools(MUTEX);
 }
 
-threads::threads(char* name):
-    _handle(0),_threadid(0),_status(0),
+threads::threads(const char* name):
+    _handle(0),_tid(0),_status(0),
     _name(NULL),_stacksize(0),_args(NULL)
 {    
     _name = (char*)malloc(strlen(name));
@@ -21,9 +21,11 @@ threads::~threads()
 {
     if(_name){
         free(_name);
+        _name = NULL;
     }
     if(_sync){
         delete (_sync);
+        _sync = NULL;
     }
 }
 
@@ -72,7 +74,7 @@ UTIL_API int  UTIL_CALL threads::ThreadCreate(ThreadFunction RunThread,void *arg
 #endif
     /* Set the thread attributes */
     if (pthread_attr_init(&type) != 0) {
-        return SetError("Couldn't initialize pthread attributes");
+        return utilException::SetError("Couldn't initialize pthread attributes");
     }
     pthread_attr_setdetachstate(&type, PTHREAD_CREATE_JOINABLE);
     /* Set caller-requested stack size. Otherwise: use the system default. */
@@ -81,7 +83,7 @@ UTIL_API int  UTIL_CALL threads::ThreadCreate(ThreadFunction RunThread,void *arg
     }
     /* Create the thread and go! */
     if (pthread_create(&_handle, &type, _fn, _args) != 0) {
-        return SetError("Not enough resources to create thread");
+        return utilException::SetError("Not enough resources to create thread");
     }
     return 0;
 #endif
@@ -93,7 +95,7 @@ UTIL_API int  UTIL_CALL threads::ThreadCreate(ThreadFunction RunThread,void *arg
         _handle = (void *) new std::thread(std::move(cpp_thread));
         return 0;
     } catch (std::system_error & ex) {
-        SetError("unable to start a C++ thread: code=%d; %s", ex.code(), ex.what());
+        utilException::SetError("unable to start a C++ thread: code=%d; %s", ex.code(), ex.what());
         return -1;
     } catch (std::bad_alloc &) {
         OutOfMemory();
@@ -104,11 +106,11 @@ UTIL_API int  UTIL_CALL threads::ThreadCreate(ThreadFunction RunThread,void *arg
 #ifdef OS_MSWIN
     _handle = (SYS_ThreadHandle)_beginthreadex(
                 NULL,
-                (unsigned int)_stacksize,
+                _stacksize,
                 _fn,
                 _args,
                 NULL,
-                &_threadid);
+                &_tid);
     return 0;
 #endif
 }
@@ -158,7 +160,7 @@ UTIL_API int UTIL_CALL threads::setPRI(THREAD_PRI priority)
     pthread_t thread = pthread_self();
 
     if (pthread_getschedparam(thread, &policy, &sched) < 0) {        
-        return SetError("pthread_getschedparam() failed");
+        return utilException::SetError("pthread_getschedparam() failed");
     }
     if (priority == THREAD_PRI_LOW) {
         sched.sched_priority = sched_get_priority_min(policy);
@@ -170,7 +172,7 @@ UTIL_API int UTIL_CALL threads::setPRI(THREAD_PRI priority)
         sched.sched_priority = (min_priority + (max_priority - min_priority) / 2);
     }
     if (pthread_setschedparam(thread, policy, &sched) < 0) {        
-        return SetError("pthread_setschedparam() failed");
+        return utilException::SetError("pthread_setschedparam() failed");
     }
     return 0;
 #endif
@@ -189,7 +191,7 @@ UTIL_API int UTIL_CALL threads::setPRI(THREAD_PRI priority)
         value = THREAD_PRIORITY_NORMAL;
     }
     if (!SetThreadPriority(GetCurrentThread(), value)) {
-        //return SetError("SetThreadPriority()");
+        //return utilException::SetError("SetThreadPriority()");
     }
     return 0;
 #endif

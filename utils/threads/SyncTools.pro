@@ -2,10 +2,15 @@ TEMPLATE = app
 CONFIG += console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
+LIBS += -lpthread
 
 SOURCES += main.cpp \
-    SyncTools.cpp
+    SyncTools.cpp \
+    threads.cpp \
+    utilException.cpp
 
 HEADERS += \
     SyncTools.h \
-    SyncType.h
+    SyncType.h \
+    threads.h \
+    utilException.h

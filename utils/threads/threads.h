@@ -30,8 +30,8 @@ class threads
     } THREAD_PRI;
 public:
     threads();
-    threads(char* name);
-    ~threads();
+    threads(const char* name);
+    virtual ~threads();
 public:
     UTIL_API void UTIL_CALL run();
     UTIL_API void UTIL_CALL setThreadFunction(ThreadFunction fn);
@@ -47,7 +47,7 @@ private:
     SYS_ThreadHandle _handle;
     ThreadFunction   _fn;
     SyncTools*       _sync;
-    threadID         _threadid;
+    threadID         _tid;
     int              _status;
     char*            _name;
     /* 0 for default, >0 for user-specified stack size. */

@@ -7,7 +7,7 @@ class SyncTools
 {
 public:
     SyncTools(TYPE type,int initv = 0);
-    ~SyncTools();
+    virtual ~SyncTools();
 public:
     /* mutex */
     int   lockMutex(){ return this->_lockMutex(_mutex);}
