@@ -1,7 +1,7 @@
 #ifndef THREADS_H
 #define THREADS_H
 #include "../../platform.h"
-#include "SyncType.h"
+//#include "SyncType.h"
 #include "SyncTools.h"
 
 typedef unsigned int threadID;
@@ -52,12 +52,12 @@ public:
     UTIL_API const char *UTIL_CALL getThreadName();
     UTIL_API threadID UTIL_CALL getThreadID();
     UTIL_API int UTIL_CALL setPRI(THREAD_PRI priority);
-    UTIL_API void UTIL_CALL waitThread(int *status);
+    UTIL_API void UTIL_CALL waitThread();
     UTIL_API void UTIL_CALL detachThread();
 private:
     SYS_ThreadHandle _handle;
     ThreadFunction   _fn;
-    SyncTools*       _sync;
+    Mutex*           _sync;
     threadID         _tid;
     int              _status;
     char*            _name;

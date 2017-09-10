@@ -7,10 +7,12 @@ LIBS += -lpthread
 SOURCES += main.cpp \
     SyncTools.cpp \
     threads.cpp \
-    utilException.cpp
+    utilException.cpp \
+    threadpool.cpp
 
 HEADERS += \
     SyncTools.h \
     SyncType.h \
     threads.h \
-    utilException.h
+    utilException.h \
+    threadpool.h

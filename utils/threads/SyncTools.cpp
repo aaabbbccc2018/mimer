@@ -1,53 +1,27 @@
 #include <stdio.h>
 #include "SyncTools.h"
 
-SyncTools::SyncTools(TYPE type,int initv):
-    _type(type),_mutex(NULL),_cond(NULL),_sem(NULL)
-{
-    switch (_type) {
-    case MUTEX:
-        _mutex = createMutex();
-        break;
-    case COND:
-        _cond = createCond();
-        break;
-    case SEM:
-        _sem = createSemaphore(initv);
-        break;
-    default:
-        break;
-    }
-}
-
-SyncTools::~SyncTools()
-{
-    switch (_type) {
-    case MUTEX:
-        destroyMutex(_mutex);
-        _mutex = NULL;
-        break;
-    case COND:
-        destroyCond(_cond);
-        _cond = NULL;
-        break;
-    case SEM:
-        destroySemaphore(_sem);
-        _sem = NULL;
-        break;
-    default:
-        break;
-    }
-}
-
 /* Mutex */
 
-Mutex* SyncTools::createMutex(void)
+Mutex::Mutex()
 {
-    Mutex *mutex;
+    _mutex = createMutex();
+}
+
+Mutex::~Mutex()
+{
+    if (_mutex){
+        destroyMutex(_mutex);
+    }
+}
+
+syncMutex* Mutex::createMutex(void)
+{
+    syncMutex *mutex;
 #ifdef OS_LINUX
     pthread_mutexattr_t attr;
     /* Allocate the structure */
-    mutex = (Mutex *)calloc(1, sizeof(*mutex));
+    mutex = (syncMutex *)calloc(1, sizeof(syncMutex));
     if (mutex) {
         pthread_mutexattr_init(&attr);
 #if THREAD_PTHREAD_RECURSIVE_MUTEX
@@ -70,7 +44,7 @@ Mutex* SyncTools::createMutex(void)
 #ifdef STD_THREAD
     /* Allocate and initialize the mutex */
     try {
-        mutex = new Mutex;
+        mutex = new syncMutex;
     } catch (std::system_error & ex) {
         utilException::SetError("unable to create a C++ mutex: code=%d; %s", ex.code(), ex.what());
         return NULL;
@@ -82,7 +56,7 @@ Mutex* SyncTools::createMutex(void)
 
 #ifdef OS_MSWIN
     /* Allocate mutex memory */
-    mutex = (Mutex *) calloc(1, sizeof(*mutex));
+    mutex = (syncMutex *) calloc(1, sizeof(syncMutex));
     if (mutex) {
         /* Initialize */
         /* On SMP systems, a non-zero spin count generally helps performance */
@@ -98,7 +72,7 @@ Mutex* SyncTools::createMutex(void)
     return (mutex);
 }
 
-void   SyncTools::destroyMutex(Mutex * mutex)
+void   Mutex::destroyMutex(syncMutex * mutex)
 {
 #ifdef OS_LINUX
     if (mutex) {
@@ -121,7 +95,7 @@ void   SyncTools::destroyMutex(Mutex * mutex)
 #endif
 }
 
-int    SyncTools::_lockMutex(Mutex * mutex)
+int    Mutex::_lockMutex(syncMutex * mutex)
 {
 #ifdef OS_LINUX
 
@@ -183,7 +157,7 @@ int    SyncTools::_lockMutex(Mutex * mutex)
 #endif
 }
 
-int    SyncTools::_tryLockMutex(Mutex * mutex)
+int    Mutex::_tryLockMutex(syncMutex * mutex)
 {
 #ifdef OS_LINUX
     int retval;
@@ -253,7 +227,7 @@ int    SyncTools::_tryLockMutex(Mutex * mutex)
 #endif
 }
 
-int    SyncTools::_unlockMutex(Mutex * mutex)
+int    Mutex::_unlockMutex(syncMutex * mutex)
 {
 #ifdef OS_LINUX
     if (mutex == NULL) {
@@ -312,10 +286,94 @@ int    SyncTools::_unlockMutex(Mutex * mutex)
 }
 
 /* Cond */
-Cond* SyncTools::createCond(void)
+
+Cond::Cond()
 {
+    _cond = createCond();
+    _mutex = NULL;
 #ifdef OS_LINUX
-    Cond *cond = (Cond *) malloc(sizeof(Cond));
+    pthread_mutexattr_t attr;
+    /* Allocate the structure */
+    _mutex = (syncMutex *)calloc(1, sizeof(syncMutex));
+    if (_mutex) {
+        pthread_mutexattr_init(&attr);
+#if THREAD_PTHREAD_RECURSIVE_MUTEX
+        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+#elif THREAD_PTHREAD_RECURSIVE_MUTEX_NP
+        pthread_mutexattr_setkind_np(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+#else
+        /* No extra attributes necessary */
+#endif
+        if (pthread_mutex_init(&_mutex->id, &attr) != 0) {
+            utilException::SetError("pthread_mutex_init() failed");
+            free(_mutex);
+        }
+    } else {
+        utilException::SetError("Allocate the initialize Mutex failed");
+    }
+#endif
+
+#ifdef STD_THREAD
+    /* Allocate and initialize the mutex */
+    try {
+        _mutex = new syncMutex;
+    } catch (std::system_error & ex) {
+        utilException::SetError("unable to create a C++ mutex: code=%d; %s", ex.code(), ex.what());
+    } catch (std::bad_alloc &) {
+        utilException::SetError("Allocate the initialize Mutex failed");
+    }
+#endif
+
+#ifdef OS_MSWIN
+    /* Allocate mutex memory */
+    _mutex = (syncMutex *) calloc(1, sizeof(syncMutex));
+    if (_mutex) {
+        /* Initialize */
+        /* On SMP systems, a non-zero spin count generally helps performance */
+#if __WINRT__
+        InitializeCriticalSectionEx(&_mutex->cs, 2000, 0);
+#else
+        InitializeCriticalSectionAndSpinCount(&_mutex->cs, 2000);
+#endif
+    } else {
+        utilException::SetError("Allocate the initialize Mutex failed");
+    }
+#endif
+}
+
+Cond::~Cond()
+{
+    if (_cond){
+        destroyCond(_cond);
+    }
+    if (_mutex){
+#ifdef OS_LINUX
+    if (_mutex) {
+        pthread_mutex_destroy(&_mutex->id);
+        free(_mutex);
+    }
+#endif
+
+#ifdef STD_THREAD
+    if (_mutex) {
+        delete _mutex;
+    }
+#endif
+
+#ifdef OS_MSWIN
+    if (_mutex) {
+        DeleteCriticalSection(&_mutex->cs);
+        free(_mutex);
+    }
+#endif
+    }
+}
+
+syncCond* Cond::createCond(void)
+{
+    syncCond* cond = NULL;
+#ifdef OS_LINUX
+    cond = (syncCond *) malloc(sizeof(syncCond));
     if (cond) {
         if (pthread_cond_init(&cond->cond, NULL) < 0) {
             utilException::SetError("pthread_cond_init() failed");
@@ -323,14 +381,12 @@ Cond* SyncTools::createCond(void)
             cond = NULL;
         }
     }
-    return (cond);
 #endif
 
 #ifdef STD_THREAD
     /* Allocate and initialize the condition variable */
     try {
-        Cond * cond = new Cond;
-        return cond;
+        cond = new syncCond;
     } catch (std::system_error & ex) {
         utilException::SetError("unable to create a C++ condition variable: code=%d; %s", ex.code(), ex.what());
         return NULL;
@@ -342,11 +398,17 @@ Cond* SyncTools::createCond(void)
 
 #ifdef OS_MSWIN
     utilException::SetError("Not support Cond");
-    return NULL;
+    cond = new syncCond;
+#if _WIN32_WINNT >= 0x0600
+    InitializeConditionVariable (cond->cv);
+#else
+    utilException::SetError("not support InitializeConditionVariable a Cond");
 #endif
+#endif
+    return cond;
 }
 
-void  SyncTools::destroyCond(Cond * cond)
+void  Cond::destroyCond(syncCond * cond)
 {
 #ifdef OS_LINUX
     if (cond) {
@@ -363,11 +425,14 @@ void  SyncTools::destroyCond(Cond * cond)
 
 #ifdef OS_MSWIN
     utilException::SetError("Not support Cond");
+    if(cond){
+        delete cond;
+    }
     return;
 #endif
 }
 
-int   SyncTools::_condSignal(Cond * cond)
+int   Cond::_condSignal(syncCond * cond)
 {
 #ifdef OS_LINUX
     int retval;
@@ -396,12 +461,20 @@ int   SyncTools::_condSignal(Cond * cond)
 #endif
 
 #ifdef OS_MSWIN
-    utilException::SetError ("Not support Cond");
-    return -1;
+    if (!cond) {
+        utilException::SetError ("Passed a NULL condition variable");
+        return -1;
+    }
+#if _WIN32_WINNT >= 0x0600
+    WakeConditionVariable(cond->cv);
+#else
+    utilException::SetError("not support WakeConditionVariable a Cond");
+#endif
+    return 0;
 #endif
 }
 
-int   SyncTools::_condBroadcast(Cond * cond)
+int   Cond::_condBroadcast(syncCond * cond)
 {
 #ifdef OS_LINUX
     int retval;
@@ -418,13 +491,21 @@ int   SyncTools::_condBroadcast(Cond * cond)
     }
     return retval;
 #endif
-
+    if (!cond) {
+        utilException::SetError ("Passed a NULL condition variable");
+        return -1;
+    }
+#if _WIN32_WINNT >= 0x0600
+    WakeAllConditionVariable(cond->cv);
+#else
+    utilException::SetError("not support WakeAllConditionVariable a Cond");
+#endif
+    return 0;
 #ifdef STD_THREAD
     if (!cond) {
         utilException::SetError ("Passed a NULL condition variable");
         return -1;
     }
-
     cond->cpp_cond.notify_all();
     return 0;
 #endif
@@ -435,7 +516,7 @@ int   SyncTools::_condBroadcast(Cond * cond)
 #endif
 }
 
-int   SyncTools::_condWaitTimeout(Cond * cond, Mutex * mutex, int ms)
+int   Cond::_condWaitTimeout(syncCond * cond, syncMutex * mutex, int timeout)
 {
 #ifdef OS_LINUX
     int retval;
@@ -452,13 +533,13 @@ int   SyncTools::_condWaitTimeout(Cond * cond, Mutex * mutex, int ms)
 #ifdef HAVE_CLOCK_GETTIME
     clock_gettime(CLOCK_REALTIME, &abstime);
 
-    abstime.tv_nsec += (ms % 1000) * 1000000;
-    abstime.tv_sec += ms / 1000;
+    abstime.tv_nsec += (timeout % 1000) * 1000000;
+    abstime.tv_sec += timeout / 1000;
 #else
     gettimeofday(&delta, NULL);
 
-    abstime.tv_sec = delta.tv_sec + (ms / 1000);
-    abstime.tv_nsec = (delta.tv_usec + (ms % 1000) * 1000) * 1000;
+    abstime.tv_sec = delta.tv_sec + (timeout / 1000);
+    abstime.tv_nsec = (delta.tv_usec + (timeout % 1000) * 1000) * 1000;
 #endif
     if (abstime.tv_nsec > 1000000000) {
         abstime.tv_sec += 1;
@@ -494,8 +575,8 @@ tryagain:
     }
 
     try {
-        std::unique_lock<std::recursive_mutex> cpp_lock(mutex->cpp_mutex, std::adopt_lock_t());
-        if (ms == MUTEX_MAXWAIT) {
+        std::unique_lock<std::recursive_mutex> cpp_lock(_mutex->cpp_mutex, std::adopt_lock_t());
+        if (timeout == MUTEX_MAXWAIT) {
             cond->cpp_cond.wait(
                         cpp_lock
                         );
@@ -504,7 +585,7 @@ tryagain:
         } else {
             auto wait_result = cond->cpp_cond.wait_for(
                         cpp_lock,
-                        std::chrono::duration<int, std::milli>(ms)
+                        std::chrono::duration<int, std::milli>(timeout)
                         );
             cpp_lock.release();
             if (wait_result == std::cv_status::timeout) {
@@ -520,12 +601,47 @@ tryagain:
 #endif
 
 #ifdef OS_MSWIN
-    utilException::SetError ("Not support Cond");
-    return -1;
+#if _WIN32_WINNT >= 0x0600
+    SleepConditionVariableCS(cond, mutex, timeout);
+#else
+    int retval;
+    DWORD dwMilliseconds;
+    if (!cond) {
+        utilException::SetError ("Passed a NULL Cond");
+        return -1;
+    }
+    if(!mutex){
+        utilException::SetError ("Passed a NULL Cond");
+    }else{
+        EnterCriticalSection(&mutex->cs);
+    }
+    if ((unsigned int)timeout == MUTEX_MAXWAIT) {
+        dwMilliseconds = INFINITE;
+    } else {
+        dwMilliseconds = (DWORD) timeout;
+    }
+#if __WINRT__
+    switch (WaitForSingleObjectEx(cond->id, dwMilliseconds, FALSE)) {
+#else
+    switch (WaitForSingleObject(cond->id, dwMilliseconds)) {
+#endif
+    case WAIT_OBJECT_0:
+        retval = 0;
+        break;
+    case WAIT_TIMEOUT:
+        retval = MUTEX_TIMEDOUT;
+        break;
+    default:
+        retval = utilException::SetError("WaitForSingleObject() failed");
+        break;
+    }
+    LeaveCriticalSection(&mutex->cs);
+    return retval;
+#endif
 #endif
 }
 
-int   SyncTools::_condWait(Cond * cond, Mutex * mutex)
+int   Cond::_condWait(syncCond * cond, syncMutex * mutex)
 {
 #ifdef OS_LINUX
     if (!cond) {
@@ -543,16 +659,29 @@ int   SyncTools::_condWait(Cond * cond, Mutex * mutex)
 #endif
 
 #ifdef OS_MSWIN
-    utilException::SetError ("Not support Cond");
-    return -1;
+    return _condWaitTimeout(cond, mutex, MUTEX_MAXWAIT);
 #endif
 }
 
 /* Sem */
-Sem* SyncTools::createSemaphore(int initial_value)
+
+Sem::Sem()
 {
+    _sem = createSemaphore(0);
+}
+
+Sem::~Sem()
+{
+    if (_sem){
+        destroySemaphore(_sem);
+    }
+}
+
+syncSem* Sem::createSemaphore(int initial_value)
+{
+    syncSem* sem = NULL;
 #ifdef OS_LINUX
-    Sem *sem = (Sem *) malloc(sizeof(Sem));
+    sem = (syncSem *) malloc(sizeof(syncSem));
     if (sem) {
         if (sem_init(&sem->sem, 0, initial_value) < 0) {
             utilException::SetError("sem_init() failed");
@@ -562,18 +691,38 @@ Sem* SyncTools::createSemaphore(int initial_value)
     } else {
         utilException::SetError("Allocate the initialize semaphore failed");
     }
-    return sem;
 #endif
 
 #ifdef STD_THREAD
     utilException::SetError("Not support Cond");
-    return NULL;
+    sem  = (syncSem *) malloc(sizeof(syncSem));
+    sem  = new syncSem;
+ /*
+    try {
+        sem->_mutex = std::mutex();
+    } catch (std::system_error & ex) {
+        utilException::SetError("unable to create a C++ mutex: code=%d; %s", ex.code(), ex.what());
+        return NULL;
+    } catch (std::bad_alloc &) {
+        utilException::SetError("Allocate the initialize Mutex failed");
+        return NULL;
+    }
+    try {
+        sem->_condition = syncCond;
+    } catch (std::system_error & ex) {
+        utilException::SetError("unable to create a C++ condition variable: code=%d; %s", ex.code(), ex.what());
+        return NULL;
+    } catch (std::bad_alloc &) {
+        utilException::SetError("bad_alloc a Cond");
+        return NULL;
+    }
+*/
+    sem->_count = 0; // Initialized as locked.
 #endif
 
 #ifdef OS_MSWIN
-    Sem *sem;
     /* Allocate sem memory */
-    sem = (Sem*) malloc(sizeof(Sem));
+    sem = (syncSem*) malloc(sizeof(syncSem));
     if (sem) {
         /* Create the semaphore, with max value 32K */
 #if __WINRT__
@@ -590,12 +739,11 @@ Sem* SyncTools::createSemaphore(int initial_value)
     } else {
         utilException::SetError("Allocate the initialize semaphore failed");
     }
-    return (sem);
 #endif
-
+    return sem;
 }
 
-void  SyncTools::destroySemaphore(Sem * sem)
+void  Sem::destroySemaphore(syncSem * sem)
 {
 #ifdef OS_LINUX
     if (sem) {
@@ -605,7 +753,9 @@ void  SyncTools::destroySemaphore(Sem * sem)
 #endif
 
 #ifdef STD_THREAD
-    return;
+    if (sem){
+        delete sem;
+    }
 #endif
 
 #ifdef OS_MSWIN
@@ -619,7 +769,7 @@ void  SyncTools::destroySemaphore(Sem * sem)
 #endif
 }
 
-int   SyncTools::_semTryWait(Sem * sem)
+int   Sem::_semTryWait(syncSem * sem)
 {
 #ifdef OS_LINUX
     int retval;
@@ -636,6 +786,11 @@ int   SyncTools::_semTryWait(Sem * sem)
 #endif
 
 #ifdef STD_THREAD
+    std::unique_lock<decltype(sem->_mutex)> lock(sem->_mutex);
+    if(sem->_count) {
+        --(sem->_count);
+        return 0;
+    }
     utilException::SetError ("Not support semaphore");
     return -1;
 #endif
@@ -645,7 +800,7 @@ int   SyncTools::_semTryWait(Sem * sem)
 #endif
 }
 
-int   SyncTools::_semWait(Sem * sem)
+int   Sem::_semWait(syncSem * sem)
 {
 #ifdef OS_LINUX
     int retval;
@@ -663,8 +818,13 @@ int   SyncTools::_semWait(Sem * sem)
 #endif
 
 #ifdef STD_THREAD
-    utilException::SetError ("Not support semaphore");
-    return -1;
+    std::unique_lock<decltype(sem->_mutex)> lock(sem->_mutex);
+    while(!sem->_count) // Handle spurious wake-ups.
+    {
+        sem->_condition.wait(lock);
+    }
+    --(sem->_count);
+    return 0;
 #endif
 
 #ifdef OS_MSWIN
@@ -672,10 +832,10 @@ int   SyncTools::_semWait(Sem * sem)
 #endif
 }
 
-int   SyncTools::_semWaitTimeout(Sem * sem, int timeout)
+int   Sem::_semWaitTimeout(syncSem * sem, int timeout)
 {
+    int retval = -1;
 #ifdef OS_LINUX
-    int retval;
 #ifdef HAVE_SEM_TIMEDWAIT
 #ifndef HAVE_CLOCK_GETTIME
     struct timeval now;
@@ -748,12 +908,13 @@ int   SyncTools::_semWaitTimeout(Sem * sem, int timeout)
 #endif
 
 #ifdef STD_THREAD
-    utilException::SetError ("Not support semaphore");
-    return -1;
+    std::unique_lock<decltype(sem->_mutex)> lock(sem->_mutex);
+    while( sem->_condition.wait_for(lock,std::chrono::seconds(timeout))
+          == std::cv_status::timeout )
+    --(sem->_count);
 #endif
 
 #ifdef OS_MSWIN
-    int retval;
     DWORD dwMilliseconds;
 
     if (!sem) {
@@ -782,11 +943,11 @@ int   SyncTools::_semWaitTimeout(Sem * sem, int timeout)
         retval = utilException::SetError("WaitForSingleObject() failed");
         break;
     }
-    return retval;
 #endif
+    return retval;
 }
 
-int   SyncTools::_semValue(Sem * sem)
+int   Sem::_semValue(syncSem * sem)
 {
 #ifdef OS_LINUX
     int ret = 0;
@@ -801,7 +962,7 @@ int   SyncTools::_semValue(Sem * sem)
 
 #ifdef STD_THREAD
     utilException::SetError ("Not support semaphore");
-    return -1;
+    return sem->_count;
 #endif
 
 #ifdef OS_MSWIN
@@ -813,7 +974,7 @@ int   SyncTools::_semValue(Sem * sem)
 #endif
 }
 
-int   SyncTools::_semPost(Sem * sem)
+int   Sem::_semPost(syncSem * sem)
 {
 #ifdef OS_LINUX
     int retval;
@@ -832,7 +993,10 @@ int   SyncTools::_semPost(Sem * sem)
 
 #ifdef STD_THREAD
     utilException::SetError ("Not support semaphore");
-    return -1;
+    std::unique_lock<decltype(sem->_mutex)> lock(sem->_mutex);
+    ++(sem->_count);
+    sem->_condition.notify_one();
+    return 0;
 #endif
 
 #ifdef OS_MSWIN
@@ -854,3 +1018,4 @@ int   SyncTools::_semPost(Sem * sem)
     return 0;
 #endif
 }
+

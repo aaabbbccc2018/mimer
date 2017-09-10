@@ -5,7 +5,7 @@ threads::threads():
     _handle(0),_tid(0),_status(0),
     _name(NULL),_stacksize(0),_args(NULL)
 {
-    _sync = new SyncTools(MUTEX);
+    _sync = new Mutex();
 }
 
 threads::threads(const char* name):
@@ -14,7 +14,7 @@ threads::threads(const char* name):
 {    
     _name = (char*)malloc(strlen(name));
     strcpy(_name, name);
-    _sync = new SyncTools(MUTEX);
+    _sync = new Mutex();
 }
 
 threads::~threads()
@@ -203,7 +203,7 @@ UTIL_API int UTIL_CALL threads::setPRI(THREAD_PRI priority)
 #endif
 }
 
-UTIL_API void UTIL_CALL threads::waitThread(int *status)
+UTIL_API void UTIL_CALL threads::waitThread()
 {
 #ifdef OS_LINUX
     pthread_join(_handle, 0);
@@ -229,9 +229,6 @@ UTIL_API void UTIL_CALL threads::waitThread(int *status)
     WaitForSingleObjectEx(_handle, INFINITE, FALSE);
     CloseHandle(_handle);
 #endif
-    if (status) {
-        *status = _status;
-    }
 }
 
 UTIL_API void UTIL_CALL threads::detachThread()
