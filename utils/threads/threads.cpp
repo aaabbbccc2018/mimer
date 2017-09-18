@@ -2,19 +2,17 @@
 #include "threads.h"
 
 threads::threads():
-    _handle(0),_tid(0),_status(0),
+    _handle(0),_fn(NULL),_tid(0),_status(0),
     _name(NULL),_stacksize(0),_args(NULL)
 {
-    _sync = new Mutex();
 }
 
 threads::threads(const char* name):
-    _handle(0),_tid(0),_status(0),
+    _handle(0),_fn(NULL),_tid(0),_status(0),
     _name(NULL),_stacksize(0),_args(NULL)
 {    
     _name = (char*)malloc(strlen(name));
     strcpy(_name, name);
-    _sync = new Mutex();
 }
 
 threads::~threads()
@@ -23,23 +21,45 @@ threads::~threads()
         free(_name);
         _name = NULL;
     }
-    if(_sync){
-        delete (_sync);
-        _sync = NULL;
-    }
 }
 
+#ifdef STD_THREAD
+#undef OS_MSWIN
+#undef OS_LINUX
+void* threads::hook(void* args)
+#endif
+#ifdef OS_LINUX
+void* threads::hook(void *args)
+#endif
+#ifdef OS_MSWIN
+unsigned int __stdcall threads::hook(void *args)
+#endif
+{
+    threads* pth = (threads*)args;
+    while(1){
+        if(pth->_fn){
+            pth->run();
+            break;
+        }
+    }
+#ifndef OS_MSWIN
+    return (NULL);
+#else
+    return 0;
+#endif
+}
 
 UTIL_API void UTIL_CALL threads::run()
 {
-    _sync->lockMutex();
     this->_fn(_args);
-    _sync->unlockMutex();
 }
 
-UTIL_API void UTIL_CALL threads::setThreadFunction(ThreadFunction fn)
+UTIL_API void UTIL_CALL threads::bind(ThreadFunction RunThread,void *args)
 {
-    _fn = fn;
+    if(RunThread){
+        _fn = RunThread;
+        _args = args;
+    }
 }
 
 UTIL_API void UTIL_CALL threads::setThreadname(const char* name)
@@ -56,8 +76,10 @@ UTIL_API void UTIL_CALL threads::setThreadname(const char* name)
 
 UTIL_API int  UTIL_CALL threads::ThreadCreate(ThreadFunction RunThread,void *args)
 {
-    _fn = RunThread;
-    _args = args;
+    if(RunThread){
+        _fn = RunThread;
+        _args = args;
+    }
 #ifdef OS_LINUX
     pthread_attr_t type;
     /* do this here before any threads exist, so there's no race condition. */
@@ -83,7 +105,7 @@ UTIL_API int  UTIL_CALL threads::ThreadCreate(ThreadFunction RunThread,void *arg
         pthread_attr_setstacksize(&type, (size_t) _stacksize);
     }
     /* Create the thread and go! */
-    if (pthread_create(&_handle, &type, _fn, _args) != 0) {
+    if (pthread_create(&_handle, &type, hook, this) != 0) {
         utilException::SetError("Not enough resources to create thread");
         return -1;
     }
@@ -93,7 +115,7 @@ UTIL_API int  UTIL_CALL threads::ThreadCreate(ThreadFunction RunThread,void *arg
 #ifdef STD_THREAD
     try {
         // !!! FIXME: no way to set a thread stack size here.
-        std::thread cpp_thread(_fn, _args);
+        std::thread cpp_thread(hook, this);
         _handle = (void *) new std::thread(std::move(cpp_thread));
         return 0;
     } catch (std::system_error & ex) {
@@ -109,8 +131,8 @@ UTIL_API int  UTIL_CALL threads::ThreadCreate(ThreadFunction RunThread,void *arg
     _handle = (SYS_ThreadHandle)_beginthreadex(
                 NULL,
                 _stacksize,
-                _fn,
-                _args,
+                hook,
+                this,
                 NULL,
                 &_tid);
     return 0;

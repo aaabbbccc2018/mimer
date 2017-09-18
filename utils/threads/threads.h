@@ -10,18 +10,13 @@ typedef unsigned int TLSID;
 #ifdef STD_THREAD
 #undef OS_MSWIN
 #undef OS_LINUX
-    #include <mutex>
-    #include <condition_variable>
-    #include <functional>
-    #include <iostream>
-    typedef void* SYS_ThreadHandle;
     typedef std::function< void*(void*)> ThreadFunction;
 #endif
 #ifdef OS_LINUX
-typedef void* (UTIL_CALL * ThreadFunction) (void *args);
+    typedef void* (UTIL_CALL * ThreadFunction) (void *args);
 #endif
 #ifdef OS_MSWIN
-typedef unsigned int (__stdcall *ThreadFunction)(void *args);
+    typedef unsigned int (__stdcall *ThreadFunction)(void *args);
 #endif
 
 class threads
@@ -44,11 +39,22 @@ public:
     threads(const char* name);
     virtual ~threads();
 public:
+#ifdef STD_THREAD
+#undef OS_MSWIN
+#undef OS_LINUX
+    static void* hook(void* args);
+#endif
+#ifdef OS_LINUX
+    static void* hook(void *args);
+#endif
+#ifdef OS_MSWIN
+    static unsigned int __stdcall hook(void *args);
+#endif
     UTIL_API void UTIL_CALL run();
-    UTIL_API void UTIL_CALL setThreadFunction(ThreadFunction fn);
+    UTIL_API void UTIL_CALL bind(ThreadFunction RunThread,void *args);
     UTIL_API void UTIL_CALL setThreadname(const char* name);
 public:
-    UTIL_API int   UTIL_CALL ThreadCreate(ThreadFunction fn,void *args);
+    UTIL_API int   UTIL_CALL ThreadCreate(ThreadFunction RunThread = NULL,void *args = NULL);
     UTIL_API const char *UTIL_CALL getThreadName();
     UTIL_API threadID UTIL_CALL getThreadID();
     UTIL_API int UTIL_CALL setPRI(THREAD_PRI priority);
@@ -57,7 +63,6 @@ public:
 private:
     SYS_ThreadHandle _handle;
     ThreadFunction   _fn;
-    Mutex*           _sync;
     threadID         _tid;
     int              _status;
     char*            _name;

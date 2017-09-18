@@ -5,37 +5,56 @@
 #include "threadpool.h"
 
 using namespace std;
+int sum = 0;
+Mutex mu;
 
 #ifdef STD_THREAD
 #undef OS_MSWIN
 #undef OS_LINUX
-void*  ThreadFunc(void* args)
+void*  ThreadAdd(void* args)
 #endif
 #ifdef OS_LINUX
-void*  ThreadFunc(void* args)
+void*  ThreadAdd(void* args)
 #endif
 #ifdef OS_MSWIN
-unsigned  __stdcall ThreadFunc(void* args)
+unsigned  __stdcall ThreadAdd(void* args)
 #endif
 {
-	char* param = (char*)args;
-	for (int i =0;i < 4; i++){
-		switch(i){
-			case 0:
-				printf("%s %s\n","00",param);
-				break;
-			case 1:
-				printf("%s %s\n","111",param);
-				break;
-			case 2:
-				printf("%s %s\n","2222",param);
-				break;
-			case 3:
-				printf("%s %s\n","33333",param);
-				break;
-		}
+    mu.lockMutex();
+    int param = (long)args;
+    for (int i = 0;i < param; i++){
+        sum += i;
 	}
-	return 0;
+    printf("after add thread sum: %d\n",sum);
+#ifdef OS_MSWIN
+    Sleep(1000);
+#else
+    sleep(1);
+#endif
+    mu.unlockMutex();
+    return 0;
+}
+
+#ifdef STD_THREAD
+#undef OS_MSWIN
+#undef OS_LINUX
+void*  ThreadDel(void* args)
+#endif
+#ifdef OS_LINUX
+void*  ThreadDel(void* args)
+#endif
+#ifdef OS_MSWIN
+unsigned  __stdcall ThreadDel(void* args)
+#endif
+{
+    mu.lockMutex();
+    int param = (long)args;
+    for (int i =0;i < param; i++){
+        sum -= i;
+    }
+    printf("after del thread sum: %d\n",sum);
+    mu.unlockMutex();
+    return 0;
 }
 
 #ifdef STD_THREAD
@@ -59,14 +78,13 @@ unsigned  __stdcall work(void* args)
 int main(int argc, char *argv[])
 {
     cout << "Hello World!" << endl;
-    threads th[NUM];
-        int i = 0;
-        while(i < NUM){
-            th[i].ThreadCreate(ThreadFunc,(void*)"hello");
-            th[i].run();
-            i++;
-        }
-
+    threads th[2];
+    th[0].ThreadCreate(ThreadAdd,(void*)1000);
+    th[0].waitThread();
+    th[1].ThreadCreate(ThreadDel,(void*)1000);
+    th[1].waitThread();
+    cout << "End of main!" << endl;
+/*
     threadpool tp(5,6);
     tp.addpool(work, (void*)"1");
     tp.addpool(work, (void*)"2");
@@ -75,5 +93,6 @@ int main(int argc, char *argv[])
     tp.addpool(work, (void*)"5");
     tp.addpool(work, (void*)"6");
     tp.run((void*)(&tp));
+*/
     return 0;
 }
