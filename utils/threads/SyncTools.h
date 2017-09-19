@@ -2,10 +2,11 @@
 #define SYNCTOOLS_H
 #include "../../platform.h"
 #include "utilException.h"
-//#include "SyncType.h"
+#include "SyncErrno.h"
 
 #define MUTEX_TIMEDOUT  1
 #define MUTEX_MAXWAIT   (~(unsigned int)0)
+static int syncerrno = 0;
 
 #ifdef STD_THREAD
 #undef OS_MSWIN

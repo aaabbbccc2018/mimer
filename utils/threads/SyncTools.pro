@@ -15,4 +15,5 @@ HEADERS += \
     SyncType.h \
     threads.h \
     utilException.h \
-    threadpool.h
+    threadpool.h \
+    SyncErrno.h

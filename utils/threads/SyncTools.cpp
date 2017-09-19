@@ -32,11 +32,13 @@ syncMutex* Mutex::createMutex(void)
         /* No extra attributes necessary */
 #endif
         if (pthread_mutex_init(&mutex->id, &attr) != 0) {
+            syncerrno = EINIT;
             utilException::SetError("pthread_mutex_init() failed");
             free(mutex);
             mutex = NULL;
         }
     } else {
+        syncerrno = EALLOC;
         utilException::SetError("Allocate the initialize Mutex failed");
     }
 #endif
@@ -46,9 +48,11 @@ syncMutex* Mutex::createMutex(void)
     try {
         mutex = new syncMutex;
     } catch (std::system_error & ex) {
+        syncerrno = EALLOC;
         utilException::SetError("unable to create a C++ mutex: code=%d; %s", ex.code(), ex.what());
         return NULL;
     } catch (std::bad_alloc &) {
+        syncerrno = EALLOC;
         utilException::SetError("Allocate the initialize Mutex failed");
         return NULL;
     }
@@ -66,6 +70,7 @@ syncMutex* Mutex::createMutex(void)
         InitializeCriticalSectionAndSpinCount(&mutex->cs, 2000);
 #endif
     } else {
+        syncerrno = EALLOC;
         utilException::SetError("Allocate the initialize Mutex failed");
     }
 #endif
@@ -103,8 +108,9 @@ int    Mutex::_lockMutex(syncMutex * mutex)
     pthread_t this_thread;
 #endif
     if (mutex == NULL) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL mutex");
-        return -1;
+        return syncerrno;
     }
 #ifdef FAKE_RECURSIVE_MUTEX
     this_thread = pthread_self();
@@ -119,38 +125,43 @@ int    Mutex::_lockMutex(syncMutex * mutex)
             mutex->owner = this_thread;
             mutex->recursive = 0;
         } else {
+            syncerrno = EEXEC;
             utilException::SetError ("pthread_mutex_lock() failed");
-            return -1;
+            return syncerrno;
         }
     }
 #else
     if (pthread_mutex_lock(&mutex->id) < 0) {
+        syncerrno = EEXEC;
         utilException::SetError ("pthread_mutex_lock() failed");
-        return -1;
+        return syncerrno;
     }
 #endif
-    return 0;
+    return EOKED;
 #endif
 
 #ifdef STD_THREAD
     if (mutex == NULL) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL mutex");
-        return -1;
+        return syncerrno;
     }
 
     try {
         mutex->cpp_mutex.lock();
-        return 0;
+        return EOKED;
     } catch (std::system_error & ex) {
+        syncerrno = EEXEC;
         utilException::SetError ("unable to lock a C++ mutex: code=%d; %s", ex.code(), ex.what());
-        return -1;
+        return syncerrno;
     }
 #endif
 
 #ifdef OS_MSWIN
     if (mutex == NULL) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL mutex");
-        return -1;
+        return syncerrno;
     }
     EnterCriticalSection(&mutex->cs);
     return (0);
@@ -166,8 +177,9 @@ int    Mutex::_tryLockMutex(syncMutex * mutex)
 #endif
 
     if (mutex == NULL) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL mutex");
-        return -1;
+        return syncerrno;
     }
     retval = 0;
 #ifdef FAKE_RECURSIVE_MUTEX
@@ -185,7 +197,9 @@ int    Mutex::_tryLockMutex(syncMutex * mutex)
         } else if (errno == EBUSY) {
             retval = MUTEX_TIMEDOUT;
         } else {
-            retval = utilException::SetError("pthread_mutex_trylock() failed");
+            syncerrno = EEXEC;
+            utilException::SetError("pthread_mutex_trylock() failed");
+            return syncerrno;
         }
     }
 #else
@@ -193,7 +207,9 @@ int    Mutex::_tryLockMutex(syncMutex * mutex)
         if (errno == EBUSY) {
             retval = MUTEX_TIMEDOUT;
         } else {
+            syncerrno = EEXEC;
             retval = utilException::SetError("pthread_mutex_trylock() failed");
+            return syncerrno;
         }
     }
 #endif
@@ -203,11 +219,13 @@ int    Mutex::_tryLockMutex(syncMutex * mutex)
 #ifdef STD_THREAD
     int retval = 0;
     if (mutex == NULL) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL mutex");
-        return -1;
+        return syncerrno;
     }
 
     if (mutex->cpp_mutex.try_lock() == false) {
+        syncerrno = EEXEC;
         retval = MUTEX_TIMEDOUT;
     }
     return retval;
@@ -216,8 +234,9 @@ int    Mutex::_tryLockMutex(syncMutex * mutex)
 #ifdef OS_MSWIN
     int retval = 0;
     if (mutex == NULL) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL mutex");
-        return -1;
+        return syncerrno;
     }
 
     if (TryEnterCriticalSection(&mutex->cs) == 0) {
@@ -231,8 +250,9 @@ int    Mutex::_unlockMutex(syncMutex * mutex)
 {
 #ifdef OS_LINUX
     if (mutex == NULL) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL mutex");
-        return -1;
+        return syncerrno;
     }
 
 #ifdef FAKE_RECURSIVE_MUTEX
@@ -250,34 +270,38 @@ int    Mutex::_unlockMutex(syncMutex * mutex)
             pthread_mutex_unlock(&mutex->id);
         }
     } else {
+        syncerrno = ESUPPORT;
         utilException::SetError ("mutex not owned by this thread");
-        return -1;
+        return syncerrno;
     }
 
 #else
     if (pthread_mutex_unlock(&mutex->id) < 0) {
+        syncerrno = EEXEC;
         utilException::SetError ("pthread_mutex_unlock() failed");
-        return -1;
+        return syncerrno;
     }
 #endif /* FAKE_RECURSIVE_MUTEX */
 
-    return 0;
+    return EOKED;
 #endif
 
 #ifdef STD_THREAD
     if (mutex == NULL) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL mutex");
-        return -1;
+        return syncerrno;
     }
 
     mutex->cpp_mutex.unlock();
-    return 0;
+    return EOKED;
 #endif
 
 #ifdef OS_MSWIN
     if (mutex == NULL) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL mutex");
-        return -1;
+        return syncerrno;
     }
 
     LeaveCriticalSection(&mutex->cs);
@@ -305,10 +329,12 @@ Cond::Cond()
         /* No extra attributes necessary */
 #endif
         if (pthread_mutex_init(&_mutex->id, &attr) != 0) {
+            syncerrno = EINIT;
             utilException::SetError("pthread_mutex_init() failed");
             free(_mutex);
         }
     } else {
+        syncerrno = EALLOC;
         utilException::SetError("Allocate the initialize Mutex failed");
     }
 #endif
@@ -318,8 +344,10 @@ Cond::Cond()
     try {
         _mutex = new syncMutex;
     } catch (std::system_error & ex) {
+        syncerrno = EALLOC;
         utilException::SetError("unable to create a C++ mutex: code=%d; %s", ex.code(), ex.what());
     } catch (std::bad_alloc &) {
+        syncerrno = EALLOC;
         utilException::SetError("Allocate the initialize Mutex failed");
     }
 #endif
@@ -336,6 +364,7 @@ Cond::Cond()
         InitializeCriticalSectionAndSpinCount(&_mutex->cs, 2000);
 #endif
     } else {
+        syncerrno = EALLOC;
         utilException::SetError("Allocate the initialize Mutex failed");
     }
 #endif
@@ -376,6 +405,7 @@ syncCond* Cond::createCond(void)
     cond = (syncCond *) malloc(sizeof(syncCond));
     if (cond) {
         if (pthread_cond_init(&cond->cond, NULL) < 0) {
+            syncerrno = EINIT;
             utilException::SetError("pthread_cond_init() failed");
             free(cond);
             cond = NULL;
@@ -388,20 +418,22 @@ syncCond* Cond::createCond(void)
     try {
         cond = new syncCond;
     } catch (std::system_error & ex) {
+        syncerrno = EALLOC;
         utilException::SetError("unable to create a C++ condition variable: code=%d; %s", ex.code(), ex.what());
         return NULL;
     } catch (std::bad_alloc &) {
+        syncerrno = EALLOC;
         utilException::SetError("bad_alloc a Cond");
         return NULL;
     }
 #endif
 
 #ifdef OS_MSWIN
-    utilException::SetError("Not support Cond");
     cond = new syncCond;
 #if _WIN32_WINNT >= 0x0600
     InitializeConditionVariable (cond->cv);
 #else
+    syncerrno = ESUPPORT;
     utilException::SetError("not support InitializeConditionVariable a Cond");
 #endif
 #endif
@@ -424,7 +456,6 @@ void  Cond::destroyCond(syncCond * cond)
 #endif
 
 #ifdef OS_MSWIN
-    utilException::SetError("Not support Cond");
     if(cond){
         delete cond;
     }
@@ -437,40 +468,46 @@ int   Cond::_condSignal(syncCond * cond)
 #ifdef OS_LINUX
     int retval;
 
-    if (!cond) {
+    if (NULL == cond) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL condition variable");
-        return -1;
+        return syncerrno;
     }
 
     retval = 0;
     if (pthread_cond_signal(&cond->cond) != 0) {
+        syncerrno = EEXEC;
         utilException::SetError ("pthread_cond_signal() failed");
-        return -1;
+        return syncerrno;
     }
     return retval;
 #endif
 
 #ifdef STD_THREAD
-    if (!cond) {
+    if (NULL == cond) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL condition variable");
-        return -1;
+        return syncerrno;
     }
 
     cond->cpp_cond.notify_one();
-    return 0;
+    return EOKED;
 #endif
 
 #ifdef OS_MSWIN
-    if (!cond) {
+    if (NULL == cond) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL condition variable");
-        return -1;
+        return syncerrno;
     }
 #if _WIN32_WINNT >= 0x0600
     WakeConditionVariable(cond->cv);
 #else
+    syncerrno = ESUPPORT;
     utilException::SetError("not support WakeConditionVariable a Cond");
+    return syncerrno;
 #endif
-    return 0;
+    return EOKED;
 #endif
 }
 
@@ -478,41 +515,45 @@ int   Cond::_condBroadcast(syncCond * cond)
 {
 #ifdef OS_LINUX
     int retval;
-
-    if (!cond) {
+    if (NULL == cond) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL condition variable");
-        return -1;
+        return syncerrno;
     }
 
     retval = 0;
     if (pthread_cond_broadcast(&cond->cond) != 0) {
+        syncerrno = EEXEC;
         utilException::SetError ("pthread_cond_broadcast() failed");
-        return -1;
+        return syncerrno;
     }
     return retval;
 #endif
-    if (!cond) {
+
+#ifdef STD_THREAD
+    if (NULL == cond) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL condition variable");
-        return -1;
+        return syncerrno;
+    }
+    cond->cpp_cond.notify_all();
+    return EOKED;
+#endif
+
+#ifdef OS_MSWIN
+    if (NULL == cond) {
+        syncerrno = ENULL;
+        utilException::SetError ("Passed a NULL condition variable");
+        return syncerrno;
     }
 #if _WIN32_WINNT >= 0x0600
     WakeAllConditionVariable(cond->cv);
 #else
+    syncerrno = ESUPPORT;
     utilException::SetError("not support WakeAllConditionVariable a Cond");
+    return syncerrno;
 #endif
-    return 0;
-#ifdef STD_THREAD
-    if (!cond) {
-        utilException::SetError ("Passed a NULL condition variable");
-        return -1;
-    }
-    cond->cpp_cond.notify_all();
-    return 0;
-#endif
-
-#ifdef OS_MSWIN
-    utilException::SetError ("Not support Cond");
-    return -1;
+    return EOKED;
 #endif
 }
 
@@ -525,9 +566,10 @@ int   Cond::_condWaitTimeout(syncCond * cond, syncMutex * mutex, int timeout)
 #endif
     struct timespec abstime;
 
-    if (!cond) {
+    if (NULL == cond) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL condition variable");
-        return -1;
+        return syncerrno;
     }
 
 #ifdef HAVE_CLOCK_GETTIME
@@ -558,45 +600,45 @@ tryagain:
     case 0:
         break;
     default:
+        syncerrno = EEXEC;
         retval = utilException::SetError("pthread_cond_timedwait() failed");
+        // return syncerrno;
     }
     return retval;
 #endif
 
 #ifdef STD_THREAD
-    if (!cond) {
+    if (NULL == cond) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL condition variable");
-        return -1;
+        return syncerrno;
     }
 
-    if (!mutex) {
+    if (NULL == mutex) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL mutex variable");
-        return -1;
+        return syncerrno;
     }
 
     try {
         std::unique_lock<std::recursive_mutex> cpp_lock(_mutex->cpp_mutex, std::adopt_lock_t());
         if (timeout == MUTEX_MAXWAIT) {
-            cond->cpp_cond.wait(
-                        cpp_lock
-                        );
+            cond->cpp_cond.wait( cpp_lock);
             cpp_lock.release();
-            return 0;
+            return EOKED;
         } else {
-            auto wait_result = cond->cpp_cond.wait_for(
-                        cpp_lock,
-                        std::chrono::duration<int, std::milli>(timeout)
-                        );
+            auto wait_result = cond->cpp_cond.wait_for( cpp_lock, std::chrono::duration<int, std::milli>(timeout));
             cpp_lock.release();
             if (wait_result == std::cv_status::timeout) {
                 return MUTEX_TIMEDOUT;
             } else {
-                return 0;
+                return EOKED;
             }
         }
     } catch (std::system_error & ex) {
+        syncerrno = EEXEC;
         utilException::SetError ("unable to wait on a C++ condition variable: code=%d; %s", ex.code(), ex.what());
-        return -1;
+        return syncerrno;
     }
 #endif
 
@@ -606,12 +648,15 @@ tryagain:
 #else
     int retval;
     DWORD dwMilliseconds;
-    if (!cond) {
+    if (NULL == cond) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL Cond");
-        return -1;
+        return syncerrno;
     }
-    if(!mutex){
+    if(NULL == mutex){
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL Cond");
+        return syncerrno;
     }else{
         EnterCriticalSection(&mutex->cs);
     }
@@ -632,7 +677,9 @@ tryagain:
         retval = MUTEX_TIMEDOUT;
         break;
     default:
+        syncerrno = EEXEC;
         retval = utilException::SetError("WaitForSingleObject() failed");
+        // return syncerrno;
         break;
     }
     LeaveCriticalSection(&mutex->cs);
@@ -644,14 +691,16 @@ tryagain:
 int   Cond::_condWait(syncCond * cond, syncMutex * mutex)
 {
 #ifdef OS_LINUX
-    if (!cond) {
+    if (NULL == cond) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL condition variable");
-        return -1;
+        return syncerrno;
     } else if (pthread_cond_wait(&cond->cond, &mutex->id) != 0) {
+        syncerrno = EEXEC;
         utilException::SetError ("pthread_cond_wait() failed");
-        return -1;
+        return syncerrno;
     }
-    return 0;
+    return EOKED;
 #endif
 
 #ifdef STD_THREAD
@@ -684,35 +733,40 @@ syncSem* Sem::createSemaphore(int initial_value)
     sem = (syncSem *) malloc(sizeof(syncSem));
     if (sem) {
         if (sem_init(&sem->sem, 0, initial_value) < 0) {
+            syncerrno = EINIT;
             utilException::SetError("sem_init() failed");
             free(sem);
             sem = NULL;
         }
     } else {
+        syncerrno = EALLOC;
         utilException::SetError("Allocate the initialize semaphore failed");
     }
 #endif
 
 #ifdef STD_THREAD
-    utilException::SetError("Not support Cond");
     sem  = (syncSem *) malloc(sizeof(syncSem));
     sem  = new syncSem;
  /*
     try {
         sem->_mutex = std::mutex();
     } catch (std::system_error & ex) {
+        syncerrno = EALLOC;
         utilException::SetError("unable to create a C++ mutex: code=%d; %s", ex.code(), ex.what());
         return NULL;
     } catch (std::bad_alloc &) {
+        syncerrno = EALLOC;
         utilException::SetError("Allocate the initialize Mutex failed");
         return NULL;
     }
     try {
         sem->_condition = syncCond;
     } catch (std::system_error & ex) {
+        syncerrno = EALLOC;
         utilException::SetError("unable to create a C++ condition variable: code=%d; %s", ex.code(), ex.what());
         return NULL;
     } catch (std::bad_alloc &) {
+        syncerrno = EALLOC;
         utilException::SetError("bad_alloc a Cond");
         return NULL;
     }
@@ -731,12 +785,14 @@ syncSem* Sem::createSemaphore(int initial_value)
         sem->id = CreateSemaphore(NULL, initial_value, 32 * 1024, NULL);
 #endif
         sem->count = initial_value;
-        if (!sem->id) {
+        if (NULL == sem->id) {
+            syncerrno = EINIT;
             utilException::SetError("Couldn't create semaphore");
             free(sem);
             sem = NULL;
         }
     } else {
+        syncerrno = EALLOC;
         utilException::SetError("Allocate the initialize semaphore failed");
     }
 #endif
@@ -774,12 +830,14 @@ int   Sem::_semTryWait(syncSem * sem)
 #ifdef OS_LINUX
     int retval;
 
-    if (!sem) {
+    if (NULL == sem) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL semaphore");
-        return -1;
+        return syncerrno;
     }
     retval = MUTEX_TIMEDOUT;
     if (sem_trywait(&sem->sem) == 0) {
+        syncerrno = EEXEC;
         retval = 0;
     }
     return retval;
@@ -789,9 +847,8 @@ int   Sem::_semTryWait(syncSem * sem)
     std::unique_lock<decltype(sem->_mutex)> lock(sem->_mutex);
     if(sem->_count) {
         --(sem->_count);
-        return 0;
+        return EOKED;
     }
-    utilException::SetError ("Not support semaphore");
     return -1;
 #endif
 
@@ -805,26 +862,29 @@ int   Sem::_semWait(syncSem * sem)
 #ifdef OS_LINUX
     int retval;
 
-    if (!sem) {
+    if (NULL == sem) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL semaphore");
-        return -1;
+        return syncerrno;
     }
 
     retval = sem_wait(&sem->sem);
     if (retval < 0) {
+        syncerrno = EEXEC;
         retval = utilException::SetError("sem_wait() failed");
+        // return syncerrno;
     }
     return retval;
 #endif
 
 #ifdef STD_THREAD
     std::unique_lock<decltype(sem->_mutex)> lock(sem->_mutex);
-    while(!sem->_count) // Handle spurious wake-ups.
+    while(NULL == sem->_count) // Handle spurious wake-ups.
     {
         sem->_condition.wait(lock);
     }
     --(sem->_count);
-    return 0;
+    return EOKED;
 #endif
 
 #ifdef OS_MSWIN
@@ -845,10 +905,11 @@ int   Sem::_semWaitTimeout(syncSem * sem, int timeout)
     int end;
 #endif
 
-    if (!sem)
+    if (NULL == sem)
     {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL semaphore");
-        return -1;
+        return syncerrno;
     }
 
     /* Try the easy cases first */
@@ -901,7 +962,9 @@ int   Sem::_semWaitTimeout(syncSem * sem, int timeout)
         }
         else
         {
+            syncerrno = EEXEC;
             utilException::SetError("sem_timedwait returned an error: %s", strerror(errno));
+            return syncerrno;
         }
     }
 #endif /* HAVE_SEM_TIMEDWAIT */
@@ -917,9 +980,10 @@ int   Sem::_semWaitTimeout(syncSem * sem, int timeout)
 #ifdef OS_MSWIN
     DWORD dwMilliseconds;
 
-    if (!sem) {
+    if (NULL == sem) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL sem");
-        return -1;
+        return syncerrno;
     }
 
     if ((unsigned int)timeout == MUTEX_MAXWAIT) {
@@ -940,7 +1004,9 @@ int   Sem::_semWaitTimeout(syncSem * sem, int timeout)
         retval = MUTEX_TIMEDOUT;
         break;
     default:
+        syncerrno = EEXEC;
         retval = utilException::SetError("WaitForSingleObject() failed");
+        // return syncerrno;
         break;
     }
 #endif
@@ -961,14 +1027,14 @@ int   Sem::_semValue(syncSem * sem)
 #endif
 
 #ifdef STD_THREAD
-    utilException::SetError ("Not support semaphore");
     return sem->_count;
 #endif
 
 #ifdef OS_MSWIN
-    if (!sem) {
+    if (NULL == sem) {
+        syncerrno = ENULL;
         utilException::SetError("Passed a NULL sem");
-        return 0;
+        return syncerrno;
     }
     return (int)sem->count;
 #endif
@@ -979,30 +1045,33 @@ int   Sem::_semPost(syncSem * sem)
 #ifdef OS_LINUX
     int retval;
 
-    if (!sem) {
+    if (NULL == sem) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL semaphore");
-        return -1;
+        return syncerrno;
     }
 
     retval = sem_post(&sem->sem);
     if (retval < 0) {
+        syncerrno = EEXEC;
         utilException::SetError("sem_post() failed");
+        // return syncerrno;
     }
     return retval;
 #endif
 
 #ifdef STD_THREAD
-    utilException::SetError ("Not support semaphore");
     std::unique_lock<decltype(sem->_mutex)> lock(sem->_mutex);
     ++(sem->_count);
     sem->_condition.notify_one();
-    return 0;
+    return EOKED;
 #endif
 
 #ifdef OS_MSWIN
-    if (!sem) {
+    if (NULL == sem) {
+        syncerrno = ENULL;
         utilException::SetError ("Passed a NULL sem");
-        return -1;
+        return syncerrno;
     }
     /* Increase the counter in the first place, because
      * after a successful release the semaphore may
@@ -1012,10 +1081,11 @@ int   Sem::_semPost(syncSem * sem)
     InterlockedIncrement(&sem->count);
     if (ReleaseSemaphore(sem->id, 1, NULL) == FALSE) {
         InterlockedDecrement(&sem->count);      /* restore */
+        syncerrno = EEXEC;
         utilException::SetError ("ReleaseSemaphore() failed");
-        return -1;
+        return syncerrno;
     }
-    return 0;
+    return EOKED;
 #endif
 }
 
