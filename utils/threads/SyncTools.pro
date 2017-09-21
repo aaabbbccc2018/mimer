@@ -3,6 +3,7 @@ CONFIG += console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
 LIBS += -lpthread
+LIBS += -L./libs -lellog
 
 SOURCES += main.cpp \
     SyncTools.cpp \
@@ -17,3 +18,6 @@ HEADERS += \
     utilException.h \
     threadpool.h \
     SyncErrno.h
+
+DEPENDPATH +=  ../../ellog
+INCLUDEPATH +=  ../../ellog

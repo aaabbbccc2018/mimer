@@ -1,12 +1,14 @@
 #ifndef SYNCTOOLS_H
 #define SYNCTOOLS_H
 #include "../../platform.h"
+#include "../../ellog/ellog.h"
 #include "utilException.h"
 #include "SyncErrno.h"
 
 #define MUTEX_TIMEDOUT  1
 #define MUTEX_MAXWAIT   (~(unsigned int)0)
 static int syncerrno = 0;
+static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
 
 #ifdef STD_THREAD
 #undef OS_MSWIN
