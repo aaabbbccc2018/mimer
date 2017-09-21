@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC  -g -Wall -Wno-write-strings -Wno-sign-compare -pthread  -shared -Wl,-soname,libellog.so -o libellog.so CMakeFiles/ellog.dir/easylogging++.cc.o CMakeFiles/ellog.dir/ellog.cpp.o 
