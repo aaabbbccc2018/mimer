@@ -28,7 +28,7 @@ void *_realloc(void *ptr, size_t size)
 
 char *_strdup(const char *s)
 {
-    char *str = strdup(s);
+    char *str = _strdup(s);
     return str;
 }
 

@@ -1,2 +1,2 @@
 # ellog
-Thanks for [easyloggingpp](https://github.com/muflihun/easyloggingpp)
+Thanks for [Easylogging++ v9.80](https://github.com/muflihun/easyloggingpp)

@@ -18,7 +18,7 @@ public:
     {
         if( i > 15 || i < 0 )
         {
-            cout << "索引超过最大值" <<endl;
+            // cout << "索引超过最大值" <<endl;
             return (int)(_data[0] & 0x1);
         }
         return (int)(_data[i/8] & (0x1 << (i%8)));

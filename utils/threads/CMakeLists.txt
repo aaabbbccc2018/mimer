@@ -12,6 +12,18 @@ else(BUILD_TYPE STREQUAL "Debug" )
 	set(CMAKE_BUILD_TYPE "Release")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wno-write-strings -Wno-sign-compare -pthread -fopenmp")
 endif(BUILD_TYPE STREQUAL "Debug" )
+# add ellog shared lib
+#定义ELLOG位置
+if(NOT ELLOG_DIR)
+	set(ELLOG_DIR ${CMAKE_SOURCE_DIR}/../../ellog)
+endif()
+if(IS_DIRECTORY ${ELLOG_DIR})
+	add_subdirectory(${ELLOG_DIR} ${PROJECT_BINARY_DIR}/ellog.out)
+	set(ELLOG_LINK_DIR ${PROJECT_BINARY_DIR}/ellog.out)
+else()
+	message(FATAL_ERROR   "INVALID FOLDER 'ELLOG_DIR'=${ELLOG_DIR}" )
+	set(ELLOG_LINK_DIR ../libs)
+endif()
 # valgrind
 include (CTest)
 # 指定include 路径
@@ -19,8 +31,7 @@ include_directories(.)
 # 查找当前目录下的所有源文件
 # 并将名称保存到 DIR_SRCS 变量
 aux_source_directory(. DIR_SRCS)
-set(LINK_DIR ../libs)
-link_directories(${LINK_DIR})
+link_directories(${ELLOG_LINK_DIR})
 # 指定生成目标
 add_executable(SyncTools ${DIR_SRCS})
 target_link_libraries(SyncTools libpthread.so ellog)

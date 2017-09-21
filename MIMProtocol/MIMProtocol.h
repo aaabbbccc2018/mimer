@@ -26,7 +26,7 @@ struct cmp_str
 class MIMProtocol
 {
     typedef std::pair<std::string, void*> PAnalyzer;
-    typedef std::map<const char*, const void*, cmp_str>  Analyzer;
+    typedef std::map<const char*, const void*>  Analyzer;
     typedef enum MechineType{ CLIENT = 0, SERVER, SERCLI }Mtype;
 public:
     MIMProtocol();

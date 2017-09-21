@@ -30,6 +30,8 @@ void* Loadso::LoadObject(const char *sofile)
                 tstr,            // address of wide-character buffer
                 XMLDATA_LEN);            // size of buffer);
 #else
+    #define _stprintf   sprintf
+    #define _tcsstr     strstr
     #define	_T(x) x
     _stprintf(tstr,"%s",sofile);
 #endif

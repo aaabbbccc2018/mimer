@@ -4,7 +4,7 @@
 //INITIALIZE_EASYLOGGINGPP
 /* Mutex */
 
-Mutex::Mutex()
+Mutex::Mutex():baseSync()
 {
     _mutex = createMutex();
     loger->info("createMutex ...");
@@ -334,7 +334,7 @@ int    Mutex::_unlockMutex(syncMutex * mutex)
 
 /* Cond */
 
-Cond::Cond()
+Cond::Cond() :baseSync()
 {
     _cond = createCond();
     _mutex = NULL;
@@ -463,7 +463,7 @@ syncCond* Cond::createCond(void)
 #ifdef OS_MSWIN
     cond = new syncCond;
 #if _WIN32_WINNT >= 0x0600
-    InitializeConditionVariable (cond->cv);
+    InitializeConditionVariable (&cond->cv);
 #else
     syncerrno = ESUPPORT;
     loger->error("errno: %d not support InitializeConditionVariable a Cond", syncerrno);
@@ -538,7 +538,7 @@ int   Cond::_condSignal(syncCond * cond)
         return syncerrno;
     }
 #if _WIN32_WINNT >= 0x0600
-    WakeConditionVariable(cond->cv);
+    WakeConditionVariable(&cond->cv);
 #else
     syncerrno = ESUPPORT;
     loger->error("errno: %d not support WakeConditionVariable a Cond", syncerrno);
@@ -589,7 +589,7 @@ int   Cond::_condBroadcast(syncCond * cond)
         return syncerrno;
     }
 #if _WIN32_WINNT >= 0x0600
-    WakeAllConditionVariable(cond->cv);
+    WakeAllConditionVariable(&cond->cv);
 #else
     syncerrno = ESUPPORT;
     loger->error("errno: %d not support WakeAllConditionVariable a Cond", syncerrno);
@@ -692,7 +692,8 @@ tryagain:
 
 #ifdef OS_MSWIN
 #if _WIN32_WINNT >= 0x0600
-    SleepConditionVariableCS(cond, mutex, timeout);
+    SleepConditionVariableCS(&cond->cv, &mutex->cs, timeout);
+	return timeout;
 #else
     int retval;
     DWORD dwMilliseconds;
@@ -767,7 +768,7 @@ int   Cond::_condWait(syncCond * cond, syncMutex * mutex)
 
 /* Sem */
 
-Sem::Sem()
+Sem::Sem() :baseSync()
 {
     _sem = createSemaphore(0);
     loger->info("createSemaphore ...");

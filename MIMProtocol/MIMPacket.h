@@ -57,6 +57,7 @@ namespace mimer {
 #define BAD_MIM_PACKET -4
 #define DEBUG      1
 #define OFFICIAL_MIM   1
+#define OFFICIAL_MQTT  OFFICIAL_MIM
 enum msgTypes
 {
     CONNECT = 1, CONNACK, PUBLISH, PUBACK, PUBREC, PUBREL,

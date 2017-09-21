@@ -1,23 +1,7 @@
 #ifndef THREADS_H
 #define THREADS_H
 #include "../../platform.h"
-//#include "SyncType.h"
-#include "SyncTools.h"
-
-typedef unsigned int threadID;
-typedef unsigned int TLSID;
-
-#ifdef STD_THREAD
-#undef OS_MSWIN
-#undef OS_LINUX
-    typedef std::function< void*(void*)> ThreadFunction;
-#endif
-#ifdef OS_LINUX
-    typedef void* (UTIL_CALL * ThreadFunction) (void *args);
-#endif
-#ifdef OS_MSWIN
-    typedef unsigned int (__stdcall *ThreadFunction)(void *args);
-#endif
+#include "ThreadType.h"
 
 class threads
 {

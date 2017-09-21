@@ -3,6 +3,11 @@ INITIALIZE_EASYLOGGINGPP
 
 namespace mim {
 
+el::base::type::StoragePointer ellog::shared()
+{
+	   return el::Helpers::storage();
+}
+
 bool ellog::log(el::Level lev, const std::string& msg)
 {
     switch (lev) {

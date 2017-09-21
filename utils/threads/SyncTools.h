@@ -2,24 +2,27 @@
 #define SYNCTOOLS_H
 #include "../../platform.h"
 #include "../../ellog/ellog.h"
+#include "ThreadType.h"
 #include "utilException.h"
 #include "SyncErrno.h"
 
 #define MUTEX_TIMEDOUT  1
 #define MUTEX_MAXWAIT   (~(unsigned int)0)
 static int syncerrno = 0;
-static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
+
+class baseSync
+{
+public:
+	baseSync():loger("SYNCTOOLS","../../ellog/config.conf"){}
+	virtual ~baseSync() {}
+protected:
+	mim::ellog loger;
+};
+
 
 #ifdef STD_THREAD
 #undef OS_MSWIN
 #undef OS_LINUX
-    #include <functional>
-    #include <iostream>           // std::cout
-    #include <thread>             // std::thread
-    #include <chrono>             // std::chrono::seconds
-    #include <mutex>              // std::mutex, std::unique_lock
-    #include <condition_variable> // std::condition_variable, std::cv_status
-    typedef void * SYS_ThreadHandle;
     /* mutex */
     typedef struct _Mutex{
         std::recursive_mutex cpp_mutex;
@@ -35,7 +38,7 @@ static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
         unsigned long _count; // Initialized as locked.
     } syncSem;
 
-    class Mutex
+    class Mutex: public baseSync
     {
     public:
         Mutex();
@@ -55,7 +58,7 @@ static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
     private:
         syncMutex* _mutex;
     };
-    class Cond
+    class Cond: public baseSync
     {
     public:
         Cond();
@@ -78,7 +81,7 @@ static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
         syncCond*  _cond;
         syncMutex* _mutex;
     };
-    class Sem
+    class Sem: public baseSync
     {
     public:
         Sem();
@@ -105,13 +108,6 @@ static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
 #endif
 
 #ifdef OS_LINUX
-    #include <stdlib.h>
-    #include <errno.h>
-    #include <pthread.h>
-    #include <sys/time.h>
-    #include <unistd.h>
-    #include <semaphore.h>
-    typedef pthread_t SYS_ThreadHandle;
     /* mutex */
     typedef struct _Mutex{
         pthread_mutex_t  id;
@@ -129,7 +125,7 @@ static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
         sem_t sem;
     } syncSem;
 
-    class Mutex
+    class Mutex: public baseSync
     {
     public:
         Mutex();
@@ -149,7 +145,7 @@ static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
     private:
         syncMutex* _mutex;
     };
-    class Cond
+    class Cond: public baseSync
     {
     public:
         Cond();
@@ -172,7 +168,7 @@ static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
         syncCond* _cond;
         syncMutex* _mutex;
     };
-    class Sem
+    class Sem: public baseSync
     {
     public:
         Sem();
@@ -199,11 +195,6 @@ static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
 #endif
 
 #ifdef OS_MSWIN
-    #include <windows.h>
-    #include <process.h>
-    #include <stdlib.h>
-    #include <stdio.h>
-    typedef HANDLE SYS_ThreadHandle;
     /* mutex */
     typedef struct _Mutex{
         CRITICAL_SECTION cs;
@@ -220,7 +211,7 @@ static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
         LONG count;
     }syncSem;
 
-    class Mutex
+    class Mutex: public baseSync
     {
     public:
         Mutex();
@@ -240,7 +231,7 @@ static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
      private:
          syncMutex* _mutex;
     };
-    class Cond
+    class Cond: public baseSync
     {
     public:
         Cond();
@@ -262,7 +253,7 @@ static mim::ellog loger = mim::ellog("../../../ellog/config.conf");
         syncCond* _cond;
         syncMutex* _mutex;
     };
-    class Sem
+    class Sem: public baseSync
     {
     public:
         Sem();

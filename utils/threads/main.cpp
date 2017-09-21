@@ -2,7 +2,10 @@
 #include <stdio.h>
 #include "../../platform.h"
 #include "threads.h"
+#include "SyncTools.h"
 #include "threadpool.h"
+
+INITIALIZE_NULL_EASYLOGGINGPP
 
 using namespace std;
 int sum = 0;

@@ -71,7 +71,6 @@ static uint16 CHECKSUM(const void *data, size_t size)
     {
         cksum += *(unsigned char*)buffer;
     }
-    /*对每个16bit进行二进制反码求和*/
     cksum = (cksum >> 16) + (cksum & 0xffff);
     cksum += (cksum >>16);
     return (unsigned short)(~cksum);
