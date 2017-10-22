@@ -13,10 +13,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "threads", "utils\threads\th
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "verify", "utils\verify\verify.vcxproj", "{74598A65-6A66-4B3D-A359-B6691CECC136}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testellog", "testellog\testellog.vcxproj", "{8A259902-4430-41AF-8E56-7725B456DCCC}"
-	ProjectSection(ProjectDependencies) = postProject
-		{CEA7F7C1-E5C9-4E0D-A1DD-F445A50B959A} = {CEA7F7C1-E5C9-4E0D-A1DD-F445A50B959A}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testellog", "ellog\test\testellog.vcxproj", "{8A259902-4430-41AF-8E56-7725B456DCCC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

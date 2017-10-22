@@ -24,7 +24,7 @@ public:
 public:
     static el::base::type::StoragePointer shared();
     bool log(el::Level lev, const std::string& msg);
-    el::Logger* operator->(){ return _logger; }
+    //el::Logger* operator->(){ return _logger; }
 public:
     bool config(const std::string& confile){
         if(_confile.empty()){
@@ -36,14 +36,26 @@ public:
         return false;
     }
 public:
-    void glog(const std::string& msg){ log(el::Level::Global, msg); }
-    void trace(const std::string& msg){ log(el::Level::Trace, msg);}
-    void debug(const std::string& msg){ log(el::Level::Debug, msg); }
-    void fatal(const std::string& msg){ log(el::Level::Fatal, msg);}
-    void error(const std::string& msg){ log(el::Level::Error, msg); }
-    void warn(const std::string& msg){ log(el::Level::Warning, msg); }
-    void verbose(const std::string& msg){ log(el::Level::Verbose, msg); }
-    void info(const std::string& msg){ log(el::Level::Info, msg); }
+#   define LOGGER_LEVEL_WRITERS_SIGNATURES(FUNCTION_NAME)\
+    template <typename T, typename... Args>\
+    inline void FUNCTION_NAME(const char * f, const T& t, const Args& ...) \
+    { _logger->FUNCTION_NAME(f,t); } \
+    template <typename T>\
+    inline void FUNCTION_NAME(const T&t){ _logger->FUNCTION_NAME(t); }
+
+	template <typename T, typename... Args>
+	inline void verbose(int, const char*, const T&, const Args&...);
+
+	template <typename T>
+	inline void verbose(int, const T&);
+
+	LOGGER_LEVEL_WRITERS_SIGNATURES(info)
+	LOGGER_LEVEL_WRITERS_SIGNATURES(debug)
+	LOGGER_LEVEL_WRITERS_SIGNATURES(warn)
+	LOGGER_LEVEL_WRITERS_SIGNATURES(error)
+	LOGGER_LEVEL_WRITERS_SIGNATURES(fatal)
+	LOGGER_LEVEL_WRITERS_SIGNATURES(trace)
+#   undef LOGGER_LEVEL_WRITERS_SIGNATURES
 private:
     el::Configurations  _conf;
     std::string         _id;
