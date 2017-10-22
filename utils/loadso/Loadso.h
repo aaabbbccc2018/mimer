@@ -1,7 +1,7 @@
 #ifndef LOADSO_H
 #define LOADSO_H
 #include <stdio.h>
-#include "../../platform.h"
+#include "platform.h"
 #ifdef OS_LINUX
     #include <stdio.h>
     #include <stdlib.h>
