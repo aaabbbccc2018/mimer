@@ -50,13 +50,17 @@ public:
         {
             el::Configurations idConf;
             defaultformat(idConf);
-            idConf.setGlobally(el::ConfigurationType::Filename, filepath + "/" + id + "_0.log");
+#ifdef OS_MSWIN
+            std::string path = filepath + "\\" + id + "_0.log";
+#else
+            std::string path = filepath + "/" + id + "_0.log";
+#endif
+            idConf.setGlobally(el::ConfigurationType::Filename, path);
             el::Loggers::reconfigureLogger(id, idConf);
             //_logger->configure(idConf);
         }
         // 设置一个日志文件最大字节数 MAX_LOG_FILE_SIZE 10M
-        // logroll("10485760");
-        logroll("1000000");
+        logroll("10485760");
     }
     virtual ~ellog() {}
 public:

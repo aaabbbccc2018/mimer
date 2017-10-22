@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "../ellog.h"
+#include "ellog.h"
 
 // There are two ways to share repository
 // one way is:
@@ -28,5 +28,9 @@ int main() {
 	elg.error("This is test error log %v", 99);
 	elg.warn("===================WARN==================");
 	elg.warn("This is test warn log %v", 99);
+	int i = 1;
+	while (i) {
+		elg.warn("This is test warn log %v", i++);
+	}
 	return 0;
 }
