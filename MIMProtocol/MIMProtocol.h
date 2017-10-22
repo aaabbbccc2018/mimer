@@ -4,7 +4,7 @@
 #include <string>
 #include <map>
 #include <string.h>
-#include "../utils/stream/Stream.h"
+#include "Stream.h"
 #include "MIMPacket.h"
 
 namespace mimer {

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../utils/stream/Stream.h"
+#include "Stream.h"
 #include "MIMPacket.h"
 #include "List.h"
 using namespace std;

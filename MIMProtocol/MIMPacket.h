@@ -35,7 +35,7 @@
 #include <list>
 #include "MIMInt.h"
 #include "MIMErr.h"
-#include "../ellog/ellog.h"
+#include "ellog.h"
 
 #ifdef  __cplusplus
 extern "C" {

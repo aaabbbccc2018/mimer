@@ -15,6 +15,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "verify", "utils\verify\veri
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testellog", "ellog\test\testellog.vcxproj", "{8A259902-4430-41AF-8E56-7725B456DCCC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testroll", "ellog\testroll\testroll.vcxproj", "{395D2E83-1D8B-4180-9771-7B67E2FBCEFC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -71,6 +73,14 @@ Global
 		{8A259902-4430-41AF-8E56-7725B456DCCC}.Release|x64.Build.0 = Release|x64
 		{8A259902-4430-41AF-8E56-7725B456DCCC}.Release|x86.ActiveCfg = Release|Win32
 		{8A259902-4430-41AF-8E56-7725B456DCCC}.Release|x86.Build.0 = Release|Win32
+		{395D2E83-1D8B-4180-9771-7B67E2FBCEFC}.Debug|x64.ActiveCfg = Debug|x64
+		{395D2E83-1D8B-4180-9771-7B67E2FBCEFC}.Debug|x64.Build.0 = Debug|x64
+		{395D2E83-1D8B-4180-9771-7B67E2FBCEFC}.Debug|x86.ActiveCfg = Debug|Win32
+		{395D2E83-1D8B-4180-9771-7B67E2FBCEFC}.Debug|x86.Build.0 = Debug|Win32
+		{395D2E83-1D8B-4180-9771-7B67E2FBCEFC}.Release|x64.ActiveCfg = Release|x64
+		{395D2E83-1D8B-4180-9771-7B67E2FBCEFC}.Release|x64.Build.0 = Release|x64
+		{395D2E83-1D8B-4180-9771-7B67E2FBCEFC}.Release|x86.ActiveCfg = Release|Win32
+		{395D2E83-1D8B-4180-9771-7B67E2FBCEFC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

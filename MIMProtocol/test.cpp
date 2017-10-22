@@ -1,4 +1,4 @@
-#include "../utils/stream/Stream.h"
+#include "Stream.h"
 #include "MIMPacket.h"
 #include "MIMProtocol.h"
 using namespace std;
