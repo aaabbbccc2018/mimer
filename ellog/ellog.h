@@ -38,16 +38,18 @@ public:
 public:
 #   define LOGGER_LEVEL_WRITERS_SIGNATURES(FUNCTION_NAME)\
     template <typename T, typename... Args>\
-    inline void FUNCTION_NAME(const char * f, const T& t, const Args& ...) \
-    { _logger->FUNCTION_NAME(f,t); } \
+    inline void FUNCTION_NAME(const char * s, const T& t, const Args& ... args) \
+    { _logger->FUNCTION_NAME(s, t, args...); } \
     template <typename T>\
-    inline void FUNCTION_NAME(const T&t){ _logger->FUNCTION_NAME(t); }
+    inline void FUNCTION_NAME(const T& t){ _logger->FUNCTION_NAME(t); }
 
 	template <typename T, typename... Args>
-	inline void verbose(int, const char*, const T&, const Args&...);
+	inline void verbose(int i, const char* s, const T& t, const Args&... args) \
+	{ _logger->verbose(i, s, t, args...); }
 
 	template <typename T>
-	inline void verbose(int, const T&);
+	inline void verbose(int i, const T& t) \
+	{ _logger->verbose(i, t); }
 
 	LOGGER_LEVEL_WRITERS_SIGNATURES(info)
 	LOGGER_LEVEL_WRITERS_SIGNATURES(debug)
