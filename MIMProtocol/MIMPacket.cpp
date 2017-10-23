@@ -11,7 +11,9 @@ const char* MIMPacket::packet_names[] =
 MIMPacket::MIMPacket(int type,int dried, int dup,int qos):
     _ptype(type),_size(0),_step(0),_dried(dried),_setrl(false)
 {
+    _loger = new mim::ellog("MIMPacket");
     printf("Packet Type:%s\n", packet_names[type]);
+    // _loger->info("Packet Type:%v", packet_names[type]);
     switch (_ptype)
     {
     case CONNECT:
@@ -123,6 +125,7 @@ MIMPacket::MIMPacket(int type,int dried, int dup,int qos):
         break;
     default:
         printf("error packet type\n");
+        _loger->error("error packet type");
         break;
     }
     FixHeaderbits.retain = _dried; // dried flag
@@ -208,6 +211,7 @@ MIMPacket::~MIMPacket()
             break;
         default:
             printf("error packet type\n");
+            _loger->error("error packet type");
             break;
         }
         _free(_packet);
@@ -347,6 +351,7 @@ void MIMPacket::setWill(const char* willtopic, const char* willmsg, size_t sizet
         if(_dried){
             if(sizet > 0xff || sizem > 0xff){
                 printf("willtopic or willmsg too long must smaller 256!\n");
+                _loger->error("willtopic or willmsg too long must smaller 256!");
                 return;
             }
             _size += 2; //willTopiclen(1 byte) & willMsglen(1 byte) length size
@@ -373,6 +378,7 @@ void MIMPacket::setUserName(const char* userName, size_t size)
         if(_dried){
             if(size > 0xff){
                 printf("user name too long must smaller 256!\n");
+                _loger->error("user name too long must smaller 256!");
                 return;
             }
             _size++;    //userNamelen(1 byte) length size
@@ -394,6 +400,7 @@ void MIMPacket::setPasswd(const char* passwd, size_t size)
         if(_dried){
             if(size > 0xff){
                 printf("password too long must smaller 256!\n");
+                _loger->error("password too long must smaller 256!");
                 return;
             }
             _size++;    //passwdlen(1 byte) length size
@@ -423,6 +430,7 @@ void MIMPacket::setSignDel(const char* clientId, size_t size)
 {
     if(_ptype != CONNECT){
         printf("%s no clientId!\n", packet_names[_ptype]);
+        _loger->error("%v  no clientId!", packet_names[_ptype]);
         return;
     }
     _step++;
@@ -445,6 +453,7 @@ void MIMPacket::setMultiConnect(int mc)
 {
     if(_ptype != CONNECT){
         printf("%s no clientId!\n", packet_names[_ptype]);
+        _loger->error("%v  no clientId!", packet_names[_ptype]);
         return;
     }
     FixHeaderbits.dup = mc;
@@ -454,6 +463,7 @@ void MIMPacket::setRC(char rc)
 {
     if(_ptype != CONNACK){
         printf("%s no RC!\n", packet_names[_ptype]);
+        _loger->error("%v  no RC!", packet_names[_ptype]);
         return;
     }
     _size += 1;
@@ -466,6 +476,7 @@ void MIMPacket::setFlags(_ubyte flags)
 {
     if(!HasFlags){
         printf("%s no flags!\n", packet_names[_ptype]);
+        _loger->error("%v  no flags!", packet_names[_ptype]);
         return;
     }
     _size++;
@@ -544,6 +555,7 @@ void MIMPacket::addTopics(char qos, const char* content, size_t size)
         break;
     default:
         printf("%s no topic!\n", packet_names[_ptype]);
+        _loger->error("%v  no topic!", packet_names[_ptype]);
         return;
         break;
     }
@@ -554,6 +566,7 @@ void MIMPacket::setPayload(const char* payload, size_t size)
 {
     if(_ptype != PUBLISH){
         printf("%s no topic!\n", packet_names[_ptype]);
+        _loger->error("%v  no topic!", packet_names[_ptype]);
         return;
     }
     _size += size;
@@ -610,6 +623,7 @@ void MIMPacket::setPingStatus(int pstatus)
 {
     if(_ptype != PINGREQ){
         printf("%s no ping status!\n", packet_names[_ptype]);
+        _loger->error("%v no ping status!", packet_names[_ptype]);
         return;
     }
     pFMT(pPingReq)->header.bits.qos = pstatus;
@@ -619,10 +633,12 @@ bool MIMPacket::encode(char* packet)
 {
     if(NULL == packet){
         printf("packet is not a enough memory!\n");
+        _loger->error("packet is not a enough memory");
         return false;
     }
     if(!finish()){
         printf("packet is not finish, please check each part of this packet type: %s!\n", packet_names[_ptype]);
+        _loger->error("packet is not finish, please check each part of this packet type: %v!", packet_names[_ptype]);
         return false;
     }
 
@@ -644,16 +660,20 @@ bool MIMPacket::encode(char* packet)
     if(CannotDried){
         /* add packet's size after encode, size MIMInt::encode's return */
         cursor += MIMInt::encode(&packet[cursor], _size-1);
+        _loger->debug("CannotDried Remaining Length: packet size : %v", cursor);
     }else{
         if(!_dried){
             if(OnlyHeader){
                 /* Only Header, RL == 0 */
                 packet[cursor++] = 0 + 1;
+                _loger->debug("OnlyHeader Remaining Length: packet size : %v", 1);
             }else{
                 /* fix RL, RL == 2 */
                 packet[cursor++] = 2 + 1;
+                _loger->debug("fix RL Remaining Length: packet size: %v", 3);
             }
         }else{
+            _loger->debug("dried op=> Remaining Length");
             //1. OnlyHeader: only fix header, delete 1-byte RL
             //2. FixRL:  fix 1-byte RL type, delete 1-byte RL
             if(OnlyHeader){
@@ -680,6 +700,7 @@ bool MIMPacket::encode(char* packet)
             /* topic's content */
             memcpy(&packet[cursor], pFMT(pPublish)->topic, commonshort);
             cursor += commonshort;
+            _loger->debug("PUBLISH: OFFICIAL_MIM topiclen: %v, topic content: %v", commonshort, pFMT(pPublish)->topic);
         }else{
             /* topic name's size 1 byte */
             commonchar = (char)pFMT(pPublish)->topiclen;
@@ -688,6 +709,7 @@ bool MIMPacket::encode(char* packet)
             /* topic's content */
             memcpy(&packet[cursor], pFMT(pPublish)->topic, commonchar);
             cursor += commonchar;
+            _loger->debug("PUBLISH: topiclen: %v, topic content: %v", commonchar, pFMT(pPublish)->topic);
         }
         /* packet ID qos not 0 */
         if(0 != FixHeaderbits.qos){
@@ -695,11 +717,13 @@ bool MIMPacket::encode(char* packet)
             memcpy(&packet[cursor], &packetId, 2);
             cursor += 2;
             // itoa((int16_t)pFMT(pPubAck)->packetId,&packet[cursor++],10);
+            _loger->debug("PUBLISH: packetId: %v, qos: %v", packetId, FixHeaderbits.qos);
         }
         /* payload qos, NOTE: payloadlen is not save at packet data, can use RL calculation while decode */
         commonshort = pFMT(pPublish)->payloadlen;
         memcpy(&packet[cursor], pFMT(pPublish)->payload , commonshort);
         cursor += commonshort;
+        _loger->debug("PUBLISH: payloadlen: %v, payload: %v", commonshort, pFMT(pPublish)->payload);
         break;
     case SUBSCRIBE:// TODO
         /* Variable header */
@@ -707,6 +731,7 @@ bool MIMPacket::encode(char* packet)
         packetId = (int16_t)pFMT(pSubscribe)->packetId;
         memcpy(&packet[cursor], (char*)&packetId, 2);
         cursor += 2;
+        _loger->debug("SUBSCRIBE: packetId: %v", packetId);
         /* payload */
         /* List of topic and qos */
         sublist = pFMT(pSubscribe)->topics;
@@ -725,6 +750,7 @@ bool MIMPacket::encode(char* packet)
                 cursor += commonchar;
                 /* each qos's */
                 packet[cursor++] = *itqoss;
+                _loger->debug("SUBSCRIBE: dried topic's size: %v, topic's content :%v , qos's: %v ", commonchar, itlist->_content, (int)*itqoss);
             }
         }else{
             for(; itlist != sublist->end() && itqoss != subqoss->end(); ++itlist,++itqoss)
@@ -738,6 +764,7 @@ bool MIMPacket::encode(char* packet)
                 cursor += commonshort;
                 /* each qos's */
                 packet[cursor++] = *itqoss;
+                _loger->debug("SUBSCRIBE: topic's size: %v, topic's content :%v , qos's: %v ", commonshort, itlist->_content, (int)*itqoss);
             }
         }
         break;
@@ -747,6 +774,7 @@ bool MIMPacket::encode(char* packet)
         packetId = (int16_t)pFMT(pSubAck)->packetId;
         memcpy(&packet[cursor], (char*)&packetId, 2);
         cursor += 2;
+        _loger->debug("SUBACK: packetId: %v", packetId);
         /* payload */
         /* List of subscribe return qos */
         subqoss = pFMT(pSubAck)->qoss;
@@ -755,6 +783,7 @@ bool MIMPacket::encode(char* packet)
         {
             /* each qos's */
             packet[cursor++] = *itqoss;
+            _loger->debug("SUBACK: qos's: %v", (int)*itqoss);
         }
         break;
     case CONNECT:// TODO
@@ -765,6 +794,7 @@ bool MIMPacket::encode(char* packet)
         /* add CONNECT MIM Protocol, size(4-byte) */
         memcpy(&packet[cursor], pFMT(pConnect)->Protocol,4);
         cursor += 4;
+        _loger->debug("CONNECT: Protocol: %v, size: %v", pFMT(pConnect)->Protocol, 4);
         /* add CONNECT MIM version, size(1-byte) */
         packet[cursor++] = pFMT(pConnect)->version;
         /* add CONNECT flags, size(1-byte) */
@@ -772,12 +802,14 @@ bool MIMPacket::encode(char* packet)
         /* add CONNECT KAT, size(2-byte) */
         memcpy(&packet[cursor], &pFMT(pConnect)->KAT,2);
         cursor += 2;
+        _loger->debug("CONNECT: version: %v, CONNECT flags: %v, CONNECT KAT:%v", pFMT(pConnect)->version, pFMT(pConnect)->flags.all, pFMT(pConnect)->KAT);
         /* payload */        
         if (_dried){
             /* 1. client ID */
             memcpy(&packet[cursor], pFMT(pConnect)->clientID, pFMT(pConnect)->clientIDlen);
             // memcpy(&packet[cursor], &pFMT(pConnect)->clientID, 16);
             cursor += pFMT(pConnect)->clientIDlen;
+            _loger->debug("CONNECT: dried client ID: %v", pFMT(pConnect)->clientID);
             if(pFMT(pConnect)->flags.bits.will){
                 /* 2. Will Topic */
                 /* Will Topic's size 1 byte */
@@ -795,6 +827,8 @@ bool MIMPacket::encode(char* packet)
                 /* Will message's content */
                 memcpy(&packet[cursor], pFMT(pConnect)->willMsg, commonchar);
                 cursor += commonchar;
+                _loger->debug("CONNECT: dried Will Topic size: %v, Will Topic's content:%v, Will message size:%v,  Will message:%v",
+                    commonchar,pFMT(pConnect)->willTopic, commonchar, pFMT(pConnect)->willMsg);
             }
             if(pFMT(pConnect)->flags.bits.username){
                 /* 4. User Name */
@@ -805,6 +839,7 @@ bool MIMPacket::encode(char* packet)
                 /* UserName's content */
                 memcpy(&packet[cursor], pFMT(pConnect)->userName, commonchar);
                 cursor += commonchar;
+                _loger->debug("CONNECT: dried UserName: %v", pFMT(pConnect)->userName);
                 if(pFMT(pConnect)->flags.bits.password){
                     /* 5. password */
                     /* password's size 1 byte */
@@ -814,6 +849,7 @@ bool MIMPacket::encode(char* packet)
                     /* password's content */
                     memcpy(&packet[cursor], pFMT(pConnect)->passwd, commonchar);
                     cursor += commonchar;
+                    _loger->debug("CONNECT: dried password: %v", pFMT(pConnect)->passwd);
                 }
             }
         }else{
@@ -826,6 +862,7 @@ bool MIMPacket::encode(char* packet)
             /* clientID's content */
             memcpy(&packet[cursor], pFMT(pConnect)->clientID, commonshort);
             cursor += commonshort;
+            _loger->debug("CONNECT: client ID: %v", pFMT(pConnect)->clientID);
             if(pFMT(pConnect)->flags.bits.will){
                 /* 2. Will Topic */
                 commonshort = (int16_t)pFMT(pConnect)->willTopiclen;
@@ -843,6 +880,8 @@ bool MIMPacket::encode(char* packet)
                 /* Will message's content */
                 memcpy(&packet[cursor], pFMT(pConnect)->willMsg,commonshort);
                 cursor += commonshort;
+                _loger->debug("CONNECT: Will Topic size: %v, Will Topic's content:%v, Will message size:%v,  Will message:%v",
+                    commonshort, pFMT(pConnect)->willTopic, commonshort, pFMT(pConnect)->willMsg);
             }
             if(pFMT(pConnect)->flags.bits.username){
                 /* 4. User Name */
@@ -853,6 +892,7 @@ bool MIMPacket::encode(char* packet)
                 /* UserName's content */
                 memcpy(&packet[cursor], pFMT(pConnect)->userName,commonshort);
                 cursor += commonshort;
+                _loger->debug("CONNECT: UserName: %v", pFMT(pConnect)->userName);
                 if(pFMT(pConnect)->flags.bits.password){
                     /* 5. password */
                     commonshort = (int16_t)pFMT(pConnect)->passwdlen;
@@ -862,6 +902,7 @@ bool MIMPacket::encode(char* packet)
                     /* password's content */
                     memcpy(&packet[cursor], pFMT(pConnect)->passwd,commonshort);
                     cursor += commonshort;
+                    _loger->debug("CONNECT: password: %v", pFMT(pConnect)->passwd);
                 }
             }
         }
@@ -870,10 +911,12 @@ bool MIMPacket::encode(char* packet)
         /* Variable header */
          packet[cursor++] = pFMT(pConnAck)->flags.all;
          packet[cursor++] = pFMT(pConnAck)->rc;
+         _loger->debug("CONNECT: Variable header: %v, RC: %v", pFMT(pConnAck)->flags.all, pFMT(pConnAck)->rc);
          /* payload */
          if(signOk()){
              if(0 == pFMT(pConnAck)->clientIDlen || NULL == pFMT(pConnAck)->clientID){
                  printf("is register, but no client ID return\n");
+                 _loger->error("is register, but no client ID return");
                  return false;
              }else{
                  /* 1. client ID */
@@ -881,6 +924,7 @@ bool MIMPacket::encode(char* packet)
                  memcpy(&packet[cursor], pFMT(pConnAck)->clientID, pFMT(pConnAck)->clientIDlen);
                  // memcpy(&packet[cursor], &pFMT(pConnAck)->clientID, 16);
                  cursor += pFMT(pConnAck)->clientIDlen;
+                 _loger->debug("CONNECT: register ok, client ID: %v", pFMT(pConnAck)->clientID);
              }
          }
         break;
@@ -895,6 +939,7 @@ bool MIMPacket::encode(char* packet)
         memcpy(&packet[cursor], (char*)&packetId, 2);
         // itoa((int16_t)pFMT(pPubAck)->packetId,&packet[cursor++],10);
         cursor += 2;
+        _loger->debug("%v: packet ID: %v", msgTypestr[_ptype], packetId);
         break;
     case UNSUBSCRIBE:// TODO
         /* Variable header */
@@ -902,6 +947,7 @@ bool MIMPacket::encode(char* packet)
         packetId = (int16_t)pFMT(pUnsubscribe)->packetId;
         memcpy(&packet[cursor], (char*)&packetId, 2);
         cursor += 2;
+        _loger->debug("UNSUBSCRIBE: packet ID: %v", packetId);
         // itoa((int16_t)pFMT(pPubAck)->packetId,&packet[cursor++],10);
         /* payload */
         /* List of unsubscribe topic*/
@@ -917,6 +963,7 @@ bool MIMPacket::encode(char* packet)
                 /* each topic's content */
                 memcpy(&packet[cursor], itlist->_content,commonchar);
                 cursor += commonchar;
+                _loger->debug("UNSUBSCRIBE: dried topic's content: %v", itlist->_content);
             }
         }else{
             for(; itlist != sublist->end(); ++itlist)
@@ -928,6 +975,7 @@ bool MIMPacket::encode(char* packet)
                 /* each topic's content */
                 memcpy(&packet[cursor], itlist->_content,commonshort);
                 cursor += commonshort;
+                _loger->debug("UNSUBSCRIBE: topic's content: %v", itlist->_content);
             }
         }
         break;
@@ -935,9 +983,11 @@ bool MIMPacket::encode(char* packet)
     case PINGRESP:
     case DISCONNECT:
         printf("packet type don't have Variable header && payload!\n");
+        _loger->debug("packet type don't have Variable header && payload!");
         break;
     default:
         printf("error packet type\n");
+        _loger->error("error packet type");
         break;
     }
     return true;
@@ -1255,9 +1305,11 @@ int   MIMPacket::decode(char* packet)
     case PINGRESP:
     case DISCONNECT:
         printf("packet type don't have Variable header && payload!\n");
+        _loger->error("packet type don't have Variable header && payload!");
         break;
     default:
         printf("error packet type\n");
+        _loger->error("error packet type");
         break;
     }
     return _size;

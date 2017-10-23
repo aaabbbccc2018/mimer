@@ -35,6 +35,7 @@
 #include <list>
 #include "MIMInt.h"
 #include "MIMErr.h"
+#include "../ellog/ellog.h"
 
 #ifdef  __cplusplus
 extern "C" {
@@ -63,6 +64,11 @@ enum msgTypes
     CONNECT = 1, CONNACK, PUBLISH, PUBACK, PUBREC, PUBREL,
     PUBCOMP, SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK,
     PINGREQ, PINGRESP, DISCONNECT
+};
+const char msgTypestr[][16] = {
+    "CONNECT", "CONNACK", "PUBLISH", "PUBACK", "PUBREC", "PUBREL",
+    "PUBCOMP", "SUBSCRIBE", "SUBACK", "UNSUBSCRIBE", "UNSUBACK",
+    "PINGREQ", "PINGRESP", "DISCONNECT"
 };
 typedef short int  int16_t;
 typedef int        int32_t;
@@ -768,6 +774,7 @@ private:
     int      _step;      // measure the encoding / decoding progress
     int      _dried;     // packet's DRIED flag
     bool     _setrl;     // Remaining Length is set
+    mim::ellog* _loger;
 };
 
 }//namespace MIMer

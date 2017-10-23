@@ -2,3 +2,13 @@
 build-mqtter-Desktop_Qt_5_7_0_MinGW_32bit-Debug/
 
 MQTTProtocol/mqtter\.pro\.user
+
+*vcxproj.filters
+*vcxproj.user
+*~
+*.pro.user
+*Debug
+*log*
+*.vs
+*.VC*
+*.mq

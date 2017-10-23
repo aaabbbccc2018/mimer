@@ -132,6 +132,11 @@
     <ClInclude Include="Stream.h" />
     <ClInclude Include="timeUtil.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ellog\ellog.vcxproj">
+      <Project>{cea7f7c1-e5c9-4e0d-a1dd-f445a50b959a}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

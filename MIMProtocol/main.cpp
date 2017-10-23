@@ -19,6 +19,7 @@ extern void test_UNSUBACK(int);
 extern void test_PINGREQ(int);
 extern void test_PINGRESP(int);
 extern void test_DISCONNECT(int);
+INITIALIZE_NULL_EASYLOGGINGPP
 
 int main(int argc, char *argv[])
 {
