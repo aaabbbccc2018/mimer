@@ -29,6 +29,28 @@ void ellog::defaultformat(el::Configurations& idConf)
     idConf.set(el::Level::Info,    el::ConfigurationType::Format, LOGGER_COLOR(GREEN,  "[ %level | %datetime ] $ %msg"));
 }
 
+void ellog::logroll(const std::string& value)
+{
+    el::Loggers::addFlag(el::LoggingFlag::StrictLogFileSizeCheck);
+    el::Loggers::reconfigureAllLoggers(el::ConfigurationType::MaxLogFileSize, value);
+    el::Helpers::installPreRollOutCallback(this->rolloutHandler);
+}
+void ellog::rolloutHandler(const char* filename, std::size_t size)
+{
+    time_t cuurenttime = time(NULL);
+    cuurenttime -= 60;
+    struct::tm oneMinuteAgo;
+    localtime_s(&oneMinuteAgo, &cuurenttime);
+    std::string filenameTemp = filename;
+    int pos = filenameTemp.rfind('_');
+    filenameTemp = filenameTemp.substr(0, pos);
+    char backupFile[MAX_PATH] = { 0 };
+    sprintf_s(backupFile, MAX_PATH, "%s_%04d%02d%02d%02d%02d.log", filenameTemp.c_str(), oneMinuteAgo.tm_year + 1900
+		, oneMinuteAgo.tm_mon + 1, oneMinuteAgo.tm_mday, oneMinuteAgo.tm_hour, oneMinuteAgo.tm_min);
+    Stream::Rename(filename, backupFile);
+}
+
+
 bool ellog::log(el::Level lev, const std::string& msg)
 {
     switch (lev) {

@@ -111,13 +111,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\utils\stream\Stream.cpp" />
     <ClCompile Include="List.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="memUtil.c" />
     <ClCompile Include="MIMInt.cpp" />
     <ClCompile Include="MIMPacket.cpp" />
     <ClCompile Include="MIMProtocol.cpp" />
-    <ClCompile Include="Stream.cpp" />
     <ClCompile Include="test.cpp" />
     <ClCompile Include="timeUtil.c" />
   </ItemGroup>
@@ -129,7 +129,6 @@
     <ClInclude Include="MIMInt.h" />
     <ClInclude Include="MIMPacket.h" />
     <ClInclude Include="MIMProtocol.h" />
-    <ClInclude Include="Stream.h" />
     <ClInclude Include="timeUtil.h" />
   </ItemGroup>
   <ItemGroup>

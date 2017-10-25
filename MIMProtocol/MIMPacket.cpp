@@ -11,7 +11,7 @@ const char* MIMPacket::packet_names[] =
 MIMPacket::MIMPacket(int type,int dried, int dup,int qos):
     _ptype(type),_size(0),_step(0),_dried(dried),_setrl(false)
 {
-    _loger = new mim::ellog("MIMPacket");
+    _loger = new mim::ellog("MIMPacket", "./logs");
     printf("Packet Type:%s\n", packet_names[type]);
     // _loger->info("Packet Type:%v", packet_names[type]);
     switch (_ptype)

@@ -24,6 +24,10 @@ bool Stream::Open(const char* filename, const char* mode)
     _isOpen = true;
     return true;
 }
+int Stream::Rename(const char* oldname, const char* newname)
+{
+	return rename(oldname, newname);
+}
 
 bool Stream::Close()
 {

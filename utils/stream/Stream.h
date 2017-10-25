@@ -1,9 +1,9 @@
 #ifndef _MIMER_STREAM_H
 #define _MIMER_STREAM_H
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "MIMInt.h"
 
 class Stream
 {
@@ -13,6 +13,7 @@ public:
     virtual ~Stream();
 public:
     bool Open(const char* filename, const char* mode);
+	static int  Rename(const char* oldname, const char* newname);
     virtual bool Close();
     virtual size_t	Read(void *buffer, size_t size, size_t count);
     virtual size_t	Write(const void *buffer, size_t size, size_t count);

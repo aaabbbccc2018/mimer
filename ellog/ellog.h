@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include "../platform.h"
+#include "../utils/stream/Stream.h"
 #include "easylogging++.h"
 
 namespace mim {
@@ -36,7 +37,7 @@ class UTIL_API ellog
     #define ON_CYAN     "\033[46m"
     #define ON_WHITE    "\033[47m"
 public:
-    ellog(const std::string& id = "default", const std::string& confile = "") : _confile(confile), _id(id)
+    ellog(const std::string& id = "default", const std::string& filepath = ".", const std::string& confile = "") : _confile(confile), _id(id)
     {
         el::Helpers::setStorage(mim::ellog::shared());
         _logger = el::Loggers::getLogger(id, true);
@@ -49,15 +50,20 @@ public:
         {
             el::Configurations idConf;
             defaultformat(idConf);
+            idConf.setGlobally(el::ConfigurationType::Filename, filepath + "/" + id + "_%datetime{%Y%M%d%H%m}.log");
             el::Loggers::reconfigureLogger(id, idConf);
             //_logger->configure(idConf);
         }
+        // 设置一个日志文件最大字节数 MAX_LOG_FILE_SIZE 10M
+        logroll("10485760");
     }
     virtual ~ellog() {}
 public:
     static el::base::type::StoragePointer shared();
-    bool log(el::Level lev, const std::string& msg);
+    static void rolloutHandler(const char* filename, std::size_t size);
     void defaultformat(el::Configurations& idConf);
+    void logroll(const std::string& value);
+    bool log(el::Level lev, const std::string& msg);
     bool config(const std::string& confile);
 public:
 #   define LOGGER_LEVEL_WRITERS_SIGNATURES(FUNCTION_NAME)\
