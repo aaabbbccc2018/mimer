@@ -13,8 +13,8 @@ public:
     virtual ~Stream();
 public:
     bool Open(const char* filename, const char* mode);
-    static bool  Rename(const char* oldname, const char* newname);
-    static bool Create(const char* filename, const char* mode = "w+");
+	static bool  Rename(const char* oldname, const char* newname);
+	static bool Create(const char* filename, const char* mode = "w+");
     virtual bool Close();
     virtual size_t	Read(void *buffer, size_t size, size_t count);
     virtual size_t	Write(const void *buffer, size_t size, size_t count);

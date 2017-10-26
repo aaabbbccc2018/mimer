@@ -50,12 +50,13 @@ public:
         {
             el::Configurations idConf;
             defaultformat(idConf);
-            idConf.setGlobally(el::ConfigurationType::Filename, filepath + "/" + id + "_%datetime{%Y%M%d%H%m}.log");
+            idConf.setGlobally(el::ConfigurationType::Filename, filepath + "/" + id + "_0.log");
             el::Loggers::reconfigureLogger(id, idConf);
             //_logger->configure(idConf);
         }
         // 设置一个日志文件最大字节数 MAX_LOG_FILE_SIZE 10M
-        logroll("10485760");
+        // logroll("10485760");
+        logroll("1000000");
     }
     virtual ~ellog() {}
 public:
@@ -89,7 +90,7 @@ public:
 	LOGGER_LEVEL_WRITERS_SIGNATURES(trace)
 #   undef LOGGER_LEVEL_WRITERS_SIGNATURES
 
-#define LOGGER_COLOR(COLOR, FORMAT) COLOR##FORMAT RESET
+#define LOGGER_COLOR(COLOR, FORMAT) COLOR FORMAT RESET
 
 private:
     el::Configurations  _conf;

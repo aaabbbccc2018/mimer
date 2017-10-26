@@ -33,21 +33,29 @@ void ellog::logroll(const std::string& value)
 {
     el::Loggers::addFlag(el::LoggingFlag::StrictLogFileSizeCheck);
     el::Loggers::reconfigureAllLoggers(el::ConfigurationType::MaxLogFileSize, value);
-    el::Helpers::installPreRollOutCallback(this->rolloutHandler);
+    el::Helpers::installPreRollOutCallback(rolloutHandler);
 }
 void ellog::rolloutHandler(const char* filename, std::size_t size)
 {
     time_t cuurenttime = time(NULL);
     cuurenttime -= 60;
-    struct::tm oneMinuteAgo;
-    localtime_s(&oneMinuteAgo, &cuurenttime);
+    struct::tm*  oneMinuteAgo = localtime(&cuurenttime);
     std::string filenameTemp = filename;
-    int pos = filenameTemp.rfind('_');
+    int pos = filenameTemp.rfind('.');
     filenameTemp = filenameTemp.substr(0, pos);
+#ifndef MAX_PATH
+#define MAX_PATH 1024
     char backupFile[MAX_PATH] = { 0 };
-    sprintf_s(backupFile, MAX_PATH, "%s_%04d%02d%02d%02d%02d.log", filenameTemp.c_str(), oneMinuteAgo.tm_year + 1900
-		, oneMinuteAgo.tm_mon + 1, oneMinuteAgo.tm_mday, oneMinuteAgo.tm_hour, oneMinuteAgo.tm_min);
-    Stream::Rename(filename, backupFile);
+    snprintf(backupFile, MAX_PATH, "%s_%04d%02d%02d%02d%02d.log", filenameTemp.c_str(),  oneMinuteAgo->tm_year + 1900
+		,oneMinuteAgo->tm_mon + 1, oneMinuteAgo->tm_mday, oneMinuteAgo->tm_hour, oneMinuteAgo->tm_min);
+    if(Stream::Rename(filename, backupFile))
+    {
+        printf("rename %s to %s ok\n", filename, backupFile);
+    }else
+        printf("rename %s to %s failed\n", filename, backupFile);
+        exit(0);
+    }
+#endif
 }
 
 

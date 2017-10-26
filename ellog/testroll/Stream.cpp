@@ -27,19 +27,19 @@ bool Stream::Open(const char* filename, const char* mode)
 
 bool Stream::Rename(const char* oldname, const char* newname)
 {
-    if(rename(oldname, newname) == 0)
-        return true;
-    return false;
+	if(rename(oldname, newname) == 0)
+		return true;
+	return false;
 }
 
 bool Stream::Create(const char* filename, const char* mode)
 {
-    FILE* fp = fopen(filename, mode);
-    if(fp){
-        fclose(fp);
-        return true;
-    }
-    return false;
+	FILE* fp = fopen(filename, mode);
+	if(fp){
+		fclose(fp);
+		return true;
+	}
+	return false;
 }
 
 bool Stream::Close()
