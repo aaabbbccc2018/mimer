@@ -51,9 +51,9 @@ public:
             el::Configurations idConf;
             defaultformat(idConf);
 #ifdef OS_MSWIN
-            std::string path = filepath + "\\" + id + "_0.log";
+            std::string path = filepath + "\\" + id + ".log";
 #else
-            std::string path = filepath + "/" + id + "_0.log";
+            std::string path = filepath + "/" + id + ".log";
 #endif
             idConf.setGlobally(el::ConfigurationType::Filename, path);
             el::Loggers::reconfigureLogger(id, idConf);
@@ -98,8 +98,8 @@ public:
 
 private:
     el::Configurations  _conf;
-    std::string         _id;
     std::string         _confile;
+    std::string         _id;
     el::Logger*         _logger;
 };
 

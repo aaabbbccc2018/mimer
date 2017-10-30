@@ -217,6 +217,10 @@ MIMPacket::~MIMPacket()
         _free(_packet);
         _packet = NULL;
     }
+    if(_loger){
+        delete _loger;
+        _loger = NULL;
+    }
 }
 
 std::ostream & operator<<(std::ostream &out, const MIMPacket &mp)
@@ -1305,7 +1309,7 @@ int   MIMPacket::decode(char* packet)
     case PINGRESP:
     case DISCONNECT:
         printf("packet type don't have Variable header && payload!\n");
-        _loger->error("packet type don't have Variable header && payload!");
+        _loger->debug("packet type don't have Variable header && payload!");
         break;
     default:
         printf("error packet type\n");

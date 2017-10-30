@@ -42,6 +42,13 @@ bool Stream::Create(const char* filename, const char* mode)
     return false;
 }
 
+bool Stream::Remove(const char* filename)
+{
+    if(remove(filename) == 0)
+        return true;
+    return false;
+}
+
 bool Stream::Close()
 {
     int iErr = 0;
