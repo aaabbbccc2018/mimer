@@ -19,7 +19,10 @@
 INITIALIZE_NULL_EASYLOGGINGPP
 
 int main() {
-	mim::ellog elg("test");
+	mim::ellog elg("test", "logs");
+	printf("time: %s", elg.datatime().c_str());
+	printf("time stamp: %lld", mim::ellog::timestamp());
+	elg.logroll("10000");
 	elg.info("===================INFO==================");
 	elg.info("This is test info log %v", 99);
 	elg.debug("===================DEBUG==================");
@@ -28,9 +31,11 @@ int main() {
 	elg.error("This is test error log %v", 99);
 	elg.warn("===================WARN==================");
 	elg.warn("This is test warn log %v", 99);
+	clog(DEBUG, elg) << "hello clog";
 	int i = 1;
-	while (i) {
-		elg.warn("This is test warn log %v", i++);
+	while (i < 15) {
+		elg.warn("%v This is test warn log %v",  __LINE__, i++);
+		clog_if(i < 10, DEBUG, elg) << "hello clog";
 	}
 	return 0;
 }
