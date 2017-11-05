@@ -61,7 +61,7 @@
     typedef unsigned short     uint_16;
     typedef unsigned long      uint_32;
     typedef unsigned long long uint_64;
-    typedef uint8              u_char;
+    typedef uint_8              u_char;
 #elif defined(OS_MSWIN)
     typedef __int8  int_8;
     typedef __int16 int_16;
@@ -72,7 +72,7 @@
     typedef unsigned __int16   uint_16;
     typedef unsigned __int32   uint_32;
     typedef unsigned __int64   uint_64;
-    typedef uint8              u_char;
+    typedef uint_8              u_char;
 #elif defined(OS_LINUX)
     typedef char	             int_8;
     typedef short	             int_16;
