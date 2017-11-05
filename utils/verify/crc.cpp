@@ -1,6 +1,6 @@
 #include "crc.h"
 
-static const uint16 crc16tab[256]= {
+static const uint_16 crc16tab[256]= {
     0x0000,0x1021,0x2042,0x3063,0x4084,0x50a5,0x60c6,0x70e7,
     0x8108,0x9129,0xa14a,0xb16b,0xc18c,0xd1ad,0xe1ce,0xf1ef,
     0x1231,0x0210,0x3273,0x2252,0x52b5,0x4294,0x72f7,0x62d6,
@@ -35,16 +35,16 @@ static const uint16 crc16tab[256]= {
     0x6e17,0x7e36,0x4e55,0x5e74,0x2e93,0x3eb2,0x0ed1,0x1ef0
 };
 
-uint16 crc16(const void *data, size_t size) {
+uint_16 crc16(const void *data, size_t size) {
     int counter;
-    uint16 crc = 0;
+    uint_16 crc = 0;
     char* buf = (char*)data;
     for (counter = 0; counter < size; counter++)
             crc = (crc<<8) ^ crc16tab[((crc>>8) ^ *buf++)&0x00FF];
     return crc;
 }
 
-static uint32 crc32_tab[] =
+static uint_32 crc32_tab[] =
 {
     0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
     0x706af48fL, 0xe963a535L, 0x9e6495a3L, 0x0edb8832L, 0x79dcb8a4L,
@@ -101,10 +101,10 @@ static uint32 crc32_tab[] =
 };
 
 /* crc32 hash */
-uint32 crc32(const void* data, size_t size)
+uint_32 crc32(const void* data, size_t size)
 {
     int i;
-    uint32 crc32val = 0;
+    uint_32 crc32val = 0;
     crc32val ^= 0xFFFFFFFF;
     char* s = (char*)data;
     for (i = 0;  i < size;  i++) {
@@ -113,7 +113,7 @@ uint32 crc32(const void* data, size_t size)
     return labs(crc32val ^ 0xFFFFFFFF);
 }
 
-static const uint64 crc64_tab[256] = {
+static const uint_64 crc64_tab[256] = {
     0x0000000000000000ULL, 0x7ad870c830358979ULL,
     0xf5b0e190606b12f2ULL, 0x8f689158505e9b8bULL,
     0xc038e5739841b68fULL, 0xbae095bba8743ff6ULL,
@@ -244,13 +244,13 @@ static const uint64 crc64_tab[256] = {
     0x536fa08fdfd90e51ULL, 0x29b7d047efec8728ULL,
 };
 
-uint64 crc64(const void* data, size_t size) {
+uint_64 crc64(const void* data, size_t size) {
     int j = 0;
-    uint64 crc = 0;
+    uint_64 crc = 0;
     char* s = (char*)data;
     for (j = 0; j < size; j++) {
-        uint8 byte = s[j];
-        crc = crc64_tab[(uint8)crc ^ byte] ^ (crc >> 8);
+        uint_8 byte = s[j];
+        crc = crc64_tab[(uint_8)crc ^ byte] ^ (crc >> 8);
     }
     return crc;
 }

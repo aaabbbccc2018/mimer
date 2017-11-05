@@ -81,11 +81,11 @@ void md5::_md5_final(u_char result[16], md5_t *ctx)
 
 const u_char *md5::md5_body(md5_t *ctx, const u_char *data, size_t size)
 {
-    uint32       a, b, c, d;
-    uint32       saved_a, saved_b, saved_c, saved_d;
+    uint_32       a, b, c, d;
+    uint_32       saved_a, saved_b, saved_c, saved_d;
     const u_char  *p;
 #if !(NGX_HAVE_LITTLE_ENDIAN && NGX_HAVE_NONALIGNED)
-    uint32       block[16];
+    uint_32       block[16];
 #endif
 
     p = data;

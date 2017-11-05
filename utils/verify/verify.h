@@ -58,7 +58,7 @@ static const char* DEBASE64(const char *data){
     free((void*)out);
     return ourstr.c_str();
 }
-static uint16 CHECKSUM(const void *data, size_t size)
+static uint_16 CHECKSUM(const void *data, size_t size)
 {
     unsigned long cksum=0;
     char* buffer = (char*)data;
@@ -75,31 +75,31 @@ static uint16 CHECKSUM(const void *data, size_t size)
     cksum += (cksum >>16);
     return (unsigned short)(~cksum);
 }
-static uint16 CHECKSUM(const char *data)
+static uint_16 CHECKSUM(const char *data)
 {
     return CHECKSUM(data,strlen(data));
 }
-static uint16 CRC16(const void *data, size_t size)
+static uint_16 CRC16(const void *data, size_t size)
 {
     return crc16(data,size);
 }
-static uint16 CRC16(const char *data)
+static uint_16 CRC16(const char *data)
 {
     return crc16(data,strlen(data));
 }
-static uint32 CRC32(const void *data, size_t size)
+static uint_32 CRC32(const void *data, size_t size)
 {
     return crc32(data,size);
 }
-static uint32 CRC32(const char* data)
+static uint_32 CRC32(const char* data)
 {
     return crc32(data,strlen(data));
 }
-static uint64 CRC64(const void *data, size_t size)
+static uint_64 CRC64(const void *data, size_t size)
 {
     return crc64(data,size);
 }
-static uint64 CRC64(const char* data)
+static uint_64 CRC64(const char* data)
 {
     return crc64(data,strlen(data));
 }
