@@ -1,7 +1,8 @@
 #ifndef __MYBD_H__  
 #define __MYBD_H__
+#include "../../platform.h"
 
-#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64) || defined(_Windows) || defined(__MINGW32__)
+#ifdef OS_MSWIN
 #   if defined(WIN32_LEAN_AND_MEAN)
 #         include <winsock2.h>
 #   endif
@@ -16,7 +17,7 @@
 //#include "../../ellog/ellog.h"
 #include <my_global.h>
 
-class mysqler  
+class UTIL_API mysqler
 {
 
 typedef unsigned int uint;

@@ -53,7 +53,7 @@
 #endif /* UTIL_CALL */
 
 #if defined(__MINGW32__) || defined(__CYGWIN32__)
-    typedef char               int8;
+    typedef char               int_8;
     typedef short              int16;
     typedef long               int32;
     typedef long long          int64;
@@ -63,7 +63,7 @@
     typedef unsigned long long uint64;
     typedef uint8              u_char;
 #elif defined(OS_MSWIN)
-    typedef __int8  int8;
+    typedef __int8  int_8;
     typedef __int16 int16;
     typedef __int32 int32;
     typedef __int64 int64;
@@ -74,7 +74,7 @@
     typedef unsigned __int64   uint64;
     typedef uint8              u_char;
 #elif defined(OS_LINUX)
-    typedef char	             int8;
+    typedef char	             int_8;
     typedef short	             int16;
     typedef int 	             int32;
     typedef unsigned char      uint8;
