@@ -1,10 +1,12 @@
 #ifndef __MYBD_H__  
 #define __MYBD_H__
 
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64) || defined(_Windows) || defined(__MINGW32__)
 #   if defined(WIN32_LEAN_AND_MEAN)
 #         include <winsock2.h>
 #   endif
 #   include <windows.h>
+#endif
 #ifdef OS_LINUX
   #include <unistd.h>
 #endif
