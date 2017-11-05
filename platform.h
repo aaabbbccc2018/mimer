@@ -4,16 +4,16 @@
 // address the operating systems
 #if defined(_WIN32) || defined(WIN32)
 #  undef  WIN32
-#  define WIN32
+#  define WIN32   1
 #  undef  _WIN32
-#  define _WIN32
+#  define _WIN32  1
 #endif
 
 #if defined(_WIN64) || defined(WIN64)
 #  undef  WIN64
-#  define WIN64
+#  define WIN64   1
 #  undef  _WIN64
-#  define _WIN64
+#  define _WIN64  1
 #endif
 
 #if defined(WIN64) || defined(WIN32) || defined(_Windows) || defined(__MINGW32__)

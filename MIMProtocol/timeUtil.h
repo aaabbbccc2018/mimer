@@ -6,9 +6,10 @@
 #include <mach/mach_time.h>
 #endif
 
-#ifdef WIN32
+#ifdef OS_MSWIN
 #  include <windows.h>
-#else
+#endif
+#ifdef OS_LINUX
 #  include <unistd.h>
 #endif
 #include <time.h>

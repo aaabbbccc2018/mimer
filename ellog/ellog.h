@@ -71,7 +71,7 @@ public:
 public:
     inline operator const char*() { return (this->_id).c_str(); }
 public:
-    static inline el::base::type::StoragePointer shared();
+    static el::base::type::StoragePointer shared();
     static void rolloutHandler(const char* filename, std::size_t size);
     static inline int64 timestamp() { return el::base::utils::DateTime::timestamp(); }
     static std::string datatime(const char* format = el::base::consts::kDefaultDateTimeFormat) {
