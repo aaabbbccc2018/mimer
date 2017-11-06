@@ -1,9 +1,11 @@
 *~
 *.pro.user
 *Debug
+*Release
 *log*
 *.vs
 *.VC.*
 *.vcxproj.*
+*x64
 *.mq
 *build

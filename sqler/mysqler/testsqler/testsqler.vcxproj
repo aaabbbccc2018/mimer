@@ -128,6 +128,9 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\ellog\ellog.vcxproj">
+      <Project>{cea7f7c1-e5c9-4e0d-a1dd-f445a50b959a}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\sqler.vcxproj">
       <Project>{a5636df2-a288-4c6c-a7da-ff8ba4b5d48a}</Project>
     </ProjectReference>

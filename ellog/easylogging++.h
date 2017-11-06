@@ -1634,7 +1634,7 @@ public:
         }
     }
 
-    static inline int64 timestamp() {
+    static inline unsigned long long timestamp() {
         struct timeval currTime;
         gettimeofday(&currTime);
         time_t t;

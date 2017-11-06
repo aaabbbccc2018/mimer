@@ -14,8 +14,9 @@
 
 #include <stdio.h>
 #include <mysql.h>
-//#include "../../ellog/ellog.h"
+#include "../../ellog/ellog.h"
 #include <my_global.h>
+INITIALIZE_NULL_EASYLOGGINGPP
 
 class UTIL_API mysqler
 {
@@ -32,6 +33,7 @@ public:
 public:
 	bool connected() const;
 	bool connect(const char* charset = "utf8");
+	void login(const char* user, const char* password);
 	bool usedb(const char* db);
 	int  execsql(const char* statement);
 	inline MYSQL_RES* result() const { return _result;}
@@ -64,6 +66,7 @@ private:
 	bool        _isConnected;
 	bool        _autocommit;
 	static bool _embedded;
+	mim::ellog* _log;
 };
 
 #endif  

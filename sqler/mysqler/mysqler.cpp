@@ -11,7 +11,7 @@ mysqler::mysqler(const char *host, const char *user,
 				 _port(port), _cliflag(clientFlags),_isConnected(false),
 				 _autocommit(true)
 {
-	//_log = new mim::ellog("mysqler", "./logs");
+	_log = new mim::ellog("mysqler", "./logs");
 	if ((_con = mysql_init(NULL)) == NULL) {
 		finish_with_error("Error tryng to initialize MYSQL mysqler insufficient memory");
 	}
@@ -20,6 +20,7 @@ mysqler::mysqler(const char *host, const char *user,
 		mysql_options(_con, MYSQL_READ_DEFAULT_GROUP, "embedded");
 		mysql_options(_con, MYSQL_OPT_USE_EMBEDDED_CONNECTION, NULL);
 	}
+	_log->info("host: %v user: %v database: %v  embedded status: %v" ,_host ,_user ,_database ,_embedded);
 }
 
 mysqler::mysqler() :_con(NULL), _result(NULL), _host(NULL), _user(NULL), _password(NULL),
@@ -60,6 +61,7 @@ bool mysqler::connect(const char* charset)
 {
 	if (!_host)
 	{
+		_log->info("connect host: %v charset: %v", _host, charset);
 		if (mysql_real_connect(_con, NULL, NULL, NULL, _database, 0, NULL, 0) == NULL)
 		{
 			finish_with_error("Error in mysqler::Connect");
@@ -83,8 +85,18 @@ bool mysqler::connect(const char* charset)
 	return true;
 }
 
+void mysqler::login(const char * user, const char * password)
+{
+	if (_con && user && password)
+	{
+		_user = user;
+		_password = password;
+	}
+}
+
 bool mysqler::usedb(const char *db)
 {
+	_log->info("use database: %v", db);
 	if (mysql_select_db(_con, db) != 0)
 	{
 		finish_with_error("Error in mysqler::usedb");
@@ -95,6 +107,7 @@ bool mysqler::usedb(const char *db)
 
 int mysqler::execsql(const char* statement)
 {
+	_log->info("execute statement: %v", statement);
 	if (mysql_query(_con, statement) != 0)
 	{
 		finish_with_error("Error in mysqler::Execute - query");
@@ -114,6 +127,7 @@ void mysqler::show_result()
 			for(int i = 0; i < num_fields; i++)
 			{
 				printf("%s ", row[i] ? row[i] : "NULL");
+				_log->debug("%s: %v", row[i] ? row[i] : "NULL");
 			}
 			printf("\n");
 		}
@@ -210,6 +224,7 @@ void mysqler::finish_with_error(const char *desc)
 	if (NULL == desc)
 		desc = "";
 	fprintf(stderr, "%s [%d]%s\n", desc, mysql_errno(_con), mysql_error(_con));
+	_log->error("%v [%v]%v", desc, mysql_errno(_con), mysql_error(_con));
 	if (_con)
 	{
 		mysql_close(_con);
