@@ -75,7 +75,8 @@ public:
     static void rolloutHandler(const char* filename, std::size_t size);
     static inline int_64 timestamp() { return el::base::utils::DateTime::timestamp(); }
     static std::string datatime(const char* format = el::base::consts::kDefaultDateTimeFormat) {
-        return el::base::utils::DateTime::getDateTime(format, &el::base::MillisecondsWidth()).c_str();
+        el::base::MillisecondsWidth msw = el::base::MillisecondsWidth();
+        return el::base::utils::DateTime::getDateTime(format, &msw);
     }
 public:
     void defaultformat(el::Configurations& idConf);

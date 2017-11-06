@@ -31,7 +31,7 @@ include_directories(${MYSQL_HOME}/include)
 # add sqler shared lib
 #定义sqler位置
 if(NOT SQLER_DIR)
-	set(SQLER_DIR ${CMAKE_SOURCE_DIR}/..)
+	set(SQLER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
 endif()
 if(IS_DIRECTORY ${SQLER_DIR})
 	add_subdirectory(${SQLER_DIR} ${PROJECT_BINARY_DIR}/sqler.out)

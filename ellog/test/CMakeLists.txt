@@ -25,7 +25,7 @@ endif(BUILD_TYPE STREQUAL "Debug" )
 # add ellog shared lib
 #定义ELLOG位置
 if(NOT ELLOG_DIR)
-	set(ELLOG_DIR ${CMAKE_SOURCE_DIR}/..)
+	set(ELLOG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 endif()
 if(IS_DIRECTORY ${ELLOG_DIR})
 	add_subdirectory(${ELLOG_DIR} ${PROJECT_BINARY_DIR}/ellog.out)
