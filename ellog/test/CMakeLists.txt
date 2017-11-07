@@ -2,37 +2,16 @@
 cmake_minimum_required (VERSION 2.8)
 # 项目信息
 project (testellog)
-# 添加宏REVERSED
-ADD_DEFINITIONS(-DREVERSED=0)
-# std++11
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX11)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-elseif(COMPILER_SUPPORTS_CXX0X)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-else()
-     message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
-endif()
-# BUILD_TYPE
-if(BUILD_TYPE STREQUAL "Debug" )
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wno-write-strings -Wno-sign-compare -pthread")
-else(BUILD_TYPE STREQUAL "Debug" )
-	set(CMAKE_BUILD_TYPE "Release")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wno-write-strings -Wno-sign-compare -pthread -fopenmp")
-endif(BUILD_TYPE STREQUAL "Debug" )
-# add ellog shared lib
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../)
+include(../../mimer.cmake)
 #定义ELLOG位置
-if(NOT ELLOG_DIR)
-	set(ELLOG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
-endif()
-if(IS_DIRECTORY ${ELLOG_DIR})
-	add_subdirectory(${ELLOG_DIR} ${PROJECT_BINARY_DIR}/ellog.out)
-	set(ELLOG_LINK_DIR ${PROJECT_BINARY_DIR}/ellog.out)
+find_library(ELLOG ellog ${CMAKE_MODULE_PATH}/lib)
+if(NOT ELLOG)
+  set(ELLOG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
+  add_subdirectory(${ELLOG_DIR} ${PROJECT_BINARY_DIR}/ellog.out)
 else()
-	message(FATAL_ERROR   "INVALID FOLDER 'ELLOG_DIR'=${ELLOG_DIR}" )
-endif()
+  set(ELLOG_LINK_DIR ${CMAKE_MODULE_PATH}/lib)
+endif(NOT ELLOG)
 # valgrind
 include (CTest)
 # 指定include 路径
