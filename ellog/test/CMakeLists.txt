@@ -6,12 +6,16 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 include(../../mimer.cmake)
 #定义ELLOG位置
 find_library(ELLOG ellog ${CMAKE_MODULE_PATH}/lib)
-if(NOT ELLOG)
+if(NOT ELLOG AND NOT ${ELLOG_LIBRARY})
   set(ELLOG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
   add_subdirectory(${ELLOG_DIR} ${PROJECT_BINARY_DIR}/ellog.out)
+  set(ELLOG_LIBRARY TRUE CACHE INTERNAL "ellog is builded at ${PROJECT_NAME}")
+  message(STATUS "ELLOG_LIBRARY = ${ELLOG_LIBRARY} ellog is build at ${PROJECT_NAME}")
 else()
+#set(ELLOG_LIBRARY TRUE CACHE INTERNAL "ellog is builded at ${PROJECT_NAME}")
   set(ELLOG_LINK_DIR ${CMAKE_MODULE_PATH}/lib)
-endif(NOT ELLOG)
+  message(STATUS "ELLOG_LIBRARY = ${ELLOG_LIBRARY} ellog is found at ${CMAKE_MODULE_PATH}/lib")
+endif(NOT ELLOG AND NOT ${ELLOG_LIBRARY})
 # valgrind
 include (CTest)
 # 指定include 路径

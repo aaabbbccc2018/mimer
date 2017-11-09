@@ -6,12 +6,17 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 include(../../mimer.cmake)
 #定义ELLOG位置
 find_library(ELLOG ellog ${CMAKE_MODULE_PATH}/lib)
-if(NOT ELLOG)
+if(NOT ELLOG AND NOT ${ELLOG_LIBRARY})
   set(ELLOG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../ellog/)
   add_subdirectory(${ELLOG_DIR} ${PROJECT_BINARY_DIR}/ellog.out)
+  set(ELLOG_LIBRARY TRUE CACHE INTERNAL "ellog is builded at ${PROJECT_NAME}")
+  message(STATUS "ELLOG_LIBRARY = ${ELLOG_LIBRARY} ellog is build at ${PROJECT_NAME}")
 else()
+  #set(ELLOG_LIBRARY TRUE CACHE INTERNAL "ellog is builded at ${PROJECT_NAME}")
   set(ELLOG_LINK_DIR ${CMAKE_MODULE_PATH}/lib)
-endif(NOT ELLOG)
+  message(STATUS "ELLOG = ${ELLOG}; ELLOG_LIBRARY = ${ELLOG_LIBRARY} ellog is found at ${CMAKE_MODULE_PATH}/lib")
+endif(NOT ELLOG AND NOT ${ELLOG_LIBRARY})
+
 # 添加 mysql 头文件
 set(MYSQL_HOME "/usr/local/mysql")
 include_directories(${MYSQL_HOME}/include)
@@ -28,8 +33,11 @@ aux_source_directory(. DIR_SRCS)
 
 # 指定生成目标
 #add_executable(mysqler ${DIR_SRCS})
-add_library (mysqler SHARED ${DIR_SRCS})
+add_library(mysqler SHARED ${DIR_SRCS})
+add_library(mysqler_static STATIC ${DIR_SRCS})
 target_link_libraries(mysqler libmysqlclient.so ellog)
+set_target_properties(mysqler_static PROPERTIES OUTPUT_NAME "mysqler")
+set_target_properties(mysqler PROPERTIES VERSION 0.1 SOVERSION 1)
 
 # 启用测试
 enable_testing()
