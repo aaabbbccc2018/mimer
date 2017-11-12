@@ -2,9 +2,18 @@
 cmake_minimum_required (VERSION 2.8)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/)
 include(mimer.cmake)
+
 # libuv
-set(UV_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty)
-add_subdirectory(${UV_SRC_DIR} ${PROJECT_BINARY_DIR}/3rdparty.out)
+#set(UV_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty)
+#add_subdirectory(${UV_SRC_DIR} ${PROJECT_BINARY_DIR}/3rdparty.out)
+
+# uvbase
+set(UVBASE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/connecter/uvbase)
+add_subdirectory(${UVBASE_SRC_DIR} ${PROJECT_BINARY_DIR}/uvbase.out)
+
+# mmloop_test
+set(MMLOOP_TEST_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/connecter/mmloop_test)
+add_subdirectory(${MMLOOP_TEST_SRC_DIR} ${PROJECT_BINARY_DIR}/connecter/mmloop_test.out)
 
 # ellog
 set(ELLOG_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ellog)
