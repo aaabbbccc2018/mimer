@@ -24,13 +24,8 @@ namespace mm {
 			if (size == 0)
 				size = 1;
 			void* p;
-			while ((p = ::malloc(size)) == 0) {
-				// std::new_handler nh = std::get_new_handler();
-				std::new_handler nh;
-				if (nh)
-					nh();
-				else
-					throw std::bad_alloc();
+			if ((p = ::malloc(size)) == 0) {
+				throw std::bad_alloc();
 			}
 			printf("return=%x\n", p);
 			return p;
@@ -81,13 +76,8 @@ namespace mm {
 			if (size == 0)
 				size = 1;
 			void* p;
-			while ((p = ::malloc(size)) == 0) {
-				// std::new_handler nh = std::get_new_handler();
-				std::new_handler nh;
-				if (nh)
-					nh();
-				else
-					throw std::bad_alloc();
+			if ((p = ::malloc(size)) == 0) {
+				throw std::bad_alloc();
 			}
 			printf("return=%x\n", p);
 			return p;

@@ -186,6 +186,11 @@
     <ClInclude Include="Test_udpServer\udpServer.h" />
     <ClInclude Include="udpsend\udpsend.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\uvbase\uvbase.vcxproj">
+      <Project>{c07f4c8b-e01f-41d5-bd53-9e58833c08f5}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
