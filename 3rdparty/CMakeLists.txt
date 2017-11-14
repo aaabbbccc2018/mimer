@@ -26,8 +26,9 @@ if (NOT uv_lib)
 		COMMAND echo "End of build libuv"
 		COMMENT "uv is builded"
 		)
-	add_custom_target(uv ALL DEPENDS ${LOG}
+	add_custom_target(uv ALL DEPENDS ${LOG})
 	#add_custom_target(uv)
 else()
 	message(STATUS "libuv.so source is install at ${UV_PREFIX}")
 endif(NOT uv_lib)
+
