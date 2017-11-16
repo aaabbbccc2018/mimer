@@ -89,7 +89,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.;../libuv/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;../libuv/include;../../ellog</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -105,7 +105,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.;../libuv/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;../libuv/include;../../ellog</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -125,7 +125,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.;../libuv/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;../libuv/include;../../ellog</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -148,7 +148,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.;../libuv/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;../libuv/include;../../ellog</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -184,6 +184,9 @@
     <ClCompile Include="mmloop_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\ellog\ellog.vcxproj">
+      <Project>{cea7f7c1-e5c9-4e0d-a1dd-f445a50b959a}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\libuv\libuv.vcxproj">
       <Project>{33066374-88cb-cb8d-15da-61032886329a}</Project>
     </ProjectReference>

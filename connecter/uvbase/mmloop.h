@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include "platform.h"
 #include "uv.h"
+#include "ellog.h"
 
 namespace mm {
 namespace uvbase {
@@ -174,7 +175,8 @@ namespace uvbase {
 	protected:
 		virtual void OnClose() {}
 		uv_handle_t *context_ptr();
-
+	protected:
+		mim::ellog* _loger;
 
 	private:
 		static void _cbClose(uv_handle_t *uvhandle);

@@ -1,4 +1,5 @@
 #include "mmloop.h"
+INITIALIZE_NULL_EASYLOGGINGPP
 
 namespace mm {
 namespace uvbase {
@@ -109,7 +110,7 @@ namespace uvbase {
 	// class Handle
 	// -----------------------------
 	Handle::Handle() :data(NULL), context(NULL), _loop(NULL) {
-
+        _loger = new mim::ellog("Handle", "./logs");
 	}
 
 	Handle::~Handle() {
@@ -121,6 +122,10 @@ namespace uvbase {
 				uv_run(context->handle.loop, UV_RUN_DEFAULT);
 			}
 		}
+        if (_loger) {
+            delete _loger;
+            _loger = NULL;
+        }
 	}
 
 	Handle::Handle(Handle &other) {

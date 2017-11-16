@@ -15,10 +15,12 @@ namespace mm {
 		void* tTM::Packer(void * data, ssize_t* size)
 		{
 			if (this->userType & 1) { //Type::CLIENT ||  Type::BOTH_CLI
+				_loger->debug("tTM is Packer userType: %v size: %v context: %v", user(), *size, data);
 				printf("Packer current is %s\n", user());
 				return data;
 			}
 			else { //Type::SERVER ||  Type::BOTH_SER
+				_loger->debug("tTM is Packer userType: %v size: %v context: %v", user(), *size, data);
 				printf("Packer current is %s\n", user());
 				return data;
 			}
@@ -27,11 +29,13 @@ namespace mm {
 		void* tTM::Unpack(void * data, ssize_t* size)
 		{
 			if (this->userType & 1) { //Type::CLIENT ||  Type::BOTH_CLI
+				_loger->debug("tTM is Unpack userType: %v size: %v context: %v", user(), *size, data);
 				printf("Unpack current is %s\n", user());
 				return data;
 			}
 			else { //Type::SERVER ||  Type::BOTH_SER
 				printf("Unpack current is %s\n", user());
+				_loger->debug("tTM is Unpack userType: %v size: %v context: %v", user(), *size, data);
 				return data;
 			}
 		}
@@ -41,6 +45,7 @@ namespace mm {
 			Loop loop(false);
 			this->userType = type;
 			this->init(loop);
+			_loger->debug("tTM is Relate addr: %v port: %v type: %v", addr, port, user());
 			switch (type)
 			{
 			case mm::Transmitter::ITM::SERVER:
@@ -76,6 +81,7 @@ namespace mm {
 		int  tTM::Recfrm(void* buf, size_t count)
 		{
 			printf("%s recv data:%s,len = %d\n", user(), (char*)buf, count);
+			_loger->debug("tTM is Recfrm size: %v buf: %v", count, buf);
 			return count;
 		}
 
@@ -84,6 +90,7 @@ namespace mm {
 			assert(this->userType & 1);
 			if (status != mmerrno::mmSuccess) {
 				fprintf(stderr, "on_connect error %s\n", Handle::errCode(status));
+				_loger->error("tTM is OnConnected error: %v", Handle::errCode(status));
 				return;
 			}
 			read_start();
@@ -95,6 +102,7 @@ namespace mm {
 			assert(!(this->userType & 1));
 			if (status != mmerrno::mmSuccess) {
 				fprintf(stderr, "New connection error %s\n", Handle::errCode(status));
+				_loger->error("tTM is doAccept error: %v", Handle::errCode(status));
 				return;
 			}
 			tTM* s2c = new tTM();
@@ -104,6 +112,7 @@ namespace mm {
 				int  port = 0;
 				s2c->getpeerIpPort(ip, port);
 				printf("client accept client ip = %s,port = %d\n", ip, port);
+				_loger->debug("tTM is doAccept client ip:%v port: %v", ip, port);
 				s2c->read_start();
 			}
 			else {
@@ -115,6 +124,7 @@ namespace mm {
 		//client or server need implement
 		void tTM::OnRead(ssize_t nread, const char *buf)
 		{
+			_loger->debug("tTM is OnRead size: %v context: %v", nread, buf);
 			if (nread < 0) {
 				fprintf(stderr, "%s Read error %s\n", user(),Handle::errType(nread));
 				close();
@@ -138,11 +148,13 @@ namespace mm {
 				scanf("%s", sendbuf);
 				ssize_t size = strlen(sendbuf) + 1;
 				void* data = Packer((void*)sendbuf, &size);
+				_loger->debug("tTM is OnWrote size: %v context: %v type: %v", size, data, user());
 				Sendto(sendbuf,size);
 			}
 			else { //Type::SERVER ||  Type::BOTH_SER
 				ssize_t size = strlen("ok") + 1;
 				void* data = Packer((void*)"ok",&size);
+				_loger->debug("tTM is OnWrote size: %v context: %v type :%v", size, data, user());
 				Sendto(data, size);
 			}
 		}
@@ -163,6 +175,7 @@ namespace mm {
 			this->_addr = addr;
 			this->_port = port;
 			this->init(loop);
+			_loger->debug("uTM is Relate addr: %v port: %v type :%v", addr, port, user());
 			switch (type)
 			{
 			case mm::Transmitter::ITM::SERVER:
@@ -193,6 +206,7 @@ namespace mm {
 
 		int  uTM::Sendto(void* buf, size_t count)
 		{
+			_loger->debug("uTM is Sendto size: %v buf: %v", count, buf);
 			send((char*)buf, count, _addr,_port);
 			return count;
 		}
@@ -200,6 +214,7 @@ namespace mm {
 		int  uTM::Recfrm(void* buf, size_t count)
 		{
 			printf("%s recv data:%s,len = %d\n", user(), (char*)buf, count);
+			_loger->debug("uTM is Recfrm size: %v buf: %v", count, buf);
 			return count;
 		}
 
@@ -207,6 +222,7 @@ namespace mm {
 		{
 			if (status != mmerrno::mmSuccess) {
 				fprintf(stderr, "Send error %s\n", Handle::errCode(status));
+				_loger->error("uTM is OnSent");
 				return;
 			}
 		}
@@ -215,6 +231,7 @@ namespace mm {
 		{
 			sockaddr_in* psin = (sockaddr_in*)addr;
 			printf("Recv from ip:%s,port:%d\n", inet_ntoa(psin->sin_addr), ntohs(psin->sin_port));
+			_loger->debug("uTM is OnReceived from ip:%v port:%v size: %v buf: %v", inet_ntoa(psin->sin_addr), ntohs(psin->sin_port), nread, buf);
 			printf("recv data:%s,len = %d\n", buf, nread);
 			Sendto((void*)buf, nread);
 			//send4(buf,nread,"192.168.100.90",1800);

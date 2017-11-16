@@ -34,6 +34,9 @@ void ellog::logroll(const std::string& value)
     el::Loggers::addFlag(el::LoggingFlag::StrictLogFileSizeCheck);
     el::Loggers::reconfigureAllLoggers(el::ConfigurationType::MaxLogFileSize, value);
     el::Helpers::installPreRollOutCallback(rolloutHandler);
+    // el::Loggers::addFlag(el::LoggingFlag::DisableApplicationAbortOnFatalLog);
+    // el::Loggers::addFlag(el::LoggingFlag::HierarchicalLogging);
+    // el::Loggers::setLoggingLevel(el::Level::Global);
 }
 
 void ellog::rolloutHandler(const char* filename, std::size_t size)
