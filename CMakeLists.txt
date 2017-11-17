@@ -4,12 +4,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/)
 include(mimer.cmake)
 
 # libuv
-#set(UV_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty)
-#add_subdirectory(${UV_SRC_DIR} ${PROJECT_BINARY_DIR}/3rdparty.out)
+set(UV_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty)
+add_subdirectory(${UV_SRC_DIR} ${PROJECT_BINARY_DIR}/3rdparty.out)
 
 # uvbase
-#set(UVBASE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/connecter/uvbase)
-#add_subdirectory(${UVBASE_SRC_DIR} ${PROJECT_BINARY_DIR}/uvbase.out)
+set(UVBASE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/connecter/uvbase)
+add_subdirectory(${UVBASE_SRC_DIR} ${PROJECT_BINARY_DIR}/uvbase.out)
 
 # transmitter
 set(TRANSMITTER_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/connecter/transmitter)

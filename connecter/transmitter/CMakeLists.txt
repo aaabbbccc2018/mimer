@@ -16,13 +16,14 @@ else()
 	set(UVBASE_LINK_DIR ${CMAKE_MODULE_PATH}/lib)
 endif(NOT UVBASE)
 
-link_directories(${UVBASE_LINK_DIR} ${CMAKE_MODULE_PATH}/lib/3rdlib/libuv/lib)
+link_directories(${UVBASE_LINK_DIR} ${CMAKE_MODULE_PATH}/lib/3rdlib/libuv/lib ${CMAKE_MODULE_PATH}/lib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../uvbase
 	                  ${CMAKE_MODULE_PATH}//lib/3rdlib/libuv/include
-	                  ./src/transmitter)
+	                  ./src/transmitter
+					  ${CMAKE_MODULE_PATH}/ellog)
 # 查找当前目录下的所有源文件
 # 并将名称保存到 DIR_SRCS 变量
 aux_source_directory(./ DIR_SRCS)
 aux_source_directory(./src/transmitter DIR_SRCS)
 add_executable(transmitter ${DIR_SRCS})
-target_link_libraries(transmitter uvbase libuv.so)
+target_link_libraries(transmitter uvbase uv ellog)
