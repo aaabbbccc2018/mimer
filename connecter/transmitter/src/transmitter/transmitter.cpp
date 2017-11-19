@@ -4,42 +4,7 @@
 
 namespace mm {
 	namespace Transmitter {
-		tTM::tTM()
-		{
-		}
-
-		tTM::~tTM()
-		{
-		}
-
-		void* tTM::Packer(void * data, ssize_t* size)
-		{
-			if (this->userType & 1) { //Type::CLIENT ||  Type::BOTH_CLI
-				_loger->debug("tTM is Packer userType: %v size: %v context: %v", user(), *size, data);
-				printf("Packer current is %s\n", user());
-				return data;
-			}
-			else { //Type::SERVER ||  Type::BOTH_SER
-				_loger->debug("tTM is Packer userType: %v size: %v context: %v", user(), *size, data);
-				printf("Packer current is %s\n", user());
-				return data;
-			}
-		}
-
-		void* tTM::Unpack(void * data, ssize_t* size)
-		{
-			if (this->userType & 1) { //Type::CLIENT ||  Type::BOTH_CLI
-				_loger->debug("tTM is Unpack userType: %v size: %v context: %v", user(), *size, data);
-				printf("Unpack current is %s\n", user());
-				return data;
-			}
-			else { //Type::SERVER ||  Type::BOTH_SER
-				printf("Unpack current is %s\n", user());
-				_loger->debug("tTM is Unpack userType: %v size: %v context: %v", user(), *size, data);
-				return data;
-			}
-		}
-
+		//tcp
 		int  tTM::Relate(const char* addr, const int port,Type type)
 		{
 			Loop loop(false);
@@ -81,7 +46,7 @@ namespace mm {
 		int  tTM::Recfrm(void* buf, size_t count)
 		{
 			printf("%s recv data:%s,len = %d\n", user(), (char*)buf, count);
-			_loger->debug("tTM is Recfrm size: %v buf: %v", count, buf);
+			_loger->debug("tTM is Recfrm size: %v buf: %v", count, (char*)buf);
 			return count;
 		}
 
@@ -105,7 +70,10 @@ namespace mm {
 				_loger->error("tTM is doAccept error: %v", Handle::errCode(status));
 				return;
 			}
+			// create a new server for a client side service
 			tTM* s2c = new tTM();
+			s2c->set_packer(this->_packer);
+			s2c->set_unpack(this->_unpack);
 			s2c->init(loop());
 			if (accept((Stream*)s2c) == 0) {
 				char ip[17] = { 0 };
@@ -113,6 +81,7 @@ namespace mm {
 				s2c->getpeerIpPort(ip, port);
 				printf("client accept client ip = %s,port = %d\n", ip, port);
 				_loger->debug("tTM is doAccept client ip:%v port: %v", ip, port);
+				// start to read data from a client
 				s2c->read_start();
 			}
 			else {
@@ -121,53 +90,45 @@ namespace mm {
 			}
 		}
 
-		//client or server need implement
+		//client or server need implement, When data comes in, it is called
 		void tTM::OnRead(ssize_t nread, const char *buf)
 		{
-			_loger->debug("tTM is OnRead size: %v context: %v", nread, buf);
+			_loger->debug("tTM is OnRead size: %v context: %v", nread, (char*)buf);
 			if (nread < 0) {
 				fprintf(stderr, "%s Read error %s\n", user(),Handle::errType(nread));
 				close();
 				return;
 			}
 			if (this->userType & 1) { //Type::CLIENT ||  Type::BOTH_CLI
-				void* data = Unpack((void*)buf, &nread);
+				void* data = Unpack((void*)buf, nread);
 				Recfrm((void*)buf, nread);
 			}
 			else { //Type::SERVER ||  Type::BOTH_SER
-				void* data = Unpack((void*)buf, &nread);
+				void* data = Unpack((void*)buf, nread);
 				Recfrm(data, nread);
 			}
 		}
 
-		//client or client need implement
+		//client or client need implement, when it needs to send data, it id called
 		void tTM::OnWrote(mmerrno status) {
 			if (this->userType & 1) { //Type::CLIENT ||  Type::BOTH_CLI
 				char sendbuf[1024];
 				memset(sendbuf, 0, 1024);
 				scanf("%s", sendbuf);
 				ssize_t size = strlen(sendbuf) + 1;
-				void* data = Packer((void*)sendbuf, &size);
-				_loger->debug("tTM is OnWrote size: %v context: %v type: %v", size, data, user());
-				Sendto(sendbuf,size);
+				void* data = Packer((void*)sendbuf, size);
+				_loger->debug("tTM is OnWrote size: %v context: %v type: %v", size, (char*)data, user());
+				Sendto(data,size);
 			}
 			else { //Type::SERVER ||  Type::BOTH_SER
 				ssize_t size = strlen("ok") + 1;
-				void* data = Packer((void*)"ok",&size);
-				_loger->debug("tTM is OnWrote size: %v context: %v type :%v", size, data, user());
+				void* data = Packer((void*)"ok",size);
+				_loger->debug("tTM is OnWrote size: %v context: %v type :%v", size, (char*)data, user());
 				Sendto(data, size);
 			}
 		}
 	
 		//udp
-		void uTM::Packer(void * data, ssize_t size)
-		{
-		}
-
-		void uTM::Unpack(void * data, ssize_t size)
-		{
-		}
-
 		int  uTM::Relate(const char* addr, const int port, Type type)
 		{
 			Loop loop(false);
@@ -206,7 +167,7 @@ namespace mm {
 
 		int  uTM::Sendto(void* buf, size_t count)
 		{
-			_loger->debug("uTM is Sendto size: %v buf: %v", count, buf);
+			_loger->debug("uTM is Sendto size: %v buf: %v", count, (char*)buf);
 			send((char*)buf, count, _addr,_port);
 			return count;
 		}
@@ -214,7 +175,7 @@ namespace mm {
 		int  uTM::Recfrm(void* buf, size_t count)
 		{
 			printf("%s recv data:%s,len = %d\n", user(), (char*)buf, count);
-			_loger->debug("uTM is Recfrm size: %v buf: %v", count, buf);
+			_loger->debug("uTM is Recfrm size: %v buf: %v", count, (char*)buf);
 			return count;
 		}
 
@@ -231,7 +192,7 @@ namespace mm {
 		{
 			sockaddr_in* psin = (sockaddr_in*)addr;
 			printf("Recv from ip:%s,port:%d\n", inet_ntoa(psin->sin_addr), ntohs(psin->sin_port));
-			_loger->debug("uTM is OnReceived from ip:%v port:%v size: %v buf: %v", inet_ntoa(psin->sin_addr), ntohs(psin->sin_port), nread, buf);
+			_loger->debug("uTM is OnReceived from ip:%v port:%v size: %v buf: %v", inet_ntoa(psin->sin_addr), ntohs(psin->sin_port), nread, (char*)buf);
 			printf("recv data:%s,len = %d\n", buf, nread);
 			Sendto((void*)buf, nread);
 			//send4(buf,nread,"192.168.100.90",1800);
