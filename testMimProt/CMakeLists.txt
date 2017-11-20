@@ -1,7 +1,7 @@
 # Make 最低版本号要求
 cmake_minimum_required (VERSION 2.8)
 # 项目信息
-project (MIMProtocol)
+project (testMimProt)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../)
 include(../mimer.cmake)
 #定义ELLOG位置
@@ -20,15 +20,20 @@ endif(NOT ELLOG AND NOT ${ELLOG_LIBRARY})
 # valgrind
 include (CTest)
 # 指定include 路径
-include_directories(./ ../ellog/ ../utils/stream)
+include_directories(../MIMProtocol ../ellog ../utils/stream)
 # 查找当前目录下的所有源文件
 # 并将名称保存到 DIR_SRCS 变量
 aux_source_directory(. DIR_SRCS)
 aux_source_directory(../utils/stream/Stream.cpp DIR_SRCS)
 link_directories(${ELLOG_LINK_DIR})
-# 生成动态链接库
-add_library(MIMProtocol SHARED ${DIR_SRCS})
-add_library(MIMProtocol_static STATIC ${DIR_SRCS})
-target_link_libraries(MIMProtocol ellog)
-set_target_properties(MIMProtocol_static PROPERTIES OUTPUT_NAME "MIMProtocol")
-set_target_properties(MIMProtocol PROPERTIES VERSION 0.1 SOVERSION 1)
+# 指定生成目标
+add_executable(testMimProt ${DIR_SRCS})
+target_link_libraries(testMimProt ellog MIMProtocol)
+
+# 启用测试
+enable_testing()
+# 测试程序是否成功运行
+foreach (index RANGE 1 14)
+	add_test (packet_type_${index}_dried testMimProt ${index} 1)
+	add_test (packet_type_${index}_official testMimProt ${index} 0)
+endforeach ()
