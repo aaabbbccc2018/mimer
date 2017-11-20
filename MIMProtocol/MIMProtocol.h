@@ -29,10 +29,10 @@ class MIMProtocol
     typedef std::map<const char*, const void*>  Analyzer;
     typedef enum MechineType{ CLIENT = 0, SERVER, SERCLI }Mtype;
 public:
-    MIMProtocol();
-    MIMProtocol(char* content, int mtype = 0);
-    MIMProtocol(int type, int dried = 0, int dup = 0,int qos = 0);
-    ~MIMProtocol();
+    UTIL_API MIMProtocol();
+    UTIL_API MIMProtocol(char* content, int mtype = 0);
+    UTIL_API MIMProtocol(int type, int dried = 0, int dup = 0,int qos = 0);
+    UTIL_API ~MIMProtocol();
 public:
     inline const void* operator[](const char* key)
     {

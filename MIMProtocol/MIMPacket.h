@@ -587,16 +587,17 @@ typedef struct {
 /**
  *
  */
-class MIMPacket
+//class UTIL_API MIMPacket;
+class  MIMPacket
 {
     friend class MIMProtocol;
 public:
     static const char* packet_names[];
 public:
-    MIMPacket(int type, int dried = 0, int dup = 0,int qos = 0);
-    virtual ~MIMPacket();
+    UTIL_API MIMPacket(int type, int dried = 0, int dup = 0,int qos = 0);
+    UTIL_API virtual ~MIMPacket();
 public:
-    friend std::ostream & operator<<(std::ostream &out, const MIMPacket &c);
+    UTIL_API friend std::ostream & operator<<(std::ostream &out, const MIMPacket &c);
 protected:
     /**
      * @brief dry: set this packet's DRIED flag. The fixed Header 0 bit is 1
@@ -650,76 +651,76 @@ public://set
      * @brief setKAT, use at CONNECT
      * @param kat
      */
-    void setKAT(Int kat);
+    void UTIL_API setKAT(Int kat);
     /**
      * @brief setClientId, use at CONNECT
      * @param clientId
      * @param size default clientId is 16 byte
      */
-    void setClientId(size_t size = 16);
+    void UTIL_API setClientId(size_t size = 16);
     /**
      * @brief setWill, use at CONNECT
      * @param willtopic
      * @param willmsg
      * @param size
      */
-    void setWill(const char* willtopic, const char* willmsg, size_t sizet, size_t sizem);
+    void UTIL_API setWill(const char* willtopic, const char* willmsg, size_t sizet, size_t sizem);
     /**
      * @brief setUserName, use at CONNECT
      * @param userName
      * @param size
      */
-    void setUserName(const char* userName, size_t size);
+    void UTIL_API setUserName(const char* userName, size_t size);
     /**
      * @brief setPasswd, use at CONNECT
      * @param passwd
      * @param size
      */
-    void setPasswd(const char* passwd, size_t size);
+    void UTIL_API setPasswd(const char* passwd, size_t size);
     /**
      * @brief setSignUp, a special CONNECT mode, create a new user,
      * a special setClientId type
      */
-    void setSignUp();
+    void UTIL_API setSignUp();
     /**
      * @brief setSignDel, a special CONNECT mode, delete a exist user,
      * a special setClientId type
      */
-    void setSignDel(const char* clientId, size_t size = 16);
+    void UTIL_API setSignDel(const char* clientId, size_t size = 16);
     /**
      * @brief setMultiConnect: make the Multi-client device connect the server
      */
-    void setMultiConnect(int mc = 1);
+    void UTIL_API setMultiConnect(int mc = 1);
     /**
      * @brief setRC, use at CONNACK
      * @param rc
      */
-    void setRC(char rc);
+    void UTIL_API setRC(char rc);
     /**
      * @brief setFlags, use at CONNECT/CONNACK
      * @param value
      * @return
      */
-    void setFlags(_ubyte value);
-    void setCleanstart(boolean value);
-    void setWillflag(boolean value);
-    void setWillQos(unsigned int value);
-    void setisPassword(boolean value);
-    void setisUsername(boolean value);
+    void UTIL_API setFlags(_ubyte value);
+    void UTIL_API setCleanstart(boolean value);
+    void UTIL_API setWillflag(boolean value);
+    void UTIL_API setWillQos(unsigned int value);
+    void UTIL_API setisPassword(boolean value);
+    void UTIL_API setisUsername(boolean value);
     /**
      * @brief setTopics, use at PUBLISH/SUBSCRIBE/UNSUBSCRIBE
      * @param content (topic and qos)
      * @param size
      * @return
      */
-    void addTopics(char qos = 0, const char* contents = NULL, size_t size = 0);
+    void UTIL_API addTopics(char qos = 0, const char* contents = NULL, size_t size = 0);
     /**
      * @brief setPayload, use at CONNECT/PUBLISH/SUBSCRIBE/SUBACK/UNSUBSCRIBE
      * @param payload
      * @param size
      * @return
      */
-    void setPayload(const char* payload, size_t size);
+    void UTIL_API setPayload(const char* payload, size_t size);
     /**
      * @brief setPacketId, use at PUBLISH/PUBACK/PUBREC/
      *                            PUBREL/PUBCOMP/SUBSCRIBE/
@@ -728,12 +729,12 @@ public://set
      * @param size
      * @return
      */
-    void setPacketId(int packetId);
+    void UTIL_API setPacketId(int packetId);
     /**
      * @brief setPingStatus set current user's status, will send will PINGREQ
      * @param pstatus
      */
-    void setPingStatus(int pstatus);
+    void UTIL_API setPingStatus(int pstatus);
 private:
     /* header.bits.dup == 0 && clientID == 0 : create a new user, will return a clientID */
     inline bool isSignin() const {
@@ -765,8 +766,8 @@ public:
      * @param packet
      * @return
      */
-    bool encode(char* packet);
-    int  decode(char* packet);
+    bool UTIL_API encode(char* packet);
+    int  UTIL_API decode(char* packet);
 private:
     void*    _packet;    // packet's data
     int      _ptype;     // packet's type

@@ -1,4 +1,5 @@
 #include "MIMPacket.h"
+INITIALIZE_NULL_EASYLOGGINGPP
 namespace mimer {
 
 const char* MIMPacket::packet_names[] =
