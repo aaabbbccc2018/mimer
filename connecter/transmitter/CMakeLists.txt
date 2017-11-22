@@ -4,17 +4,18 @@ cmake_minimum_required (VERSION 2.8)
 project (transmitter)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 include(../../mimer.cmake)
+
 #∂®“ÂuvbaseŒª÷√
+get_property(transmitter_UVBASE_LIBRARY GLOBAL PROPERTY "UVBASE_LIBRARY")
 find_library(UVBASE uvbase ${CMAKE_MODULE_PATH}/lib)
-if(NOT UVBASE)
+if(NOT UVBASE AND NOT transmitter_UVBASE_LIBRARY)
 	message(STATUS "not find ${CMAKE_MODULE_PATH}")
 	set(UVBASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../uvbase)
 	add_subdirectory(${UVBASE_DIR} ${PROJECT_BINARY_DIR}/uvbase.out)
-	set(UVBASE_LINK_DIR ${CMAKE_MODULE_PATH}/lib)
 else()
 	message(STATUS "finded")
 	set(UVBASE_LINK_DIR ${CMAKE_MODULE_PATH}/lib)
-endif(NOT UVBASE)
+endif(NOT UVBASE AND NOT transmitter_UVBASE_LIBRARY)
 
 link_directories(${UVBASE_LINK_DIR} ${CMAKE_MODULE_PATH}/lib/3rdlib/libuv/lib ${CMAKE_MODULE_PATH}/lib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../uvbase

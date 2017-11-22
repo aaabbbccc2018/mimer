@@ -4,7 +4,7 @@ cmake_minimum_required (VERSION 2.8)
 project (ellog)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../)
 include(../mimer.cmake)
-# set(ELLOG_LIBRARY FALSE CACHE INTERNAL "ellog is builded")
+set_property(GLOBAL PROPERTY ELLOG_LIBRARY TRUE)
 # 查找当前目录下的所有源文件
 # 并将名称保存到 DIR_LIB_SRCS 变量
 aux_source_directory(. DIR_LIB_SRCS)
