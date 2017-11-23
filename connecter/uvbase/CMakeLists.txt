@@ -4,7 +4,7 @@ cmake_minimum_required (VERSION 2.8)
 project (uvbase)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 include(../../mimer.cmake)
-set_property(GLOBAL PROPERTY UVBASE_LIBRARY TRUE)
+
 #∂®“ÂuvbaseŒª÷√
 find_library(UV uv ${CMAKE_MODULE_PATH}/lib/3rdlib/libuv/lib)
 if(NOT UV)

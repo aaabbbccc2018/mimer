@@ -15,10 +15,10 @@ else()
 endif()
 
 if( CMAKE_BUILD_TYPE STREQUAL "Debug" )
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wno-sign-compare -pthread")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wno-sign-compare")
 else( CMAKE_BUILD_TYPE STREQUAL "Debug" )
 	set(CMAKE_BUILD_TYPE "Release")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wno-sign-compare -pthread -fopenmp")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wno-sign-compare -fopenmp")
 endif( CMAKE_BUILD_TYPE STREQUAL "Debug" )
 
 #message("Build Type:" ${CMAKE_BUILD_TYPE} ${CMAKE_CXX_FLAGS})

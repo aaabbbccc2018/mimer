@@ -1,7 +1,7 @@
 # Make 最低版本号要求
 cmake_minimum_required (VERSION 2.8)
 # 项目信息
-project (MIMProtocol)
+project (mimp)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../)
 include(../mimer.cmake)
 
@@ -26,8 +26,8 @@ aux_source_directory(. DIR_SRCS)
 aux_source_directory(../utils/stream/Stream.cpp DIR_SRCS)
 link_directories(${ELLOG_LINK_DIR})
 # 生成动态链接库
-add_library(MIMProtocol SHARED ${DIR_SRCS})
-add_library(MIMProtocol_static STATIC ${DIR_SRCS})
-target_link_libraries(MIMProtocol ellog)
-set_target_properties(MIMProtocol_static PROPERTIES OUTPUT_NAME "MIMProtocol")
-set_target_properties(MIMProtocol PROPERTIES VERSION 0.1 SOVERSION 1)
+add_library(mimp SHARED ${DIR_SRCS})
+add_library(mimp_static STATIC ${DIR_SRCS})
+target_link_libraries(mimp ellog)
+set_target_properties(mimp_static PROPERTIES OUTPUT_NAME "mimp")
+set_target_properties(mimp PROPERTIES VERSION 0.1 SOVERSION 1)

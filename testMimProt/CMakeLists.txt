@@ -27,7 +27,7 @@ aux_source_directory(../utils/stream/Stream.cpp DIR_SRCS)
 link_directories(${ELLOG_LINK_DIR})
 # 指定生成目标
 add_executable(testMimProt ${DIR_SRCS})
-target_link_libraries(testMimProt ellog MIMProtocol)
+target_link_libraries(testMimProt ellog mimp)
 
 # 启用测试
 enable_testing()

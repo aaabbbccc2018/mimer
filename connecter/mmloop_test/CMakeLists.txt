@@ -7,14 +7,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 include(../../mimer.cmake)
 
 #∂®“ÂuvbaseŒª÷√
-get_property(mmloop_test_UVBASE_LIBRARY GLOBAL PROPERTY "UVBASE_LIBRARY" )
+get_property(UVBASE_BUILED_MODULE GLOBAL PROPERTY "uvbase_build")
 find_library(UVBASE uvbase ${CMAKE_MODULE_PATH}/lib)
-if(NOT UVBASE AND NOT mmloop_test_UVBASE_LIBRARY)
+if(NOT UVBASE AND NOT UVBASE_BUILED_MODULE)
 	set(UVBASE_DIR ../uvbase)
 	add_subdirectory(${UVBASE_DIR} ${PROJECT_BINARY_DIR}/uvbase.out)
 else()
 	set(UVBASE_LINK_DIR ${CMAKE_MODULE_PATH}/lib)
-endif(NOT UVBASE AND NOT mmloop_test_UVBASE_LIBRARY)
+endif(NOT UVBASE AND NOT UVBASE_BUILED_MODULE)
 
 link_directories(${UVBASE_LINK_DIR} ${CMAKE_MODULE_PATH}/lib/3rdlib/libuv/lib ${CMAKE_MODULE_PATH}/lib)
 include_directories(./ ../uvbase ../../ ${CMAKE_MODULE_PATH}/lib/3rdlib/libuv/include ${CMAKE_MODULE_PATH}/ellog)

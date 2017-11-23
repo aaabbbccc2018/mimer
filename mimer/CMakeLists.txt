@@ -28,5 +28,5 @@ aux_source_directory(../utils/stream/Stream.cpp DIR_SRCS)
 link_directories(${ELLOG_LINK_DIR})
 # 指定生成目标
 add_executable(mimer ${DIR_SRCS})
-target_link_libraries(mimer ellog MIMProtocol)
+target_link_libraries(mimer ellog mimp)
 
