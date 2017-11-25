@@ -5118,8 +5118,8 @@ public:
                         ++s;
                         if (value == NULL)
                         {
-                             b << "\033[31mExist NULL Pointer, Will Crash!!!\033[00m";
-]                            ELPP_INTERNAL_ERROR("Exist NULL Pointer, Will Crash", true);
+                             b << "\033[1;31mExist NULL Pointer, Will Crash!!!\033[00m";
+                             ELPP_INTERNAL_ERROR("Exist NULL Pointer, Will Crash", true);
                              //continue;
                         }
                         else {

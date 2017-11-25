@@ -73,7 +73,7 @@ public:
 public:
     static el::base::type::StoragePointer shared();
     static void rolloutHandler(const char* filename, std::size_t size);
-    static void ellog::crashHandler(int sig);
+    static void crashHandler(int sig);
     static inline int_64 timestamp() { return el::base::utils::DateTime::timestamp(); }
     static std::string datatime(const char* format = el::base::consts::kDefaultDateTimeFormat) {
         el::base::MillisecondsWidth msw = el::base::MillisecondsWidth();
