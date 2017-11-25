@@ -32,11 +32,15 @@ void ellog::defaultformat(el::Configurations& idConf)
 void ellog::logroll(const std::string& value)
 {
     el::Loggers::addFlag(el::LoggingFlag::StrictLogFileSizeCheck);
+    // fix ctrl+c crash bug:  https://github.com/muflihun/easyloggingpp/issues/186
+    el::Loggers::addFlag(el::LoggingFlag::DisableApplicationAbortOnFatalLog);
+    el::Loggers::addFlag(el::LoggingFlag::HierarchicalLogging);
+    el::Loggers::setLoggingLevel(el::Level::Global);
+    el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
+    el::Helpers::setCrashHandler(crashHandler);
+    el::Loggers::addFlag(el::LoggingFlag::LogDetailedCrashReason);
     el::Loggers::reconfigureAllLoggers(el::ConfigurationType::MaxLogFileSize, value);
     el::Helpers::installPreRollOutCallback(rolloutHandler);
-    // el::Loggers::addFlag(el::LoggingFlag::DisableApplicationAbortOnFatalLog);
-    // el::Loggers::addFlag(el::LoggingFlag::HierarchicalLogging);
-    // el::Loggers::setLoggingLevel(el::Level::Global);
 }
 
 void ellog::rolloutHandler(const char* filename, std::size_t size)
@@ -65,6 +69,14 @@ void ellog::rolloutHandler(const char* filename, std::size_t size)
             printf("again rename %s to %s ok\n", filename, backupFile);
         }
 	}
+}
+
+void ellog::crashHandler(int sig)
+{
+    el::Helpers::logCrashReason(sig, true);
+    el::Loggers::flushAll();
+    el::Helpers::crashAbort(sig); // FOLLOWING LINE IS ABSOLUTELY NEEDED AT THE END IN ORDER TO ABORT APPLICATION
+    el::Loggers::flushAll();
 }
 
 bool ellog::log(el::Level lev, const std::string& msg)

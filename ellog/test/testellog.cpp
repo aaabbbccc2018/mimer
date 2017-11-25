@@ -33,9 +33,12 @@ int main() {
 	elg.warn("This is test warn log %v", 99);
 	clog(DEBUG, elg) << "hello clog";
 	int i = 1;
+	char* p = "pointer";
+	char* nil = NULL;
 	while (i < 15) {
-		elg.warn("%v This is test warn log %v",  __LINE__, i++);
+		elg.warn("%v This is test warn log %v %v",  __LINE__, i++, NULL);
 		clog_if(i < 10, DEBUG, elg) << "hello clog";
 	}
+	elg.warn("%v This is test warn log %v pointer %v nil %v", __LINE__, i++, p, nil);
 	return 0;
 }

@@ -5116,7 +5116,15 @@ public:
                 } else {
                     if (*(s + 1) == base::consts::kFormatSpecifierCharValue) {
                         ++s;
-                        b << value;
+                        if (value == NULL)
+                        {
+                             b << "\033[31mExist NULL Pointer, Will Crash!!!\033[00m";
+]                            ELPP_INTERNAL_ERROR("Exist NULL Pointer, Will Crash", true);
+                             //continue;
+                        }
+                        else {
+                             b << value;
+                        }
                         log_(level, vlevel, ++s, args...);
                         return;
                     }
