@@ -1,4 +1,6 @@
 #pragma once
+#ifndef _TRANSMITTER_H
+#define _TRANSMITTER_H
 #include "mmloop_net.h"
 
 using namespace mm::uvbase;
@@ -7,16 +9,18 @@ typedef  UDP  baseU;                       /*Provide a transport layer base clas
 
 namespace mm {
 	namespace Transmitter {
+		class MM_LOOP_API tTM;
+		class MM_LOOP_API uTM;
 		/*
 			interface of Transmitter
 		*/
 		class ITM
 		{
-		/*
-		protected:
-			ITM():_packer(NULL),_unpack(NULL) {}
-			~ITM() {}
-		*/
+			/*
+			protected:
+				ITM():_packer(NULL),_unpack(NULL) {}
+				~ITM() {}
+			*/
 		public:
 			enum Type {
 				SERVER = 0,                /* Just a server */
@@ -36,7 +40,7 @@ namespace mm {
 			4. 拆包 Unpack   : 将上层的原数据打包，为发送准备(private)
 			5. 取关 Unlink   : 本次结束，取消与传输器的联系
 			*/
-			virtual int   Relate(const char* addr,const int port,Type type = SERVER) = 0;
+			virtual int   Relate(const char* addr, const int port, Type type = SERVER) = 0;
 			virtual int   Unlink() = 0;
 			virtual void* Packer(void* data, size_t size) {
 				if (_packer) {
@@ -59,14 +63,14 @@ namespace mm {
 			packer* _packer = NULL;
 			unpack* _unpack = NULL;
 		};
-		
+
 		class tTM :public ITM, public baseT
 		{
-		/*
-		public:
-			tTM() {}
-			~tTM() {}
-		*/
+			/*
+			public:
+				tTM() {}
+				~tTM() {}
+			*/
 		public:
 			const char* _type[5] = { "server","client","both_ser","both_cli","unknown" };
 			inline const char* user() { return _type[userType]; }
@@ -94,11 +98,11 @@ namespace mm {
 
 		class uTM :public ITM, public baseU
 		{
-		/*
-		public:
-			uTM() {}
-			~uTM() {}
-		*/
+			/*
+			public:
+				uTM() {}
+				~uTM() {}
+			*/
 		public:
 			const char* _type[5] = { "server","client","both_ser","both_cli","unknown" };
 			inline const char* user() { return _type[userType]; }
@@ -123,3 +127,4 @@ namespace mm {
 	}
 
 }
+#endif

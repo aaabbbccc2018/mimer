@@ -59,6 +59,7 @@ namespace mimer {
 #define DEBUG      1
 #define OFFICIAL_MIM   1
 #define OFFICIAL_MQTT  OFFICIAL_MIM
+#define REVERSED 1
 enum msgTypes
 {
     CONNECT = 1, CONNACK, PUBLISH, PUBACK, PUBREC, PUBREL,
@@ -252,6 +253,7 @@ typedef union
 #endif
 } Header;
 typedef Header* pHeader;
+#define initHeader(TYPE) TYPE
 
 /**
  * Data for one of the ack packets.
@@ -263,7 +265,7 @@ typedef struct
     int    packetId;                    /* MIM packet id */
 } Ack;
 typedef Ack* pAck;
-
+#define initAck(TYPE) { initHeader(TYPE), 0}
 /**
  * Data for a packet with header only.
  */
@@ -272,7 +274,7 @@ typedef struct
     Header header;                      /* MIM header byte */
 } header_s;
 typedef header_s* pHeaders;
-
+#define initheader_s(TYPE) { TYPE }
 /*
  * Packets
  *
@@ -308,7 +310,7 @@ typedef union
     } bits;
 #endif
 } connflags;
-
+#define initconnflags 254
 /**
  * Data for a connect packet. 0x1
  */
@@ -334,7 +336,7 @@ typedef struct
     char*         passwd;               /* password */
 } Connect;
 typedef Connect* pConnect;
-
+#define initCONNECT { initHeader(CONNECT), MIM_NAME, MIM_VER, initconnflags, 100, 0,NULL, 0,NULL, 0,NULL, 0,NULL, 0, NULL }
 /**
  * Data for a connack packet. 0x2
  */
@@ -358,7 +360,7 @@ typedef union
     } bits;
 #endif
 } cackflags;                            /* connack flags byte */
-
+#define initcackflags 0
 typedef struct
 {
     Header header;                      /* MIM header byte */
@@ -370,7 +372,7 @@ typedef struct
     char* clientID;                     /* create a new user, will return a new clientId */
 } ConnAck;
 typedef ConnAck* pConnAck;
-
+#define initCONNACK { initHeader(CONNACK),initcackflags, 0, 0, NULL}
 /**
  * Data for a publish packet. 0x3
  */
@@ -386,31 +388,31 @@ typedef struct
     char*  payload;                     /* binary payload, length delimited */
 } Publish;
 typedef Publish* pPublish;
-
+#define initPUBLISH { initHeader(PUBLISH), 0, NULL, 0, 0, NULL}
 /**
  * Data for a Puback packet. 0x4
  */
 typedef Ack PubAck;
 typedef PubAck* pPubAck;
-
+#define initPUBACK initAck(PUBACK)
 /**
  * Data for a Pubrec packet. 0x5
  */
 typedef Ack PubRec;
 typedef PubRec* pPubRec;
-
+#define initPUBREC initAck(PUBREC)
 /**
  * Data for a Pubrel packet. 0x6
  */
 typedef Ack PubRel;
 typedef PubRel* pPubRel;
-
+#define initPUBREL initAck(PUBREL)
 /**
  * Data for a Pubrel Pubcomp. 0x7
  */
 typedef Ack PubComp;
 typedef PubComp* pPubComp;
-
+#define initPUBCOMP initAck(PUBCOMP)
 /**
  * Data for a subscribe packet. 0x8
  */
@@ -425,7 +427,7 @@ typedef struct
     // int    noTopics;               /* topic and qos count */
 } Subscribe;
 typedef Subscribe* pSubscribe;
-
+#define initSUBSCRIBE { initHeader(SUBSCRIBE), 0, NULL, NULL}
 /**
  * Data for a suback packet. 0x9
  */
@@ -438,7 +440,7 @@ typedef struct
     ListQos*  qoss;                   /* list of granted QoSs */
 } SubAck;
 typedef SubAck* pSubAck;
-
+#define initSUBACK { initHeader(SUBACK), 0, NULL}
 /**
  * Data for an unsubscribe packet. 0x10
  */
@@ -452,30 +454,33 @@ typedef struct
     // int    noTopics;               /* topic count */
 } Unsubscribe;
 typedef Unsubscribe* pUnsubscribe;
-
+#define initUNSUBSCRIBE { initHeader(UNSUBSCRIBE), 0, NULL}
 /**
  * Data for an Unsuback packet. 0x11
  */
 typedef Ack UnsubAck;
 typedef UnsubAck* pUnsubAck;
-
+#define initUNSUBACK initAck(UNSUBACK)
 /**
  * Data for an PingReq packet. 0x12
  */
 typedef header_s PingReq;
 typedef PingReq* pPingReq;
-
+#define initPINGREQ initheader_s(PINGREQ)
 /**
  * Data for an PingResp packet. 0x13
  */
 typedef header_s PingResp;
 typedef PingResp* pPingResp;
-
+#define initPINGRESP initheader_s(PINGRESP)
 /**
  * Data for an Disconnect packet. 0x14
  */
 typedef header_s Disconnect;
 typedef Disconnect* pDisconnect;
+#define initDISCONNECT initheader_s(DISCONNECT)
+
+#define INIT(type) init##type
 
 typedef struct {
     char* topic;
@@ -647,6 +652,7 @@ public://get
         return payload;
     }
 public://set
+	void UTIL_API initer(msgTypes type);
     /**
      * @brief setKAT, use at CONNECT
      * @param kat

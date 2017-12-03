@@ -224,6 +224,73 @@ MIMPacket::~MIMPacket()
     }
 }
 
+void MIMPacket::initer(msgTypes type)
+{
+	Connect connect = INIT(CONNECT);
+	ConnAck connack = INIT(CONNACK);
+	Publish publish = INIT(PUBLISH);
+	PubAck  puback  = INIT(PUBACK);
+	PubRec  pubrec  = INIT(PUBREC);
+	PubRel  pubrel  = INIT(PUBREL);
+	PubComp pubcomp = INIT(PUBCOMP);
+	Subscribe subsb = INIT(SUBSCRIBE);
+	SubAck  suback  = INIT(SUBACK);
+	Unsubscribe usb = INIT(UNSUBSCRIBE);
+	UnsubAck unsack = INIT(UNSUBACK);
+	PingReq pingreq = INIT(PINGREQ);
+	PingResp presp  = INIT(PINGRESP);
+	Disconnect disc = INIT(DISCONNECT);
+	switch (type)
+	{
+	case CONNECT:
+		_packet = (void*)&(connect);
+		break;
+	case CONNACK:
+		_packet = (void*)&(connack);
+		break;
+	case PUBLISH:
+		_packet = (void*)&(publish);
+		break;
+	case PUBACK:
+		_packet = (void*)&(puback);
+		break;
+	case PUBREC:
+		_packet = (void*)&(pubrec);
+		break;
+	case PUBREL:
+		_packet = (void*)&(pubrel);
+		break;
+	case PUBCOMP:
+		_packet = (void*)&(pubcomp);
+		break;
+	case SUBSCRIBE:
+		_packet = (void*)&(subsb);
+		break;
+	case SUBACK:
+		_packet = (void*)&(suback);
+		break;
+	case UNSUBSCRIBE:
+		_packet = (void*)&(usb);
+		break;
+	case UNSUBACK:
+		_packet = (void*)&(unsack);
+		break;
+	case PINGREQ:
+		_packet = (void*)&(pingreq);
+		break;
+	case PINGRESP:
+		_packet = (void*)&(presp);
+		break;
+	case DISCONNECT:
+		_packet = (void*)&(disc);
+		break;
+	default:
+		printf("error packet type\n");
+		_loger->error("error packet type");
+		break;
+	}
+}
+
 std::ostream & operator<<(std::ostream &out, const MIMPacket &mp)
 {
     msgTypes ptype = (msgTypes)mp._ptype;
@@ -998,7 +1065,7 @@ bool MIMPacket::encode(char* packet)
     return true;
 }
 
-int   MIMPacket::decode(char* packet)
+int  MIMPacket::decode(char* packet)
 {
     if(NULL == packet || NULL ==  _packet){
         _loger->error("decode: packet is null");

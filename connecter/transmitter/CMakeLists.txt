@@ -26,5 +26,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../uvbase
 # 并将名称保存到 DIR_SRCS 变量
 aux_source_directory(./ DIR_SRCS)
 aux_source_directory(./src/transmitter DIR_SRCS)
-add_executable(transmitter ${DIR_SRCS})
-target_link_libraries(transmitter uvbase uv ellog)
+add_library(transmitter SHARED ${DIR_SRCS})
+add_library(transmitter_static STATIC ${DIR_SRCS})
+#add_dependencies(uvbase uv)
+target_link_libraries(transmitter uv uvbase ellog)
+set_target_properties(transmitter_static PROPERTIES OUTPUT_NAME "transmitter")
+set_target_properties(transmitter PROPERTIES VERSION 0.1 SOVERSION 1)

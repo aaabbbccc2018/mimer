@@ -19,6 +19,10 @@ add_subdirectory(${UVBASE_SRC_DIR} ${PROJECT_BINARY_DIR}/uvbase.out)
 set(TRANSMITTER_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/connecter/transmitter)
 add_subdirectory(${TRANSMITTER_SRC_DIR} ${PROJECT_BINARY_DIR}/transmitter.out)
 
+# testransmitter
+set(TESTRANSMITTER_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/connecter/transmitter/test)
+add_subdirectory(${TESTRANSMITTER_SRC_DIR} ${PROJECT_BINARY_DIR}/testtransmitter.out)
+
 # mmloop_test
 set(MMLOOP_TEST_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/connecter/mmloop_test)
 add_subdirectory(${MMLOOP_TEST_SRC_DIR} ${PROJECT_BINARY_DIR}/mmloop_test.out)
