@@ -1,8 +1,6 @@
 #include <stdio.h>
-#include "mmloop.h"
 #include "transmitter.h"
-INITIALIZE_NULL_EASYLOGGINGPP
-
+#include "log_config.h"
 using namespace mm::Transmitter;
 extern int client(int argc, char* argv[]);
 extern int server(int argc, char* argv[]);

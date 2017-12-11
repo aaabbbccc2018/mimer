@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
+#include "mmloop.h"
 #include "transmitter.h"
-INITIALIZE_NULL_EASYLOGGINGPP
 
 namespace mm {
 	namespace Transmitter {

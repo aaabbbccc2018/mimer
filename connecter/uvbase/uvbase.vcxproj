@@ -180,6 +180,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="biter.h" />
+    <ClInclude Include="log_config.h" />
     <ClInclude Include="mmloop_lock.h" />
     <ClInclude Include="mmloop_MT.h" />
     <ClInclude Include="mmloop_utils.h" />
