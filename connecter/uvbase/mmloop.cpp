@@ -1,5 +1,5 @@
 #include "mmloop.h"
-INITIALIZE_NULL_EASYLOGGINGPP
+#include "log_config.h"
 
 namespace mm {
 namespace uvbase {

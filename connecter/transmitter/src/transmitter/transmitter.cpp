@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include "transmitter.h"
-INITIALIZE_NULL_EASYLOGGINGPP
+//#include "log_config.h"
 
 namespace mm {
 	namespace Transmitter {
