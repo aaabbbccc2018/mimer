@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include "mmloop.h"
+#include "MIMPacket.h"
+using namespace mimer;
 #include "transmitter.h"
 //#include "log_config.h"
 
@@ -39,15 +41,15 @@ namespace mm {
 			return 0;
 		}
 
-		int  tTM::Sendto(void* buf, size_t count)
+		int  tTM::Sendto(void* buf, ssize_t& count)
 		{
 			write((char*)buf,count);
 			return count;
 		}
 
-		int  tTM::Recfrm(void* buf, size_t count)
+		int  tTM::Recfrm(void* buf, ssize_t& count)
 		{
-			printf("%s recv data:%s,len = %d\n", user(), (char*)buf, count);
+			//printf("%s recv data:%s,len = %d\n", user(), (char*)buf, count);
 			_loger->debug("tTM is Recfrm size: %v buf: %v", count, (char*)buf);
 			return count;
 		}
@@ -61,7 +63,11 @@ namespace mm {
 				return;
 			}
 			read_start();
-			Sendto((void*)"hello!",6);
+			// client connect, should send a connect packet to server
+			ssize_t size = strlen("CONNECT");
+			data = Packer((void*)"CONNECT", size);
+			Sendto(data, size);
+
 		}
 
 		//server need implement
@@ -103,30 +109,59 @@ namespace mm {
 			}
 			if (this->userType & 1) { //Type::CLIENT ||  Type::BOTH_CLI
 				void* data = Unpack((void*)buf, nread);
-				Recfrm((void*)buf, nread);
+				Recfrm(data, nread);
+				char* getData = (char*)data;
+				// when client recieve a connack packet
+				if (MIMPacket::type(getData[0]) == CONNACK) {
+					ssize_t size = strlen("login ok") + 1;
+					void* data = Packer((void*)"login ok", size);
+					_loger->debug("tTM is OnWrote size: %v context: %v type: %v", size, (char*)data, user());
+					Sendto(data, size);
+				}
+				else {
+					char sendbuf[1024];
+					memset(sendbuf, 0, 1024);
+					scanf("%s", sendbuf);
+					ssize_t size = strlen(sendbuf) + 1;
+					void* data = Packer((void*)sendbuf, size);
+					_loger->debug("tTM is OnWrote size: %v context: %v type: %v", size, (char*)data, user());
+					Sendto(data, size);
+				}
 			}
 			else { //Type::SERVER ||  Type::BOTH_SER
 				void* data = Unpack((void*)buf, nread);
 				Recfrm(data, nread);
+				char* getData = (char*)data;
+				// when server recieve a connect packet, should be send back a connack packet
+				if (MIMPacket::type(getData[0]) == CONNECT) {
+					ssize_t size = strlen("CONNACK");
+					data = Packer((void*)"CONNACK", size);
+					_loger->debug("tTM is OnWrote size: %v context: %v type :%v", size, (char*)data, user());
+					Sendto(data, size);
+				}
+				else {
+					ssize_t size = strlen("data reciver");
+					data = Packer((void*)"data reciver", size);
+					_loger->debug("tTM is OnRead size: %v context: %v type :%v", size, (char*)data, user());
+					Sendto(data, size);
+					_loger->debug("tTM is OnRead data server will write back");
+				}
 			}
 		}
 
 		//client or client need implement, when it needs to send data, it id called
 		void tTM::OnWrote(mmerrno status) {
 			if (this->userType & 1) { //Type::CLIENT ||  Type::BOTH_CLI
-				char sendbuf[1024];
-				memset(sendbuf, 0, 1024);
-				scanf("%s", sendbuf);
-				ssize_t size = strlen(sendbuf) + 1;
-				void* data = Packer((void*)sendbuf, size);
-				_loger->debug("tTM is OnWrote size: %v context: %v type: %v", size, (char*)data, user());
-				Sendto(data,size);
+				_loger->debug("tTM is OnWrote client");
 			}
 			else { //Type::SERVER ||  Type::BOTH_SER
-				ssize_t size = strlen("ok") + 1;
-				void* data = Packer((void*)"ok",size);
-				_loger->debug("tTM is OnWrote size: %v context: %v type :%v", size, (char*)data, user());
-				Sendto(data, size);
+				_loger->debug("tTM is OnWrote server");
+				/*
+					ssize_t size = strlen("CONNACK") + 1;
+					void* data = Packer((void*)"CONNACK",&size);
+					_loger->debug("tTM is OnWrote size: %v context: %v type :%v", size, (char*)data, user());
+					Sendto(data, size);
+				*/
 			}
 		}
 	

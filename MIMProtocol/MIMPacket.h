@@ -529,6 +529,11 @@ typedef struct {
     memset(pFMT(PTYPE)->KEY,0,SIZE);           \
     memcpy(pFMT(PTYPE)->KEY,VALUEADRR,SIZE);
 
+#define MQNEWS(PTYPE,KEY,VALUEADRR,SIZE)       \
+    pFMT(PTYPE)->KEY = (char*)_malloc(SIZE+2); \
+    memset(pFMT(PTYPE)->KEY,0,SIZE+2);         \
+    strcpy(pFMT(PTYPE)->KEY,VALUEADRR);
+
 #define MQNEW2(PTYPE,KEY,VALUEADRR,SIZE)       \
     pFMT(PTYPE)->KEY = (char*)_calloc(1,SIZE); \
     memcpy(pFMT(PTYPE)->KEY,VALUEADRR,SIZE);

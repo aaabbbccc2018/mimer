@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "transmitter.h"
-#include "log_config.h"
+//#include "log_config.h"
 using namespace mm::Transmitter;
 extern int client(int argc, char* argv[]);
 extern int server(int argc, char* argv[]);

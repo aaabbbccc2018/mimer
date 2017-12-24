@@ -28,8 +28,8 @@ namespace mm {
 				BOTH_SER,                  /* server or client,Tend to server */
 				BOTH_CLI,                  /* server or client,Tend to client */
 			};
-			typedef void* (packer)(void*, size_t);
-			typedef void* (unpack)(void*, size_t);
+			typedef void* (packer)(void*, ssize_t&);
+			typedef void* (unpack)(void*, ssize_t&);
 		public:
 			/*
 			- ´«ÊäÆ÷½Ó¿Ú
@@ -42,20 +42,20 @@ namespace mm {
 			*/
 			virtual int   Relate(const char* addr, const int port, Type type = SERVER) = 0;
 			virtual int   Unlink() = 0;
-			virtual void* Packer(void* data, size_t size) {
+			virtual void* Packer(void* data, ssize_t& size) {
 				if (_packer) {
 					return _packer(data, size);
 				}
 				return data;
 			}
-			virtual void* Unpack(void* data, size_t size) {
+			virtual void* Unpack(void* data, ssize_t& size) {
 				if (_unpack) {
 					return _unpack(data, size);
 				}
 				return data;
 			}
-			virtual int   Sendto(void* buf, size_t count) = 0;
-			virtual int   Recfrm(void* buf, size_t count) = 0;
+			virtual int   Sendto(void* buf, ssize_t& count) = 0;
+			virtual int   Recfrm(void* buf, ssize_t& count) = 0;
 		public:
 			void set_packer(packer* method) { _packer = method; }
 			void set_unpack(unpack* method) { _unpack = method; }
@@ -79,9 +79,9 @@ namespace mm {
 			virtual int  Relate(const char* addr, const int port, Type type = Type::SERVER);
 			virtual int  Unlink();
 			/* post */
-			virtual int  Sendto(void* buf, size_t count);
+			virtual int  Sendto(void* buf, ssize_t& count);
 			/* get */
-			virtual int  Recfrm(void* buf, size_t count);
+			virtual int  Recfrm(void* buf, ssize_t& count);
 		private:
 			/* will be implement a client */
 			virtual void OnConnected(mmerrno status);

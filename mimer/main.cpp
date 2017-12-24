@@ -1,7 +1,10 @@
 #include <iostream>
 #include "Stream.h"
+#include "transmitter.h"
+using namespace mm::Transmitter;
+extern int client(int argc, char* argv[]);
+extern int server(int argc, char* argv[]);
 #include "MIMPacket.h"
-//#include "transmitter.h"
 
 using namespace std;
 using namespace mimer;
@@ -22,63 +25,23 @@ extern void test_send_DISCONNECT(int);
 
 int main(int argc, char *argv[])
 {
-	/*x
-	if (argc < 3) {
-		printf("usege: %s msgTypes dried\n", argv[0]);
-		return -1;
+	if (argc >= 2) {
+		char* str = argv[1];
+		if (!strcmp(str, "server")) {
+			printf("--------------- maomao-Server ---------------\n");
+			server(argc, argv);
+		}
+		else if (!strcmp(str, "client")) {
+			printf("--------------- maomao-Client ---------------\n");
+			client(argc, argv);
+		}
+		else {
+			printf("--------------- maomao-Unkonw ---------------\n");
+		}
 	}
-
-	msgTypes ptype = (msgTypes)atoi(argv[1]);
-	int dried = atoi(argv[2]);
-	switch (ptype)
-	{
-	case CONNECT:
-		test_send_CONNECT(dried);
-		break;
-	case CONNACK:
-		test_send_CONNACK(dried);
-		break;
-	case PUBLISH:
-		test_send_PUBLISH(dried);
-		break;
-	case PUBACK:
-		test_send_PUBACK(dried);
-		break;
-	case PUBREC:
-		test_send_PUBREC(dried);
-		break;
-	case PUBREL:
-		test_send_PUBREL(dried);
-		break;
-	case PUBCOMP:
-		test_send_PUBCOMP(dried);
-		break;
-	case SUBSCRIBE:
-		test_send_SUBSCRIBE(dried);
-		break;
-	case SUBACK:
-		test_send_SUBACK(dried);
-		break;
-	case UNSUBSCRIBE:
-		test_send_UNSUBSCRIBE(dried);
-		break;
-	case UNSUBACK:
-		test_send_UNSUBACK(dried);
-		break;
-	case PINGREQ:
-		test_send_PINGREQ(dried);
-		break;
-	case PINGRESP:
-		test_send_PINGRESP(dried);
-		break;
-	case DISCONNECT:
-		test_send_DISCONNECT(dried);
-		break;
-	default:
-		printf("error packet type\n");
-		break;
+	else {
+		printf("Usage: server/client\n");
 	}
-	*/
 	cout << "Hello World!" << endl;
 	return 0;
 }

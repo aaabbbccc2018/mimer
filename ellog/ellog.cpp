@@ -23,7 +23,7 @@ bool ellog::config(const std::string& confile)
 void ellog::defaultformat(el::Configurations& idConf)
 {
     idConf.set(el::Level::Trace,   el::ConfigurationType::Format, LOGGER_COLOR(BOLD,   "[ %level | %datetime ] > %msg"));
-    idConf.set(el::Level::Debug,   el::ConfigurationType::Format, LOGGER_COLOR(WHITE,  "[ %level | %datetime ] : %msg"));
+    idConf.set(el::Level::Debug,   el::ConfigurationType::Format, "[ %level | %datetime ] : %msg");
     idConf.set(el::Level::Error,   el::ConfigurationType::Format, LOGGER_COLOR(RED,    "[ %level | %datetime ] ! %msg"));
     idConf.set(el::Level::Warning, el::ConfigurationType::Format, LOGGER_COLOR(YELLOW, "[ %level | %datetime ] ? %msg"));
     idConf.set(el::Level::Info,    el::ConfigurationType::Format, LOGGER_COLOR(GREEN,  "[ %level | %datetime ] $ %msg"));

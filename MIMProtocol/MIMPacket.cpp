@@ -390,12 +390,12 @@ void MIMPacket::setClientId(size_t size)
             // clientIDlen is always 16 byte,so needn't record
             _size += 16;
             pFMT(pConnect)->clientIDlen = 16;
-            MQNEW(pConnect,clientID,clientId,16);
+            MQNEWS(pConnect,clientID,clientId,16);
         }else{
             // clientIDlen(2 byte) length size
             _size += (size+2);
             pFMT(pConnect)->clientIDlen = size;
-            MQNEW(pConnect,clientID,clientId,size);
+            MQNEWS(pConnect,clientID,clientId,size);
         }
         _step++;
     }else if(_ptype == CONNACK){
@@ -405,7 +405,7 @@ void MIMPacket::setClientId(size_t size)
             }else{
                 _size += 16;
                 pFMT(pConnAck)->clientIDlen = 16;
-                MQNEW(pConnAck,clientID,clientId,16);
+                MQNEWS(pConnAck,clientID,clientId,16);
                 /* clientIDlen is 16, so needn't add 1 Byte to measure clientID */
             }
         }
@@ -433,9 +433,9 @@ void MIMPacket::setWill(const char* willtopic, const char* willmsg, size_t sizet
         _size += sizet;
         _size += sizem;
         pFMT(pConnect)->willTopiclen = sizet;
-        MQNEW(pConnect,willTopic,willtopic,sizet);
+        MQNEWS(pConnect,willTopic,willtopic,sizet);
         pFMT(pConnect)->willMsglen = sizem;
-        MQNEW(pConnect,willMsg,willmsg,sizem);
+        MQNEWS(pConnect,willMsg,willmsg,sizem);
     }else{
         pFMT(pConnect)->flags.bits.willRetain = 0;
     }
@@ -459,7 +459,7 @@ void MIMPacket::setUserName(const char* userName, size_t size)
         }
         _size += size;
         pFMT(pConnect)->userNamelen = size;
-        MQNEW(pConnect,userName,userName,size);
+        MQNEWS(pConnect,userName,userName,size);
     }
     _step++;
     this->addRLsize();
@@ -481,7 +481,7 @@ void MIMPacket::setPasswd(const char* passwd, size_t size)
         }
         _size += size;
         pFMT(pConnect)->passwdlen = size;
-        MQNEW(pConnect,passwd,passwd,size);
+        MQNEWS(pConnect,passwd,passwd,size);
     }
     _step++;
     this->addRLsize();
@@ -510,12 +510,12 @@ void MIMPacket::setSignDel(const char* clientId, size_t size)
         // clientIDlen is always 16 byte,so needn't record
         _size += 16;
         pFMT(pConnect)->clientIDlen = 16;
-        MQNEW(pConnect,clientID,clientId,16);
+        MQNEWS(pConnect,clientID,clientId,16);
     }else{
         // clientIDlen(2 byte) length size
         _size += (size+2);
         pFMT(pConnect)->clientIDlen = size;
-        MQNEW(pConnect,clientID,clientId,size);
+        MQNEWS(pConnect,clientID,clientId,size);
     }
     pFMT(pConnect)->flags.bits.isregister = 0;
     this->addRLsize();
@@ -577,7 +577,7 @@ void MIMPacket::addTopics(char qos, const char* content, size_t size)
             _size++;     // 1 byte
         }
         pFMT(pPublish)->topiclen = size;
-        MQNEW(pPublish,topic,content,size);
+        MQNEWS(pPublish,topic,content,size);
         _size += size;
         _step++;
         break;
@@ -644,7 +644,7 @@ void MIMPacket::setPayload(const char* payload, size_t size)
     _size += size;
     _step++;
     pFMT(pPublish)->payloadlen = size;
-    MQNEW(pPublish,payload,payload,size);
+    MQNEWS(pPublish,payload,payload,size);
     this->addRLsize();
 }
 
@@ -874,7 +874,7 @@ bool MIMPacket::encode(char* packet)
         /* add CONNECT KAT, size(2-byte) */
         memcpy(&packet[cursor], &pFMT(pConnect)->KAT,2);
         cursor += 2;
-        _loger->debug("CONNECT: version: %v, CONNECT flags: %v, CONNECT KAT:%v", pFMT(pConnect)->version, pFMT(pConnect)->flags.all, pFMT(pConnect)->KAT);
+        _loger->debug("CONNECT: version: %v, CONNECT flags: %v, CONNECT KAT:%v", (int)pFMT(pConnect)->version, pFMT(pConnect)->flags.all, pFMT(pConnect)->KAT);
         /* payload */        
         if (_dried){
             /* 1. client ID */
@@ -953,7 +953,7 @@ bool MIMPacket::encode(char* packet)
                 memcpy(&packet[cursor], pFMT(pConnect)->willMsg,commonshort);
                 cursor += commonshort;
                 _loger->debug("CONNECT: Will Topic size: %v, Will Topic's content:%v, Will message size:%v,  Will message:%v",
-                    commonshort, pFMT(pConnect)->willTopic, commonshort, pFMT(pConnect)->willMsg);
+                    commonshort, (char*)pFMT(pConnect)->willTopic, commonshort, (char*)pFMT(pConnect)->willMsg);
             }
             if(pFMT(pConnect)->flags.bits.username){
                 /* 4. User Name */
@@ -1136,17 +1136,17 @@ int  MIMPacket::decode(char* packet)
             pFMT(pPublish)->topiclen = commonshort;
             cursor += 2;
             /* topic name's content */
-            MQNEW(pPublish,topic,&packet[cursor],commonshort);
+            MQNEWS(pPublish,topic,&packet[cursor],commonshort);
             cursor += commonshort;
             _step++;
-            _loger->debug("PUBLISH: OFFICIAL topic name's size: %v topic content : %v", 2, pFMT(pPublish)->topic);
+            _loger->debug("PUBLISH: OFFICIAL topic name's size: %v topic content : %v", 2, (char*)pFMT(pPublish)->topic);
         }else{
             /* topic name  */
             commonchar = pFMT(pPublish)->topiclen = packet[cursor++];
-            MQNEW(pPublish,topic,&packet[cursor],commonchar);
+            MQNEWS(pPublish,topic,&packet[cursor],commonchar);
             cursor += commonchar;
             _step++;
-            _loger->debug("PUBLISH: Dried topic name's size: %v topic content : %v", 1, pFMT(pPublish)->topic);
+            _loger->debug("PUBLISH: Dried topic name's size: %v topic content : %v", 1, (char*)pFMT(pPublish)->topic);
         }
         /* packet ID qos not 0 */
         if(0 != FixHeaderbits.qos){
@@ -1159,10 +1159,10 @@ int  MIMPacket::decode(char* packet)
         /* payload qos */
         payloadSize = _size - cursor;
         pFMT(pPublish)->payloadlen = payloadSize;
-        MQNEW(pPublish,payload,&packet[cursor],pFMT(pPublish)->payloadlen);
+        MQNEWS(pPublish,payload,&packet[cursor],pFMT(pPublish)->payloadlen);
         cursor += payloadSize;
         _step++;
-        _loger->debug("PUBLISH: payload size : %v payload :%v", payloadSize, pFMT(pPublish)->payload);
+        _loger->debug("PUBLISH: payload size : %v payload :%v", payloadSize, (char*)pFMT(pPublish)->payload);
         break;
     case SUBSCRIBE:
         /* Variable header */
@@ -1243,43 +1243,43 @@ int  MIMPacket::decode(char* packet)
         memcpy(&pFMT(pConnect)->KAT,&packet[cursor],2);
         cursor += 2;
         _step += 4;
-        _loger->debug("CONNECT: Protocol : %v version: %v flags: %s KAT: %v", MIM_NAME, pFMT(pConnect)->version, pFMT(pConnect)->flags.all, pFMT(pConnect)->KAT);
+        _loger->debug("CONNECT: Protocol : %v version: %v flags: %v KAT: %v", MIM_NAME, (int)pFMT(pConnect)->version, pFMT(pConnect)->flags.all, (int)pFMT(pConnect)->KAT);
         //pFMT(pConnect)->KAT = atoi(packetId);
         /* payload */
         if (_dried){
             /* 1. client ID */
             pFMT(pConnect)->clientIDlen = 16;
-            MQNEW(pConnect,clientID,&packet[cursor],16);
+            MQNEWS(pConnect,clientID,&packet[cursor],16);
             cursor += 16;
             _step++;
-            _loger->debug("CONNECT: Dried clientID : %v ", pFMT(pConnect)->clientID);
+            _loger->debug("CONNECT: Dried clientID : %v ", (char*)pFMT(pConnect)->clientID);
             if(pFMT(pConnect)->flags.bits.will){
                 /* 2. Will Topic */
                 commonchar = pFMT(pConnect)->willTopiclen = packet[cursor++];
-                MQNEW(pConnect,willTopic,&packet[cursor],commonchar);
+                MQNEWS(pConnect,willTopic,&packet[cursor],commonchar);
                 cursor += commonchar;
                 _step++;
                 /* 3. Will message */
                 commonchar = pFMT(pConnect)->willMsglen = packet[cursor++];
-                MQNEW(pConnect,willMsg,&packet[cursor],commonchar);
+                MQNEWS(pConnect,willMsg,&packet[cursor],commonchar);
                 cursor += commonchar;
                 _step += 2;
-                _loger->debug("CONNECT: Dried Will Topic : %v Will message: %v", pFMT(pConnect)->willTopic, pFMT(pConnect)->willMsg);
+                _loger->debug("CONNECT: Dried Will Topic : %v Will message: %v", (char*)pFMT(pConnect)->willTopic, (char*)pFMT(pConnect)->willMsg);
             }
             if(pFMT(pConnect)->flags.bits.username){
                 /* 4. User Name */
                 commonchar = pFMT(pConnect)->userNamelen = packet[cursor++];
-                MQNEW(pConnect,userName,&packet[cursor],commonchar);
+                MQNEWS(pConnect,userName,&packet[cursor],commonchar);
                 cursor += commonchar;
                 _step++;
-                _loger->debug("CONNECT: Dried user name: %v", pFMT(pConnect)->userName);
+                _loger->debug("CONNECT: Dried user name: %v", (char*)pFMT(pConnect)->userName);
                 if(pFMT(pConnect)->flags.bits.password){
                     /* 5. password */
                     commonchar = pFMT(pConnect)->passwdlen = packet[cursor++];
-                    MQNEW(pConnect,passwd,&packet[cursor],commonchar);
+                    MQNEWS(pConnect,passwd,&packet[cursor],commonchar);
                     cursor += commonchar;
                     _step++;
-                    _loger->debug("CONNECT: Dried password: %v", pFMT(pConnect)->passwd);
+                    _loger->debug("CONNECT: Dried password: %v", (char*)pFMT(pConnect)->passwd);
                 }
             }
         }else{
@@ -1289,17 +1289,17 @@ int  MIMPacket::decode(char* packet)
             memcpy(&commonshort,&packet[cursor],2);
             pFMT(pConnect)->clientIDlen = commonshort;
             cursor += 2;
-            MQNEW(pConnect, clientID,&packet[cursor],commonshort);
+            MQNEWS(pConnect, clientID,&packet[cursor],commonshort);
             cursor += commonshort;
             _step++;
-            _loger->debug("CONNECT: clientID : %v ", pFMT(pConnect)->clientID);
+            _loger->debug("CONNECT: clientID : %v ", (char*)pFMT(pConnect)->clientID);
             if(pFMT(pConnect)->flags.bits.will){
                 /* 2. Will Topic */
                 /* willTopiclen(2 byte) size */
                 memcpy(&commonshort,&packet[cursor],2);
                 pFMT(pConnect)->willTopiclen = commonshort;
                 cursor += 2;
-                MQNEW(pConnect,willTopic,&packet[cursor],commonshort);
+                MQNEWS(pConnect,willTopic,&packet[cursor],commonshort);
                 cursor += commonshort;
                 _step++;
                 /* 3. Will message */
@@ -1307,10 +1307,10 @@ int  MIMPacket::decode(char* packet)
                 memcpy(&commonshort,&packet[cursor],2);
                 pFMT(pConnect)->willMsglen = commonshort;
                 cursor += 2;
-                MQNEW(pConnect,willMsg,&packet[cursor],commonshort);
+                MQNEWS(pConnect,willMsg,&packet[cursor],commonshort);
                 cursor += commonshort;
                 _step++;
-                _loger->debug("CONNECT: Will Topic : %v Will message: %v", pFMT(pConnect)->willTopic, pFMT(pConnect)->willMsg);
+                _loger->debug("CONNECT: Will Topic : %v Will message: %v", (char*)pFMT(pConnect)->willTopic, (char*)pFMT(pConnect)->willMsg);
             }
             if(pFMT(pConnect)->flags.bits.username){
                 /* 4. User Name */
@@ -1318,20 +1318,20 @@ int  MIMPacket::decode(char* packet)
                 memcpy(&commonshort,&packet[cursor],2);
                 pFMT(pConnect)->userNamelen = commonshort;
                 cursor += 2;
-                MQNEW(pConnect,userName,&packet[cursor],commonshort);
+                MQNEWS(pConnect,userName,&packet[cursor],commonshort);
                 cursor += commonshort;
                 _step++;
-                _loger->debug("CONNECT: user name: %v", pFMT(pConnect)->userName);
+                _loger->debug("CONNECT: user name: %v", (char*)pFMT(pConnect)->userName);
                 if(pFMT(pConnect)->flags.bits.password){
                     /* 5. password */
                     /* userNamelen(2 byte) size */
                     memcpy(&commonshort,&packet[cursor],2);
                     pFMT(pConnect)->passwdlen = commonshort;
                     cursor += 2;
-                    MQNEW(pConnect,passwd,&packet[cursor],commonshort);
+                    MQNEWS(pConnect,passwd,&packet[cursor],commonshort);
                     cursor += commonshort;
                     _step++;
-                    _loger->debug("CONNECT: password: %v", pFMT(pConnect)->passwd);
+                    _loger->debug("CONNECT: password: %v", (char*)pFMT(pConnect)->passwd);
                 }
             }
         }
@@ -1340,14 +1340,14 @@ int  MIMPacket::decode(char* packet)
         /* Variable header */
         pFMT(pConnAck)->flags.all = packet[cursor++];
         pFMT(pConnAck)->rc = packet[cursor++];
-        _loger->debug("CONNACK: flag: %v rc: %v", pFMT(pConnAck)->flags.all, pFMT(pConnAck)->rc);
+        _loger->debug("CONNACK: flag: %v rc: %v", pFMT(pConnAck)->flags.all, (int)pFMT(pConnAck)->rc);
         /* payload */
         if(signOk()){
             /* 1. client ID */
             pFMT(pConnAck)->clientIDlen = 16;
-            MQNEW(pConnAck,clientID,&packet[cursor],16);
+            MQNEWS(pConnAck,clientID,&packet[cursor],16);
             cursor += 16;
-            _loger->debug("CONNACK: is register clientID: %v", pFMT(pConnAck)->clientID);
+            _loger->debug("CONNACK: is register clientID: %v", (char*)pFMT(pConnAck)->clientID);
         }
         break;
     case PUBACK:
