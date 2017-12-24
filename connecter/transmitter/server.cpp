@@ -2,13 +2,13 @@
 #include "transmitter.h"
 using namespace mm::Transmitter;
 
-void* server_pack(void * data, size_t size)
+void* server_pack(void * data, ssize_t& size)
 {
 	printf("server Packer data: %s size:%d\n", (char*)data, size);
 	return data;
 }
 
-void* server_unpack(void * data, size_t size)
+void* server_unpack(void * data, ssize_t& size)
 {
 	printf("server Unpack data: %s size:%d\n", (char*)data, size);
 	return data;

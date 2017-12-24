@@ -1,13 +1,13 @@
 #include "transmitter.h"
 using namespace mm::Transmitter;
 
-void* client_pack(void * data, size_t size)
+void* client_pack(void * data, ssize_t& size)
 {
 	printf("client Packer data: %s size:%d\n", (char*)data, size);
 	return data;
 }
 
-void* client_unpack(void * data, size_t size)
+void* client_unpack(void * data, ssize_t& size)
 {
 	printf("client Unpack data: %s size:%d\n", (char*)data, size);
 	return data;
