@@ -54,7 +54,7 @@ namespace mimer {
 
 #define MIM_NAME  "MIM1"
 #define _ubyte    unsigned char
-#define MIM_VER   (0x00)
+#define MIM_VER   (0x01)
 #define BAD_MIM_PACKET -4
 #define DEBUG      1
 #define OFFICIAL_MIM   1
@@ -530,9 +530,9 @@ typedef struct {
     memcpy(pFMT(PTYPE)->KEY,VALUEADRR,SIZE);
 
 #define MQNEWS(PTYPE,KEY,VALUEADRR,SIZE)       \
-    pFMT(PTYPE)->KEY = (char*)_malloc(SIZE+2); \
-    memset(pFMT(PTYPE)->KEY,0,SIZE+2);         \
-    strcpy(pFMT(PTYPE)->KEY,VALUEADRR);
+    pFMT(PTYPE)->KEY = (char*)_malloc(SIZE+1); \
+    memset(pFMT(PTYPE)->KEY,0,SIZE+1);         \
+    memcpy(pFMT(PTYPE)->KEY,VALUEADRR,SIZE);
 
 #define MQNEW2(PTYPE,KEY,VALUEADRR,SIZE)       \
     pFMT(PTYPE)->KEY = (char*)_calloc(1,SIZE); \
