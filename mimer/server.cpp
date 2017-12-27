@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include "transmitter.h"
 #include "MIMPacket.h"
+#include "MIMProtocol.h"
+
 using namespace mimer;
 using namespace mm::Transmitter;
-
 void* server_pack(void * data, ssize_t& size)
 {
        printf("server Packer data: %s size:%d\n", (char*)data, size);
@@ -38,6 +39,7 @@ void* server_unpack(void * data, ssize_t& size)
        printf("server Unpack data: %s size:%d\n", (char*)data, size);
        char* getData = (char*)data;
        std::cout << charStream(getData, size);
+       MIMProtocol mp(getData, 1);
        MIMPacket dpkt(MIMPacket::type(getData[0]));
        dpkt.decode(getData);
        //std::cout << dpkt;
@@ -45,7 +47,7 @@ void* server_unpack(void * data, ssize_t& size)
        data = (char*)malloc(size);
        memset(data, 0, size);
        memcpy(data, dpkt.data(), size);
-        return data;
+       return data;
  }
 
 int server(int argc, char* argv[])

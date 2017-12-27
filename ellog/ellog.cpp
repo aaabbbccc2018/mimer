@@ -56,7 +56,7 @@ void ellog::rolloutHandler(const char* filename, std::size_t size)
     char backupFile[MAX_PATH] = { 0 };
     snprintf(backupFile, MAX_PATH, "%s_%04d%02d%02d%02d%02d%02d.log", filenameTemp.c_str(),  oneMinuteAgo->tm_year + 1900
 		,oneMinuteAgo->tm_mon + 1, oneMinuteAgo->tm_mday, oneMinuteAgo->tm_hour, oneMinuteAgo->tm_min, oneMinuteAgo->tm_sec);
-    if(Stream::Rename(filename, backupFile))
+    if(mimer::Stream::Rename(filename, backupFile))
     {
         printf("rename %s to %s ok\n", filename, backupFile);
 	}
@@ -64,7 +64,7 @@ void ellog::rolloutHandler(const char* filename, std::size_t size)
         printf("rename %s to %s failed\n", filename, backupFile);
         snprintf(backupFile, MAX_PATH, "%s_%04d%02d%02d%02d%02d%02d.log", filenameTemp.c_str(), oneMinuteAgo->tm_year + 1900
         , oneMinuteAgo->tm_mon + 1, oneMinuteAgo->tm_mday, oneMinuteAgo->tm_hour, oneMinuteAgo->tm_min, oneMinuteAgo->tm_sec + 3);
-        if (Stream::Rename(filename, backupFile))
+        if (mimer::Stream::Rename(filename, backupFile))
         {
             printf("again rename %s to %s ok\n", filename, backupFile);
         }

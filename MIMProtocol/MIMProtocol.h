@@ -22,6 +22,19 @@ struct cmp_str
       return (strcmp(a, b) < 0);
    }
 };
+#define CHARS     '0'
+#define INTEGER   '1'
+static std::map<std::string, char> meta =
+{
+    /* CONNECT */
+    { "Protocol",  CHARS },
+    { "version",   INTEGER },
+    { "KAT",       INTEGER },
+    { "clientID",  CHARS },
+    { "username",  CHARS },
+    { "password",  CHARS },
+    { "willTopic", CHARS }
+};
 
 class MIMProtocol
 {
@@ -48,7 +61,17 @@ public:
         Analyzer::const_iterator iter;
         for(iter = mp._ctrler.begin();iter != mp._ctrler.end(); ++iter)
         {
-            out << iter->first << " :\t" << iter->second << "\n";
+            switch (meta[std::string(iter->first)])
+            {
+            case CHARS:
+                out << iter->first << " :\t" << (char*)iter->second << "\n";
+                break;
+            case INTEGER:
+                out << iter->first << " :\t" << (int)iter->second << "\n";
+                break;
+            default:
+                break;
+            }
         }
         return out;
     }
