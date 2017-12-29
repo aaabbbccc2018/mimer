@@ -24,6 +24,8 @@ struct cmp_str
 };
 #define CHARS     '0'
 #define INTEGER   '1'
+#define LIST1     '2'
+#define LIST2     '3'
 static std::map<std::string, char> meta =
 {
     /* CONNECT */
@@ -33,7 +35,24 @@ static std::map<std::string, char> meta =
     { "clientID",  CHARS },
     { "username",  CHARS },
     { "password",  CHARS },
-    { "willTopic", CHARS }
+    { "willTopic", CHARS },
+    { "willMsg",   CHARS },
+    { "willRetain",INTEGER },
+    /* CONNACK */
+    { "clientID",  CHARS },
+    { "sessionPresent", INTEGER },
+    { "RC",        INTEGER },
+	/* PUBLISH SUBSCRIBE SUBACK PUBACK PUBREC PUBREL PUBCOMP UNSUBACK UNSUBSCRIBE */
+    { "packetId",  INTEGER },
+	/* SUBSCRIBE UNSUBSCRIBE */
+    { "topics",    LIST1 },
+	/* PINGREQ */
+    { "cstatus",   INTEGER },
+	/* PUBLISH */
+    { "topic",     CHARS },
+    { "payload",   CHARS },
+	/* SUBSCRIBE SUBACK */
+    { "qoss",      LIST2  }
 };
 
 class MIMProtocol
@@ -59,6 +78,10 @@ public:
     {
         out << *(mp._mqData);
         Analyzer::const_iterator iter;
+		ListSub* sublist = NULL;
+		Subitor  itlist;
+		ListQos* subqoss = NULL;
+		Qositor  itqoss;
         for(iter = mp._ctrler.begin();iter != mp._ctrler.end(); ++iter)
         {
             switch (meta[std::string(iter->first)])
@@ -68,6 +91,20 @@ public:
                 break;
             case INTEGER:
                 out << iter->first << " :\t" << (int)iter->second << "\n";
+                break;
+            case LIST1:
+				sublist = (ListSub*)(iter->second);
+				itlist = sublist->begin();
+				for(; itlist != sublist->end(); ++itlist){
+					out << *itlist << "\n";
+				}
+                break;
+            case LIST2:
+				subqoss = (ListQos*)(iter->second);
+				itqoss = subqoss->begin();
+				for(; itqoss != subqoss->end(); ++itqoss){
+					out << *itqoss << "\n";
+				}
                 break;
             default:
                 break;

@@ -21,10 +21,11 @@ link_directories(${UVBASE_LINK_DIR} ${CMAKE_MODULE_PATH}/lib/3rdlib/libuv/lib ${
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../uvbase
 	                  ${CMAKE_MODULE_PATH}//lib/3rdlib/libuv/include
 	                  ./src/transmitter
-					  ${CMAKE_MODULE_PATH}/ellog)
+					  ${CMAKE_MODULE_PATH}/ellog
+					  ${CMAKE_MODULE_PATH}/MIMProtocol)
 # 查找当前目录下的所有源文件
 # 并将名称保存到 DIR_SRCS 变量
-aux_source_directory(./ DIR_SRCS)
+#aux_source_directory(./ DIR_SRCS)
 aux_source_directory(./src/transmitter DIR_SRCS)
 add_library(transmitter SHARED ${DIR_SRCS})
 add_library(transmitter_static STATIC ${DIR_SRCS})
