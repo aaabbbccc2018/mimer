@@ -86,6 +86,9 @@ typedef struct sub_s{
         memcpy(_content,rhs._content,_size);
     }
     ~sub_s(){if(_content){_free(_content);_content = NULL;}}
+    friend std::ostream & operator<<(std::ostream &out, const sub_s &sbs){
+        return out << sbs._content;
+    }
 }sub_t;
 typedef list<sub_t> ListSub;
 typedef ListSub::iterator Subitor;

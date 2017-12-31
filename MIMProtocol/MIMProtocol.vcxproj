@@ -144,6 +144,7 @@
     <ClCompile Include="timeUtil.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="comdefine.h" />
     <ClInclude Include="List.h" />
     <ClInclude Include="memutil.h" />
     <ClInclude Include="MIMErr.h" />

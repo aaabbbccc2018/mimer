@@ -3,17 +3,21 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include "comdefine.h"
 #include <string.h>
 #include "Stream.h"
 #include "MIMPacket.h"
+#include "ellog.h"
 
 namespace mimer {
 
 #define tFMT(PTYPE) ((PTYPE)(_mqData->_packet))
 #define BITS(FLAGS) (FLAGS.bits)
+#define HEADERFLAG  (tFMT(pHeader)->bits)
 #define CONNFLAG    (BITS(tFMT(pConnect)->flags))
 #define CONAFLAG    (BITS(tFMT(pConnAck)->flags))
 #define pVoid        reinterpret_cast<void*>
+typedef intptr_t ssize_t;
 
 struct cmp_str
 {
@@ -42,16 +46,16 @@ static std::map<std::string, char> meta =
     { "clientID",  CHARS },
     { "sessionPresent", INTEGER },
     { "RC",        INTEGER },
-	/* PUBLISH SUBSCRIBE SUBACK PUBACK PUBREC PUBREL PUBCOMP UNSUBACK UNSUBSCRIBE */
+    /* PUBLISH SUBSCRIBE SUBACK PUBACK PUBREC PUBREL PUBCOMP UNSUBACK UNSUBSCRIBE */
     { "packetId",  INTEGER },
-	/* SUBSCRIBE UNSUBSCRIBE */
+    /* SUBSCRIBE UNSUBSCRIBE */
     { "topics",    LIST1 },
-	/* PINGREQ */
+    /* PINGREQ */
     { "cstatus",   INTEGER },
-	/* PUBLISH */
+    /* PUBLISH */
     { "topic",     CHARS },
     { "payload",   CHARS },
-	/* SUBSCRIBE SUBACK */
+    /* SUBSCRIBE SUBACK */
     { "qoss",      LIST2  }
 };
 
@@ -59,11 +63,10 @@ class MIMProtocol
 {
     typedef std::pair<std::string, void*> PAnalyzer;
     typedef std::map<const char*, const void*>  Analyzer;
-    typedef enum MechineType{ CLIENT = 0, SERVER, SERCLI }Mtype;
 public:
-    UTIL_API MIMProtocol();
+    UTIL_API MIMProtocol(Type mtype = SERVER);
     UTIL_API MIMProtocol(char* content, int mtype = 0);
-    UTIL_API MIMProtocol(int type, int dried = 0, int dup = 0,int qos = 0);
+    UTIL_API MIMProtocol(int ptype, int mtype = 0, int dried = 0, int dup = 0,int qos = 0);
     UTIL_API ~MIMProtocol();
 public:
     inline const void* operator[](const char* key)
@@ -74,14 +77,18 @@ public:
             return NULL;
         }
     }
+    UTIL_API void* request(void * data, ssize_t& size);
+    UTIL_API void* response(void* data, ssize_t& size);
+    UTIL_API void  setPtype(int ptype) { _ptype = ptype; }
+    UTIL_API bool  analyzer(void* data, ssize_t& size);
     friend std::ostream & operator<<(std::ostream &out, const MIMProtocol &mp)
     {
         out << *(mp._mqData);
         Analyzer::const_iterator iter;
-		ListSub* sublist = NULL;
-		Subitor  itlist;
-		ListQos* subqoss = NULL;
-		Qositor  itqoss;
+        ListSub* sublist = NULL;
+        Subitor  itlist;
+        ListQos* subqoss = NULL;
+        Qositor  itqoss;
         for(iter = mp._ctrler.begin();iter != mp._ctrler.end(); ++iter)
         {
             switch (meta[std::string(iter->first)])
@@ -93,18 +100,18 @@ public:
                 out << iter->first << " :\t" << (int)iter->second << "\n";
                 break;
             case LIST1:
-				sublist = (ListSub*)(iter->second);
-				itlist = sublist->begin();
-				for(; itlist != sublist->end(); ++itlist){
-					out << *itlist << "\n";
-				}
+                sublist = (ListSub*)(iter->second);
+                itlist = sublist->begin();
+                for(; itlist != sublist->end(); ++itlist){
+                    out << *itlist << "\n";
+                }
                 break;
             case LIST2:
-				subqoss = (ListQos*)(iter->second);
-				itqoss = subqoss->begin();
-				for(; itqoss != subqoss->end(); ++itqoss){
-					out << *itqoss << "\n";
-				}
+                subqoss = (ListQos*)(iter->second);
+                itqoss = subqoss->begin();
+                for(; itqoss != subqoss->end(); ++itqoss){
+                    out << *itqoss << "\n";
+                }
                 break;
             default:
                 break;
@@ -115,13 +122,15 @@ public:
 private:
     bool analyzer();
     bool controller();
+    void* ret(MIMPacket* pkt, void* data, ssize_t& size);
 private:
     MIMPacket*  _mqData;    // packet's data
     int         _ptype;     // packet's type
-    Mtype       _mtype;     // mechine type
+    Type        _mtype;     // type
     Analyzer    _ctrler;    // save each packet's controller
     bool        _dried;
     Stream*     _stream;
+    mim::ellog* _loger;
 };
 
 }//namespace mimer

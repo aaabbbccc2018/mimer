@@ -2,25 +2,31 @@
 
 namespace mimer {
 
-MIMProtocol::MIMProtocol():_mqData(NULL),_ptype(0),_mtype(CLIENT),_dried(0),_stream(NULL)
+MIMProtocol::MIMProtocol(Type mtype):_mqData(NULL),_ptype(-1),_mtype(mtype),_dried(0),_stream(NULL)
 {
+    _loger = new mim::ellog("MIMProtocol", "./logs");
 }
 
-MIMProtocol::MIMProtocol(char* content,int mtype):_mtype((Mtype)mtype),_dried(0),_stream(NULL)
+MIMProtocol::MIMProtocol(char* content,int mtype):_mtype((Type)mtype),_dried(0),_stream(NULL)
 {
+    _loger = new mim::ellog("MIMProtocol", "./logs");
     _mqData = new MIMPacket(MIMPacket::type(content[0]));
     if(_mqData->decode(content)){
         _ptype = _mqData->type();
         _dried = tFMT(pHeaders)->header.bits.retain;
+        _loger->debug("MIMPacket type: %v", _mqData->types());
     }else{
+        _loger->error("MIMPacket type: %v decode failed", _mqData->types());
         printf("%s", "MIMpacket decode error!!!\n");
     }
     analyzer();
 }
 
-MIMProtocol::MIMProtocol(int type, int dried, int dup,int qos):_ptype(type),_dried(dried),_stream(NULL)
+MIMProtocol::MIMProtocol(int ptype, int mtype, int dried, int dup,int qos):
+    _ptype(ptype),_mtype((Type)mtype),_dried(dried),_stream(NULL)
 {
-    _mqData = new MIMPacket(type,dried,dup,qos);
+    _loger = new mim::ellog("MIMProtocol", "./logs");
+    _mqData = new MIMPacket(ptype, dried, dup, qos);
 }
 
 MIMProtocol::~MIMProtocol()
@@ -33,17 +39,23 @@ MIMProtocol::~MIMProtocol()
         delete _stream;
         _stream = NULL;
     }
+    if (_loger) {
+        delete _loger;
+        _loger = NULL;
+    }
 }
 
 bool MIMProtocol::analyzer()
 {
     if(0 >= _ptype || 15 <= _ptype /*|| false == _mqData->finish()*/){
+        _loger->error("MIMPacket type: %v packet type: %v", _mqData->types(), _ptype);
         printf("%s", "Invalid packet type or incomplete packet!!!\n");
         return false;
     }
     switch (_ptype)
     {
     case PUBLISH:
+        _ctrler["pubQOS"]   = pVoid(HEADERFLAG.qos);
         _ctrler["packetId"] = pVoid(tFMT(pPublish)->packetId);
         _ctrler["topic"]    = (tFMT(pPublish)->topic);
         _ctrler["payload"]  = (tFMT(pPublish)->payload);
@@ -130,7 +142,202 @@ bool MIMProtocol::analyzer()
 
 bool MIMProtocol::controller()
 {
+    _loger->debug("MIMProtocol type: %v", _mtype);
     return true;
+}
+
+void* MIMProtocol::response(void * data, ssize_t& size)
+{
+    assert(_mtype == SERVER);
+    // server (_ptype is get from client)
+    MIMPacket* repk = NULL;
+    switch (_ptype)
+    {
+    case PUBLISH:
+        if (1 == (int)_ctrler["pubQOS"]) {
+            repk = new MIMPacket(PUBACK);
+            repk->setPacketId(1000);
+        }else if(1 == (int)_ctrler["pubQOS"]) {
+            repk = new MIMPacket(PUBREC);
+            repk->setPacketId(1000);
+            repk = new MIMPacket(PUBREL);
+            repk->setPacketId(1000);
+            repk = new MIMPacket(PUBCOMP);
+            repk->setPacketId(1000);
+        }else {
+            repk = new MIMPacket(PUBACK);
+            repk->setPacketId(1000);
+        }
+        break;
+    case SUBSCRIBE:
+        repk = new MIMPacket(SUBACK);
+        repk->setPacketId(1);
+        repk->addTopics(1);
+        repk->addTopics(2);
+        break;
+    case SUBACK:
+        _loger->warn("%v NO SUPPORT RESPONSE!!!", MIMPacket::packet_names[_ptype]);
+        break;
+    case CONNECT:
+        repk = new MIMPacket(CONNACK);
+        cackflags caf;
+        caf.bits.reserved = 0;
+        caf.bits.sessionPresent = 0;
+        caf.bits.isregister = 1;
+        repk->setFlags(caf.all);
+        repk->setRC(1);
+        repk->setClientId();
+        break;
+    case CONNACK:
+        _loger->warn("%v NO SUPPORT RESPONSE!!!", MIMPacket::packet_names[_ptype]);
+        break;
+    case PUBACK:
+    case PUBREC:
+    case PUBREL:
+    case PUBCOMP:
+    case UNSUBACK:
+        _loger->warn("%v NO SUPPORT RESPONSE!!!", MIMPacket::packet_names[_ptype]);
+        break;
+    case UNSUBSCRIBE:
+        repk->setPacketId(1000);
+        break;
+    case PINGREQ:
+        // PINGRESP only header
+        break;
+    case PINGRESP:
+        _loger->warn("%v NO SUPPORT RESPONSE!!!", MIMPacket::packet_names[_ptype]);
+        break;
+    case DISCONNECT:
+        // close connection
+        break;
+    default:
+        printf("error packet type\n");
+        break;
+    }
+    return ret(repk, data, size);
+}
+
+void* MIMProtocol::request(void* data, ssize_t& size)
+{
+    assert(_mtype == CLIENT);
+    // client
+    MIMPacket* reqpk = NULL;
+    switch (_ptype)
+    {
+    case PUBLISH:
+        reqpk = new MIMPacket(PUBLISH);
+        reqpk->addTopics(0, "test", strlen("test"));
+        reqpk->setPacketId(1);
+        reqpk->setPayload((char*)data, (size_t)size);
+        break;
+    case SUBSCRIBE:
+        reqpk = new MIMPacket(SUBSCRIBE);
+        reqpk->setPacketId(1);
+        reqpk->addTopics(0, "hello", 6);
+        reqpk->addTopics(0, "world", 5);
+        reqpk->addTopics(0, "This ", 5);
+        reqpk->addTopics(0, "is ", 3);
+        reqpk->addTopics(0, "a ", 2);
+        reqpk->addTopics(1, "Test!", 5);
+        break;
+    case SUBACK:
+        _loger->warn("%v NO SUPPORT REQUEST!!!", MIMPacket::packet_names[_ptype]);
+        break;
+    case CONNECT:
+        reqpk = new MIMPacket(CONNECT);
+        connflags cf;
+        cf.bits.cleanstart = 1;
+        cf.bits.isregister = 0;
+        cf.bits.password = 1;
+        cf.bits.username = 1;
+        cf.bits.will = 1;
+        cf.bits.willQoS = 0;
+        cf.bits.willRetain = 0;
+        reqpk->setFlags(cf.all);
+        reqpk->setKAT(10);
+        reqpk->setClientId();
+        reqpk->setWill("test", "test", strlen("test"), strlen("test"));
+        reqpk->setUserName("skybosi", strlen("skybosi"));
+        reqpk->setPasswd("skybosi", strlen("skybosi"));
+        reqpk->setMultiConnect();
+        break;
+    case CONNACK:
+        reqpk = new MIMPacket(PUBLISH);
+        // connect success
+        if (1 == (int)_ctrler["RC"]) {
+            reqpk->addTopics(0, "list", strlen("list"));
+            reqpk->setPacketId(1);
+            reqpk->setPayload("get list", strlen("get list"));
+        }
+        // connect falied
+        else {
+            _loger->error("connect error %v", (int)_ctrler["RC"]);
+        }
+        break;
+    case PUBACK:
+    case PUBREC:
+    case PUBREL:
+    case PUBCOMP:
+        reqpk = new MIMPacket(_ptype);
+        reqpk->setPacketId(1000);
+        break;
+    case UNSUBACK:
+        _loger->warn("%v NO SUPPORT REQUEST!!!", MIMPacket::packet_names[_ptype]);
+        break;
+    case UNSUBSCRIBE:
+        reqpk = new MIMPacket(UNSUBSCRIBE);
+        reqpk->setPacketId(1);
+        reqpk->addTopics(0, "good", 5);
+        reqpk->addTopics(0, "bye", 4);
+        break;
+    case PINGREQ:
+        reqpk = new MIMPacket(PINGREQ);
+        reqpk->setPingStatus(PING_WRITING);
+        break;
+    case PINGRESP:
+        _loger->warn("%v NO SUPPORT REQUEST!!!", MIMPacket::packet_names[_ptype]);
+        break;
+    case DISCONNECT:
+        reqpk = new MIMPacket(DISCONNECT);
+        // disconnect only header
+        break;
+    default:
+        printf("error packet type\n");
+        break;
+    }
+    return ret(reqpk, data, size);
+}
+
+void* MIMProtocol::ret(MIMPacket* pkt, void* data, ssize_t& size)
+{
+    if (!pkt) {
+        return NULL;
+    }
+    size = pkt->size();
+    data = (char*)malloc(size);
+    memset(data, 0, size);
+    if (!pkt->encode((char*)data)) {
+        return NULL;
+    }
+    std::cout << charStream((char*)pkt->data(), size);
+    return data;
+}
+
+bool MIMProtocol::analyzer(void* data, ssize_t& size)
+{
+    char* content = (char*)data;
+    _mqData = new MIMPacket(MIMPacket::type(content[0]));
+    if (_mqData->decode(content)) {
+        _ptype = _mqData->type();
+        _dried = tFMT(pHeaders)->header.bits.retain;
+        _loger->debug("MIMPacket type: %v", _mqData->types());
+    }
+    else {
+        _loger->error("MIMPacket type: %v decode failed", _mqData->types());
+        printf("%s", "MIMpacket decode error!!!\n");
+        return false;
+    }
+    return analyzer();
 }
 
 }//namespace mimer

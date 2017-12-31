@@ -8,30 +8,16 @@ using namespace mm::Transmitter;
 void* server_pack(void * data, ssize_t& size)
 {
        printf("server Packer data: %s size:%d\n", (char*)data, size);
-       MIMPacket* pkt = NULL;
+       MIMProtocol* mp = NULL;
        if (!strncmp((char*)data, "CONNACK", strlen("CONNACK"))) {
-               pkt = new MIMPacket(CONNACK);
-               cackflags caf;
-               caf.bits.reserved = 0;
-               caf.bits.sessionPresent = 0;
-               caf.bits.isregister = 1;
-               pkt->setFlags(caf.all);
-               pkt->setRC(1);
-               pkt->setClientId();
+           mp = new MIMProtocol(CONNECT, SERVER);
+           return mp->response(data, (ssize_t)size);
        }
        else {
-               pkt = new MIMPacket(PUBLISH, 0, 0, 1);
-               pkt->addTopics(0, "test", strlen("test"));
-               pkt->setPacketId(1);
-               pkt->setPayload((char*)data, strlen((char*)data));
+           mp = new MIMProtocol(PUBLISH, SERVER);
+           return mp->response(data, (ssize_t)size);
        }
-       size = pkt->size();
-       data = (char*)malloc(size);
-       memset(data, 0, size);
-       if (!pkt->encode((char*)data)) {
-               return NULL;
-       }
-       return data;
+       return NULL;
 }
 
 void* server_unpack(void * data, ssize_t& size)
@@ -40,22 +26,17 @@ void* server_unpack(void * data, ssize_t& size)
        char* getData = (char*)data;
        std::cout << charStream(getData, size);
        MIMProtocol mp(getData, 1);
-       MIMPacket dpkt(MIMPacket::type(getData[0]));
-       dpkt.decode(getData);
-       //std::cout << dpkt;
-       size = dpkt.size();
-       data = (char*)malloc(size);
-       memset(data, 0, size);
-       memcpy(data, dpkt.data(), size);
-       return data;
+       char* rtData = NULL;
+       return mp.response(data, size);
+
  }
 
 int server(int argc, char* argv[])
 {
-	tTM server;
-	server.set_packer(server_pack);
-	server.set_unpack(server_unpack);
-	//uTM server;
-	server.Relate("127.0.0.1", 9130);
-	return 0;
+    tTM server;
+    server.set_packer(server_pack);
+    server.set_unpack(server_unpack);
+    //uTM server;
+    server.Relate("127.0.0.1", 9130);
+    return 0;
 }
