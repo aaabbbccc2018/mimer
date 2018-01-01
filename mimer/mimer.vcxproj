@@ -152,9 +152,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\connecter\libuv\libuv.vcxproj">
-      <Project>{33066374-88cb-cb8d-15da-61032886329a}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\connecter\uvbase\uvbase.vcxproj">
       <Project>{c07f4c8b-e01f-41d5-bd53-9e58833c08f5}</Project>
     </ProjectReference>
@@ -171,7 +168,6 @@
     <ClCompile Include="client.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="server.cpp" />
-    <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\connecter\transmitter\src\transmitter\transmitter.h" />

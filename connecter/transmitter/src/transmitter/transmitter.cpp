@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include <assert.h>
-#include "mmloop.h"
-#include "MIMPacket.h"
-using namespace mimer;
 #include "transmitter.h"
 //#include "log_config.h"
+using namespace mimer;
 
 namespace mm {
     namespace Transmitter {
@@ -14,6 +12,7 @@ namespace mm {
             Loop loop(false);
             this->userType = type;
             this->init(loop);
+            this->_stder = new Stdio(this, loop);
             _loger->debug("tTM is Relate addr: %v port: %v type: %v", addr, port, user(userType));
             switch (type)
             {
@@ -37,6 +36,7 @@ namespace mm {
 
         bool tTM::Create(const char* protocol)
         {
+            _protocol = protocol;
             if (std::string(protocol) == "MIM1") {
                 this->_monitor = new MIMProtocol(userType);
                 _loger->debug("Create monitor %v is success", user(userType));
@@ -77,8 +77,20 @@ namespace mm {
                 ssize_t size = -1;
                 // client connect, should send a connect packet to server
                 _monitor->setPtype(CONNECT);
-                condata = _monitor->request(condata, size);
-                Sendto(condata, size);
+                Login* login = new Login();
+                login->userName = "skybosi";
+                login->passwd = "skybosi";
+                login->willTopic = "test";
+                login->willMsg = "test";
+                condata = (void*)login;
+                callback* cbd = _monitor->request(condata, size);
+                if (cbd->data) {
+                    Sendto(cbd->data, cbd->size);
+                    _pinger = new clock(this, 1000, 10000);
+                }
+                else {
+                    _loger->error("User %v login in falied!!!", user(userType));
+                }
             }
             else {
                 _loger->error("Create %v Monitor is error!!!", user(userType));
@@ -128,29 +140,39 @@ namespace mm {
                 close();
                 return;
             }
+            void* getdata = (void*)buf;
+            ssize_t size = nread;
+            Recfrm(getdata, size);
             if (this->userType & 1) { //Type::CLIENT ||  Type::BOTH_CLI
-                void* getdata = (void*)buf;
-                ssize_t size = nread;
                 _monitor->setPtype(MIMPacket::type(buf[0]));
                 if (_monitor->analyzer(getdata, size)) {
                     void* reqdata = NULL;
-                    reqdata = _monitor->request(reqdata, size);
-                    Sendto(reqdata, size);
+                    callback* cbd = _monitor->request(reqdata, size);
+                    if (cbd->data) {
+                        Sendto(cbd->data, cbd->size);
+                    }
+                    else {
+                        _loger->error("tTM %v request failed code: %v!!!", user(userType), cbd->errcode);
+                    }
                 }
                 else {
-                    _loger->error("tTM is get packet analyzer failed!!!");
+                    _loger->error("tTM %v is get packet analyzer failed!!!", user(userType));
                 }
             }
             else { //Type::SERVER ||  Type::BOTH_SER
-                // void* data = Unpack((void*)buf, nread);
-                void* getdata = (void*)buf;
-                ssize_t size = nread;
-                Recfrm(getdata, size);
                 _monitor->setPtype(MIMPacket::type(buf[0]));
                 if (_monitor->analyzer(getdata, size)) {
                     void* reqdata = NULL;
-                    reqdata = _monitor->response(reqdata, size);
-                    Sendto(reqdata, size);
+                    callback* cbd = _monitor->response(reqdata, size);
+                    if (cbd->data) {
+                        Sendto(cbd->data, cbd->size);
+                    }
+                    else {
+                        _loger->error("tTM %v response failed code: %v!!!", user(userType), cbd->errcode);
+                    }
+                }
+                else {
+                    _loger->error("tTM %v is get packet analyzer failed!!!", user(userType));
                 }
             }
         }
@@ -159,14 +181,21 @@ namespace mm {
         void tTM::OnWrote(mmerrno status) {
             if (this->userType & 1) { //Type::CLIENT ||  Type::BOTH_CLI
                 _loger->debug("tTM is OnWrote client");
+                _stder->read(1024, 0);
+                /*
                 char sendbuf[1024];
                 memset(sendbuf, 0, 1024);
                 scanf("%s", sendbuf);
                 ssize_t size = strlen(sendbuf) + 1;
                 void* postdata = (void*)sendbuf;
                 _monitor->setPtype(PUBLISH);
-                postdata = _monitor->request(postdata, size);
-                Sendto(postdata, size);
+                callback* cbd = _monitor->request(postdata, size);
+                if(cbd->data){
+                    Sendto(cbd->data, cbd->size);
+                }
+                else {
+                    _loger->error("tTM %v request failed code: %v!!!", user(userType), cbd->errcode);
+                }*/
             }
             else { //Type::SERVER ||  Type::BOTH_SER
                 _loger->debug("tTM is OnWrote server");

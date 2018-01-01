@@ -67,7 +67,7 @@ enum msgTypes
     PINGREQ, PINGRESP, DISCONNECT
 };
 const char msgTypestr[][16] = {
-    "CONNECT", "CONNACK", "PUBLISH", "PUBACK", "PUBREC", "PUBREL",
+    "","CONNECT", "CONNACK", "PUBLISH", "PUBACK", "PUBREC", "PUBREL",
     "PUBCOMP", "SUBSCRIBE", "SUBACK", "UNSUBSCRIBE", "UNSUBACK",
     "PINGREQ", "PINGRESP", "DISCONNECT"
 };
@@ -340,6 +340,21 @@ typedef struct
 } Connect;
 typedef Connect* pConnect;
 #define initCONNECT { initHeader(CONNECT), MIM_NAME, MIM_VER, initconnflags, 100, 0,NULL, 0,NULL, 0,NULL, 0,NULL, 0, NULL }
+
+/**
+* User login structure
+*/
+typedef struct
+{
+    char*         willTopic;            /* will topic */
+    char*         willMsg;              /* will message */
+    char*         userName;             /* client user name */
+    char*         passwd;               /* client password */
+    char*         userName2;            /* client user name */
+}Login;
+typedef Login* pLogin;
+#define initLogin(userName, passwd) { NULL, NULL, userName, passwd, NULL }
+
 /**
  * Data for a connack packet. 0x2
  */

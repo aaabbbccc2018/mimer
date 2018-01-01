@@ -1,5 +1,4 @@
 #include "MIMProtocol.h"
-
 namespace mimer {
 
 MIMProtocol::MIMProtocol(Type mtype):_mqData(NULL),_ptype(-1),_mtype(mtype),_dried(0),_stream(NULL)
@@ -146,7 +145,7 @@ bool MIMProtocol::controller()
     return true;
 }
 
-void* MIMProtocol::response(void * data, ssize_t& size)
+callback* MIMProtocol::response(void * data, ssize_t& size)
 {
     assert(_mtype == SERVER);
     // server (_ptype is get from client)
@@ -177,6 +176,7 @@ void* MIMProtocol::response(void * data, ssize_t& size)
         break;
     case SUBACK:
         _loger->warn("%v NO SUPPORT RESPONSE!!!", MIMPacket::packet_names[_ptype]);
+        return ret_err(_ptype, NO_SUPPORT_RESP, data);
         break;
     case CONNECT:
         repk = new MIMPacket(CONNACK);
@@ -190,6 +190,7 @@ void* MIMProtocol::response(void * data, ssize_t& size)
         break;
     case CONNACK:
         _loger->warn("%v NO SUPPORT RESPONSE!!!", MIMPacket::packet_names[_ptype]);
+        return ret_err(_ptype, NO_SUPPORT_RESP, data);
         break;
     case PUBACK:
     case PUBREC:
@@ -197,15 +198,19 @@ void* MIMProtocol::response(void * data, ssize_t& size)
     case PUBCOMP:
     case UNSUBACK:
         _loger->warn("%v NO SUPPORT RESPONSE!!!", MIMPacket::packet_names[_ptype]);
+        return ret_err(_ptype, NO_SUPPORT_RESP, data);
         break;
     case UNSUBSCRIBE:
         repk->setPacketId(1000);
         break;
     case PINGREQ:
+        repk = new MIMPacket(PINGRESP);
         // PINGRESP only header
+        _loger->warn("%v only header!!!", MIMPacket::packet_names[_ptype]);
         break;
     case PINGRESP:
         _loger->warn("%v NO SUPPORT RESPONSE!!!", MIMPacket::packet_names[_ptype]);
+        return ret_err(_ptype, NO_SUPPORT_RESP, data);
         break;
     case DISCONNECT:
         // close connection
@@ -217,11 +222,12 @@ void* MIMProtocol::response(void * data, ssize_t& size)
     return ret(repk, data, size);
 }
 
-void* MIMProtocol::request(void* data, ssize_t& size)
+callback* MIMProtocol::request(void* data, ssize_t& size)
 {
     assert(_mtype == CLIENT);
     // client
     MIMPacket* reqpk = NULL;
+    Login* login = NULL;
     switch (_ptype)
     {
     case PUBLISH:
@@ -242,8 +248,13 @@ void* MIMProtocol::request(void* data, ssize_t& size)
         break;
     case SUBACK:
         _loger->warn("%v NO SUPPORT REQUEST!!!", MIMPacket::packet_names[_ptype]);
+        return ret_err(_ptype, NO_SUPPORT_REQ, data);
         break;
     case CONNECT:
+        if (data == NULL) {
+            return NULL;
+        }
+        login = (Login*)data;
         reqpk = new MIMPacket(CONNECT);
         connflags cf;
         cf.bits.cleanstart = 1;
@@ -256,15 +267,15 @@ void* MIMProtocol::request(void* data, ssize_t& size)
         reqpk->setFlags(cf.all);
         reqpk->setKAT(10);
         reqpk->setClientId();
-        reqpk->setWill("test", "test", strlen("test"), strlen("test"));
-        reqpk->setUserName("skybosi", strlen("skybosi"));
-        reqpk->setPasswd("skybosi", strlen("skybosi"));
+        reqpk->setWill(login->willTopic, login->willMsg, strlen(login->willTopic), strlen(login->willMsg));
+        reqpk->setUserName(login->userName, strlen(login->userName));
+        reqpk->setPasswd(login->passwd, strlen(login->passwd));
         reqpk->setMultiConnect();
         break;
     case CONNACK:
-        reqpk = new MIMPacket(PUBLISH);
         // connect success
         if (1 == (int)_ctrler["RC"]) {
+            reqpk = new MIMPacket(PUBLISH);
             reqpk->addTopics(0, "list", strlen("list"));
             reqpk->setPacketId(1);
             reqpk->setPayload("get list", strlen("get list"));
@@ -272,6 +283,7 @@ void* MIMProtocol::request(void* data, ssize_t& size)
         // connect falied
         else {
             _loger->error("connect error %v", (int)_ctrler["RC"]);
+            return ret_err(_ptype, (int)_ctrler["RC"], data);
         }
         break;
     case PUBACK:
@@ -283,6 +295,7 @@ void* MIMProtocol::request(void* data, ssize_t& size)
         break;
     case UNSUBACK:
         _loger->warn("%v NO SUPPORT REQUEST!!!", MIMPacket::packet_names[_ptype]);
+        return ret_err(_ptype, NO_SUPPORT_REQ, data);
         break;
     case UNSUBSCRIBE:
         reqpk = new MIMPacket(UNSUBSCRIBE);
@@ -296,6 +309,7 @@ void* MIMProtocol::request(void* data, ssize_t& size)
         break;
     case PINGRESP:
         _loger->warn("%v NO SUPPORT REQUEST!!!", MIMPacket::packet_names[_ptype]);
+        return ret_err(_ptype, NO_SUPPORT_REQ, data);
         break;
     case DISCONNECT:
         reqpk = new MIMPacket(DISCONNECT);
@@ -308,7 +322,7 @@ void* MIMProtocol::request(void* data, ssize_t& size)
     return ret(reqpk, data, size);
 }
 
-void* MIMProtocol::ret(MIMPacket* pkt, void* data, ssize_t& size)
+callback* MIMProtocol::ret(MIMPacket* pkt, void* data, ssize_t& size)
 {
     if (!pkt) {
         return NULL;
@@ -316,11 +330,33 @@ void* MIMProtocol::ret(MIMPacket* pkt, void* data, ssize_t& size)
     size = pkt->size();
     data = (char*)malloc(size);
     memset(data, 0, size);
+    callback* rtdata = new callback();
     if (!pkt->encode((char*)data)) {
-        return NULL;
+        rtdata->data = NULL;
+        rtdata->size = -1;
+        rtdata->errcode = PACKET_ENCODE_ERROR;
+    }
+    else {
+        rtdata->data = data;
+        rtdata->size = size;
+        rtdata->errcode = PACKET_ENCODE_OK;
     }
     std::cout << charStream((char*)pkt->data(), size);
-    return data;
+    return rtdata;
+}
+
+callback* MIMProtocol::ret_err(int ptype, int errcode, void* data)
+{
+    if (0 >= ptype || 15 <= ptype /*|| false == _mqData->finish()*/) {
+        _loger->error("MIMPacket type: %v packet type: %v", _mqData->types(), _ptype);
+        return NULL;
+    }
+    data = malloc(sizeof(callback));
+    ((callback*)data)->data = NULL;
+    ((callback*)data)->errcode = errcode;
+    ssize_t size = ((callback*)data)->size = sizeof(callback);
+    std::cout << charStream((char*)data, size);
+    return (callback*)data;
 }
 
 bool MIMProtocol::analyzer(void* data, ssize_t& size)

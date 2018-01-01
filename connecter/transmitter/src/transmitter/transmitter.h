@@ -1,6 +1,10 @@
 #pragma once
 #ifndef _TRANSMITTER_H
 #define _TRANSMITTER_H
+#include "mmloop_utils.h"
+#include "mmloop_files.h"
+#include "mmloop.h"
+#include "MIMPacket.h"
 #include "mmloop_net.h"
 #include "MIMProtocol.h"
 #include "comdefine.h"
@@ -18,6 +22,8 @@ namespace mm {
         /*
             interface of Transmitter
         */
+        class clock;
+        class Stdio;
         class ITM
         {
             /*
@@ -62,6 +68,7 @@ namespace mm {
             packer* _packer = NULL;
             unpack* _unpack = NULL;
             baseP * _monitor = NULL;
+            const char* _protocol = "";
         };
 
         class tTM :public ITM, public baseT
@@ -71,6 +78,8 @@ namespace mm {
                 tTM() {}
                 ~tTM() {}
             */
+            friend class clock;
+            friend class Stdio;
         public:
             virtual int  Relate(const char* addr, const int port, Type type = Type::SERVER);
             virtual bool Create(const char* protocol = "MIM1");
@@ -90,7 +99,8 @@ namespace mm {
             virtual void OnWrote(mmerrno status);
         private:
             Type userType;
-
+            clock*  _pinger;
+            Stdio*  _stder;
         };
         typedef tTM TTM;
 
@@ -118,6 +128,82 @@ namespace mm {
             int  _port;
         };
         typedef uTM UTM;
+
+        class clock : public Timer
+        {
+        public:
+            clock(tTM* tmer, uint64_t timeout = 1000, uint64_t repeat = 1000) :_tmer(tmer){
+                //Loop loop(false);
+                Loop loop = _tmer->loop();
+                this->init(loop);
+                this->start(timeout, repeat);
+                //loop.run(Loop::Default);
+            }
+            ~clock() {}
+            virtual void OnTimer()
+            {
+                if (_tmer) {
+                    void* data = NULL;
+                    ssize_t size = -1;
+                    _tmer->_monitor->setPtype(PINGREQ);
+                    callback* cbd = _tmer->_monitor->request(data, size);
+                    if (cbd->data) {
+                        _tmer->Sendto(cbd->data, cbd->size);
+                    }
+                    else {
+                        _tmer->_loger->error("tTM %v OnTimer failed code: %v!!!", user(_tmer->userType), cbd->errcode);
+                    }
+                }
+            }
+        private:
+            tTM * _tmer = NULL;
+        };
+
+        class Stdio : public File
+        {
+        public:
+            Stdio(tTM* tmer, Loop& loop) :File(loop),_tmer(tmer) {}
+            ~Stdio() {}
+        public:
+            Stdio & operator =(int fb)
+            {
+                this->setfb(fb);
+            }
+            virtual void OnWrite(int result)
+            {
+                printf("OnWrite result = %d\n", result);
+            }
+            virtual void OnOpen(int result)
+            {
+                printf("open end! result = %d\n", result);
+                char* buf = "1234";
+                this->write(buf, 4, -1);
+            }
+
+            virtual void OnClose(int result)
+            {
+                printf("OnClose!\n");
+                this->clean();
+            }
+
+            virtual void OnRead(char* data, int len)
+            {
+                if (_tmer) {
+                    ssize_t size = len;
+                    void* postdata = (void*)data;
+                    _tmer->_monitor->setPtype(PUBLISH);
+                    callback* cbd = _tmer->_monitor->request(postdata, size);
+                    if (cbd->data) {
+                        _tmer->Sendto(cbd->data, size);
+                    }
+                    else {
+                        _tmer->_loger->error("tTM %v request failed code: %v!!!", user(_tmer->userType), cbd->errcode);
+                    }
+                }
+            }
+        private:
+            tTM * _tmer = NULL;
+        };
     }
 
 }

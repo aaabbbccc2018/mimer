@@ -10,5 +10,13 @@ enum Type {
 };
 const static char* _type[5] = { "server","client","both_ser","both_cli","unknown" };
 inline const static char* user(int t) { return _type[t]; }
+typedef intptr_t ssize_t;
+
+typedef struct{
+    void*   data;
+    ssize_t size;
+    int     errcode;
+}callback;
+#define initCallBack(code) { NULL,code }
 
 #endif // !_COMMON_DEFINE_H_

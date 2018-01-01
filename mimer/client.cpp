@@ -1,6 +1,4 @@
 #include "transmitter.h"
-#include "MIMPacket.h"
-#include "MIMProtocol.h"
 using namespace mimer;
 using namespace mm::Transmitter;
 

@@ -3,11 +3,10 @@
 #include <iostream>
 #include <string>
 #include <map>
-#include "comdefine.h"
 #include <string.h>
-#include "Stream.h"
-#include "MIMPacket.h"
 #include "ellog.h"
+#include "comdefine.h"
+#include "MIMPacket.h"
 
 namespace mimer {
 
@@ -17,7 +16,6 @@ namespace mimer {
 #define CONNFLAG    (BITS(tFMT(pConnect)->flags))
 #define CONAFLAG    (BITS(tFMT(pConnAck)->flags))
 #define pVoid        reinterpret_cast<void*>
-typedef intptr_t ssize_t;
 
 struct cmp_str
 {
@@ -59,6 +57,7 @@ static std::map<std::string, char> meta =
     { "qoss",      LIST2  }
 };
 
+class PINGTimer;
 class MIMProtocol
 {
     typedef std::pair<std::string, void*> PAnalyzer;
@@ -77,10 +76,11 @@ public:
             return NULL;
         }
     }
-    UTIL_API void* request(void * data, ssize_t& size);
-    UTIL_API void* response(void* data, ssize_t& size);
+    UTIL_API callback* request(void * data, ssize_t& size);
+    UTIL_API callback* response(void* data, ssize_t& size);
     UTIL_API void  setPtype(int ptype) { _ptype = ptype; }
     UTIL_API bool  analyzer(void* data, ssize_t& size);
+
     friend std::ostream & operator<<(std::ostream &out, const MIMProtocol &mp)
     {
         out << *(mp._mqData);
@@ -122,7 +122,8 @@ public:
 private:
     bool analyzer();
     bool controller();
-    void* ret(MIMPacket* pkt, void* data, ssize_t& size);
+    callback* ret(MIMPacket* pkt, void* data, ssize_t& size);
+    callback* ret_err(int ptype, int errcode, void* data);
 private:
     MIMPacket*  _mqData;    // packet's data
     int         _ptype;     // packet's type
