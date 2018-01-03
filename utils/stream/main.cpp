@@ -8,6 +8,7 @@
 #include<iostream>
 #include"Stream.h"
 using namespace std;
+using namespace mimer;
 
 int main(int argc,char** argv)
 {

@@ -181,7 +181,7 @@ namespace mm {
         void tTM::OnWrote(mmerrno status) {
             if (this->userType & 1) { //Type::CLIENT ||  Type::BOTH_CLI
                 _loger->debug("tTM is OnWrote client");
-                _stder->read(1024, 0);
+                _stder->read(1024, -1);
                 /*
                 char sendbuf[1024];
                 memset(sendbuf, 0, 1024);

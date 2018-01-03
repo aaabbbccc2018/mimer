@@ -188,7 +188,7 @@ namespace mm {
 
             virtual void OnRead(char* data, int len)
             {
-                if (_tmer) {
+                if (_tmer && len > 0) {
                     ssize_t size = len;
                     void* postdata = (void*)data;
                     _tmer->_monitor->setPtype(PUBLISH);

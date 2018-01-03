@@ -10,11 +10,11 @@ void* server_pack(void * data, ssize_t& size)
        MIMProtocol* mp = NULL;
        if (!strncmp((char*)data, "CONNACK", strlen("CONNACK"))) {
            mp = new MIMProtocol(CONNECT, SERVER);
-           return mp->response(data, (ssize_t)size);
+           return mp->response(data, size);
        }
        else {
            mp = new MIMProtocol(PUBLISH, SERVER);
-           return mp->response(data, (ssize_t)size);
+           return mp->response(data, size);
        }
        return NULL;
 }
