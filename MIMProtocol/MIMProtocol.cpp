@@ -130,7 +130,7 @@ bool MIMProtocol::analyzer()
     case PINGRESP:
     case DISCONNECT:
         //_ctrler["header"] = (tFMT(pHeaders)->header);
-        printf("packet type don't have Variable header && payload!\n");
+        _loger->warn("%v ONLY HEADER!!", MIMPacket::packet_names[_ptype]);
         break;
     default:
         printf("error packet type\n");
@@ -355,7 +355,6 @@ callback* MIMProtocol::ret_err(int ptype, int errcode, void* data)
     ((callback*)data)->data = NULL;
     ((callback*)data)->errcode = errcode;
     ssize_t size = ((callback*)data)->size = sizeof(callback);
-    std::cout << charStream((char*)data, size);
     return (callback*)data;
 }
 

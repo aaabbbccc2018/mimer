@@ -13,7 +13,7 @@ MIMPacket::MIMPacket(int type,int dried, int dup,int qos):
     _ptype(type),_size(0),_step(0),_dried(dried),_setrl(false)
 {
     _loger = new mim::ellog("MIMPacket", "./logs");
-    printf("Packet Type:%s\n", packet_names[type]);
+    //printf("Packet Type:%s\n", packet_names[type]);
     // _loger->info("Packet Type:%v", packet_names[type]);
     switch (_ptype)
     {
@@ -125,7 +125,7 @@ MIMPacket::MIMPacket(int type,int dried, int dup,int qos):
         _step++;
         break;
     default:
-        printf("error packet type\n");
+        //printf("error packet type\n");
         _loger->error("error packet type");
         break;
     }
@@ -211,7 +211,7 @@ MIMPacket::~MIMPacket()
         case PUBCOMP:
             break;
         default:
-            printf("error packet type\n");
+            //printf("error packet type\n");
             _loger->error("error packet type");
             break;
         }
@@ -285,7 +285,7 @@ void MIMPacket::initer(msgTypes type)
 		_packet = (void*)&(disc);
 		break;
 	default:
-		printf("error packet type\n");
+		//printf("error packet type\n");
 		_loger->error("error packet type");
 		break;
 	}
@@ -422,7 +422,7 @@ void MIMPacket::setWill(const char* willtopic, const char* willmsg, size_t sizet
     if(pFMT(pConnect)->flags.bits.will){
         if(_dried){
             if(sizet > 0xff || sizem > 0xff){
-                printf("willtopic or willmsg too long must smaller 256!\n");
+                //printf("willtopic or willmsg too long must smaller 256!\n");
                 _loger->error("willtopic or willmsg too long must smaller 256!");
                 return;
             }
@@ -449,7 +449,7 @@ void MIMPacket::setUserName(const char* userName, size_t size)
     if(pFMT(pConnect)->flags.bits.username){
         if(_dried){
             if(size > 0xff){
-                printf("user name too long must smaller 256!\n");
+                //printf("user name too long must smaller 256!\n");
                 _loger->error("user name too long must smaller 256!");
                 return;
             }
@@ -471,7 +471,7 @@ void MIMPacket::setPasswd(const char* passwd, size_t size)
     if(pFMT(pConnect)->flags.bits.password){
         if(_dried){
             if(size > 0xff){
-                printf("password too long must smaller 256!\n");
+                //printf("password too long must smaller 256!\n");
                 _loger->error("password too long must smaller 256!");
                 return;
             }
@@ -501,7 +501,7 @@ void MIMPacket::setSignUp()
 void MIMPacket::setSignDel(const char* clientId, size_t size)
 {
     if(_ptype != CONNECT){
-        printf("%s no clientId!\n", packet_names[_ptype]);
+        //printf("%s no clientId!\n", packet_names[_ptype]);
         _loger->error("%v  no clientId!", packet_names[_ptype]);
         return;
     }
@@ -524,7 +524,7 @@ void MIMPacket::setSignDel(const char* clientId, size_t size)
 void MIMPacket::setMultiConnect(int mc)
 {
     if(_ptype != CONNECT){
-        printf("%s no clientId!\n", packet_names[_ptype]);
+        //printf("%s no clientId!\n", packet_names[_ptype]);
         _loger->error("%v  no clientId!", packet_names[_ptype]);
         return;
     }
@@ -534,7 +534,7 @@ void MIMPacket::setMultiConnect(int mc)
 void MIMPacket::setRC(char rc)
 {
     if(_ptype != CONNACK){
-        printf("%s no RC!\n", packet_names[_ptype]);
+        //printf("%s no RC!\n", packet_names[_ptype]);
         _loger->error("%v  no RC!", packet_names[_ptype]);
         return;
     }
@@ -547,7 +547,7 @@ void MIMPacket::setRC(char rc)
 void MIMPacket::setFlags(_ubyte flags)
 {
     if(!HasFlags){
-        printf("%s no flags!\n", packet_names[_ptype]);
+        //printf("%s no flags!\n", packet_names[_ptype]);
         _loger->error("%v  no flags!", packet_names[_ptype]);
         return;
     }
@@ -626,7 +626,7 @@ void MIMPacket::addTopics(char qos, const char* content, size_t size)
         _step = QND;
         break;
     default:
-        printf("%s no topic!\n", packet_names[_ptype]);
+        //printf("%s no topic!\n", packet_names[_ptype]);
         _loger->error("%v  no topic!", packet_names[_ptype]);
         return;
         break;
@@ -637,7 +637,7 @@ void MIMPacket::addTopics(char qos, const char* content, size_t size)
 void MIMPacket::setPayload(const char* payload, size_t size)
 {
     if(_ptype != PUBLISH){
-        printf("%s no topic!\n", packet_names[_ptype]);
+        //printf("%s no topic!\n", packet_names[_ptype]);
         _loger->error("%v  no topic!", packet_names[_ptype]);
         return;
     }
@@ -694,7 +694,7 @@ void MIMPacket::setPacketId(int packetId)
 void MIMPacket::setPingStatus(int pstatus)
 {
     if(_ptype != PINGREQ){
-        printf("%s no ping status!\n", packet_names[_ptype]);
+        //printf("%s no ping status!\n", packet_names[_ptype]);
         _loger->error("%v no ping status!", packet_names[_ptype]);
         return;
     }
@@ -704,12 +704,12 @@ void MIMPacket::setPingStatus(int pstatus)
 bool MIMPacket::encode(char* packet)
 {
     if(NULL == packet){
-        printf("packet is not a enough memory!\n");
+        //printf("packet is not a enough memory!\n");
         _loger->error("packet is not a enough memory");
         return false;
     }
     if(!finish()){
-        printf("packet is not finish, please check each part of this packet type: %s!\n", packet_names[_ptype]);
+        //printf("packet is not finish, please check each part of this packet type: %s!\n", packet_names[_ptype]);
         _loger->error("packet is not finish, please check each part of this packet type: %v!", packet_names[_ptype]);
         return false;
     }
@@ -987,7 +987,7 @@ bool MIMPacket::encode(char* packet)
          /* payload */
          if(signOk()){
              if(0 == pFMT(pConnAck)->clientIDlen || NULL == pFMT(pConnAck)->clientID){
-                 printf("is register, but no client ID return\n");
+                 //printf("is register, but no client ID return\n");
                  _loger->error("is register, but no client ID return");
                  return false;
              }else{
@@ -1054,11 +1054,11 @@ bool MIMPacket::encode(char* packet)
     case PINGREQ:
     case PINGRESP:
     case DISCONNECT:
-        printf("packet type don't have Variable header && payload!\n");
+        //printf("packet type don't have Variable header && payload!\n");
         _loger->debug("%v packet type don't have Variable header && payload!", msgTypestr[_ptype]);
         break;
     default:
-        printf("error packet type\n");
+        //printf("error packet type\n");
         _loger->error("error packet type");
         break;
     }
@@ -1403,11 +1403,11 @@ int  MIMPacket::decode(char* packet)
     case PINGREQ:
     case PINGRESP:
     case DISCONNECT:
-        printf("packet type don't have Variable header && payload!\n");
+        //printf("packet type don't have Variable header && payload!\n");
         _loger->debug("%v packet type don't have Variable header && payload!", msgTypestr[_ptype]);
         break;
     default:
-        printf("error packet type\n");
+        //printf("error packet type\n");
         _loger->error("error packet type");
         break;
     }
