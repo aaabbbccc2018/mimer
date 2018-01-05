@@ -5,3 +5,4 @@ APP_STL := gnustl_static
 STLPORT_FORCE_REBUILD := true
 #APP_ABI := all
 APP_ABI := armeabi armeabi-v7a
+NDK_TOOLCHAIN_VERSION := 4.9

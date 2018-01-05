@@ -7,8 +7,8 @@ LOCAL_MODULE    := libtransmitter
 #指定平台
 #LOCAL_ARM_MODE := arm
 #需要引用的库
-LOCAL_LDFLAGS  := -fPIC -shared  -Wl -ldl
-ifeq ($(SET_LIBROOT),"true")
+LOCAL_LDFLAGS  := -fPIC -shared -ldl
+ifdef ($(LIBROOT))
 LOCAL_LDFLAGS += -L $(LIBROOT)/ellog/$(TARGET_ARCH_ABI) -lellog
 LOCAL_LDFLAGS += -L $(LIBROOT)/uvbase/$(TARGET_ARCH_ABI) -luvbase
 LOCAL_LDFLAGS += -L $(LIBROOT)/mimp/$(TARGET_ARCH_ABI) -lmimp

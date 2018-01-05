@@ -7,7 +7,7 @@ LOCAL_MODULE    := libmimp
 #指定平台
 #LOCAL_ARM_MODE := arm
 #需要引用的库
-LOCAL_LDFLAGS  := -fPIC -shared  -Wl -ldl
+LOCAL_LDFLAGS  := -fPIC -shared -ldl
 #LOCAL_LDFLAGS  += -L ../../lib/ellog/$(TARGET_ARCH_ABI)/libellog.so
 $(warning "LOCAL_LDFLAGS" $(LOCAL_LDFLAGS))
 LOCAL_LDLIBS += -latomic
@@ -18,7 +18,7 @@ LOCAL_CFLAGS := -Wall -O3 -enable-threads
 #定义宏
 TOP_INCLUDE := $(LOCAL_PATH)/..
 LOCAL_C_INCLUDES := $(TOP_INCLUDE) \
-	$(TOP_INCLUDE)/../../ellog
+	$(TOP_INCLUDE)/../ellog
 
 $(warning "include" $(TOP_INCLUDE) $(LOCAL_C_INCLUDES))
 TOP_SRC := $(LOCAL_PATH)/..
@@ -39,8 +39,12 @@ include $(BUILD_SHARED_LIBRARY)
 #清除一些变量
 include $(CLEAR_VARS)
 LOCAL_MODULE := ellog
-#$(warning "----------------------" $(LIBROOT))
+$(warning "----------------------" $(LIBROOT))
 #链接的第三方库
-#LOCAL_SRC_FILES := $(LOCAL_PATH)/../../lib/android/ellog/$(TARGET_ARCH_ABI)/libellog.so
+ifdef ($(LIBROOT))
 LOCAL_SRC_FILES := $(LIBROOT)/ellog/$(TARGET_ARCH_ABI)/libellog.so
+else
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../../lib/android/ellog/$(TARGET_ARCH_ABI)/libellog.so
+endif
+$(warning "----------------------" $(LOCAL_SRC_FILES))
 include $(PREBUILT_SHARED_LIBRARY)
