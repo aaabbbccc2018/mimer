@@ -1,0 +1,50 @@
+#!/bin/bash
+if [[ $# < 1 ]]; then
+	echo "$0 module(default:all) build-option(eg:-B V=1)"
+	echo "module: "
+	echo "1.  ellog"
+	echo "2.  mimp"
+	echo "3.  uv"
+	echo "4.  uvbase"
+	echo "5.  transmitter"
+	exit
+fi
+ROOTPATH=`pwd`
+REBUILD=$2
+LIBROOT=$ROOTPATH/lib/android
+SET_LIBROOT="true"
+export LIBROOT
+case $1 in
+	1 | ellog) 
+		cd $ROOTPATH/ellog/jni && ndk-build $REBUILD && mkdir -p $LIBROOT/ellog && cp -r `pwd`/../libs/* $LIBROOT/ellog
+		;;
+	2 | mimp)
+		cd $ROOTPATH/MIMProtocol/jni && ndk-build $REBUILD && mkdir -p $LIBROOT/mimp && cp -r `pwd`/../libs/* $LIBROOT/mimp
+		;;
+	3 | uv) 
+		cd $ROOTPATH/connecter/libuv/jni && ndk-build $REBUILD && mkdir -p $LIBROOT/uv && cp -r `pwd`/../libs/* $LIBROOT/uv
+		;;
+	4 | uvbase)
+		cd $ROOTPATH/connecter/uvbase/jni && ndk-build $REBUILD && mkdir -p $LIBROOT/uvbase && cp -r `pwd`/../libs/* $LIBROOT/uvbase
+		;;
+	5 | transmitter)
+		cd $ROOTPATH/connecter/transmitter/src/transmitter/jni && ndk-build $REBUILD && mkdir -p $LIBROOT/transmitter && cp -r `pwd`/../libs/* $LIBROOT/transmitter
+		;;
+	0 | all)
+		cd $ROOTPATH/ellog/jni && ndk-build $REBUILD && mkdir -p $LIBROOT/ellog && cp -r `pwd`/../libs/* $LIBROOT/ellog
+		cd $ROOTPATH/MIMProtocol/jni && ndk-build $REBUILD && mkdir -p $LIBROOT/mimp && cp -r `pwd`/../libs/* $LIBROOT/mimp
+		cd $ROOTPATH/connecter/libuv/jni && ndk-build $REBUILD && mkdir -p $LIBROOT/uv && cp -r `pwd`/../libs/* $LIBROOT/uv
+		cd $ROOTPATH/connecter/uvbase/jni && ndk-build $REBUILD && mkdir -p $LIBROOT/uvbase && cp -r `pwd`/../libs/* $LIBROOT/uvbase
+		cd $ROOTPATH/connecter/transmitter/src/transmitter/jni && ndk-build $REBUILD && mkdir -p $LIBROOT/transmitter && cp -r `pwd`/../libs/* $LIBROOT/transmitter
+		;;
+	*)
+		echo "$0 module(default:all) build-option(eg:-B V=1)"
+		echo "module: "
+		echo "1.  ellog"
+		echo "2.  mimp"
+		echo "3.  uv"
+		echo "4.  uvbase"
+		echo "5.  transmitter"
+		exit
+		;;
+esac

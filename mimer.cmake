@@ -1,4 +1,5 @@
 # set build type
+#cmake -DCMAKE_TOOLCHAIN_FILE=$NDKROOT/build/cmake/android.toolchain.cmake     -DANDROID_ABI="armeabi-v7a"     -DANDROID_NATIVE_API_LEVEL=android-23     -DANDROID_TOOLCHAIN_NAME=arm-linux-androideabi-4.9     -DANDROID_STL_FORCE_FEATURES=OFF .
 set(CMAKE_BUILD_TYPE "Debug")
 
 #Add the c++11 flag, whatever it is
@@ -28,8 +29,9 @@ set(TOP_PATH ${CMAKE_MODULE_PATH})
 #message("TOP path:" ${TOP_PATH})
 
 if( CMAKE_PLATFORM_TYPE STREQUAL "android" )
-	add_definitions(-DCMAKE_TOOLCHAIN_FILE=$NDKROOT/build/cmake/android.toolchain.cmake-DANDROID_ARM_NEON=TRUE)
+	add_definitions(-DCMAKE_TOOLCHAIN_FILE=$NDKROOT/build/cmake/android.toolchain.cmake	-DANDROID_ABI=whatever -DANDROID_NATIVE_API_LEVEL=android-23 )
 	set(UVLIB_PATH ${CMAKE_MODULE_PATH}/lib/3rdlib/libuv/lib/android)
+	message(STATUS "UVLIB_PATH ${UVLIB_PATH}")
 else( CMAKE_PLATFORM_TYPE STREQUAL "android")
 	set(UVLIB_PATH ${CMAKE_MODULE_PATH}/lib/3rdlib/libuv/lib)
 endif( CMAKE_PLATFORM_TYPE STREQUAL "android" )
