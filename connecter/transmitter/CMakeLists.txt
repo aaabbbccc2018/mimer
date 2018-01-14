@@ -17,7 +17,7 @@ else()
 	set(UVBASE_LINK_DIR ${CMAKE_MODULE_PATH}/lib)
 endif(NOT UVBASE AND NOT UVBASE_BUILED_MODULE)
 
-link_directories(${UVBASE_LINK_DIR} ${CMAKE_MODULE_PATH}/lib/3rdlib/libuv/lib ${CMAKE_MODULE_PATH}/lib)
+link_directories(${UVBASE_LINK_DIR} ${UVLIB_PATH} ${CMAKE_MODULE_PATH}/lib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../uvbase
 	                  ${CMAKE_MODULE_PATH}//lib/3rdlib/libuv/include
 	                  ./src/transmitter

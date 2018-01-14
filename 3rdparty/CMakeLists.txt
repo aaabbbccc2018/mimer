@@ -14,6 +14,7 @@ else()
 	message(STATUS "libuv source is exist at ${LIBUV_PATH}")
 endif(NOT uv_src)
 configure_file(${CMAKE_MODULE_PATH}/connecter/libuv.vcxproj ${LIBUV_PATH}/ COPYONLY)
+configure_file(${CMAKE_MODULE_PATH}/connecter/libuv.cmake ${LIBUV_PATH}/CMakeLists.txt COPYONLY)
 #check libuv is build and install
 set(LOG "log.txt")  
 set(UV_PREFIX ${CMAKE_MODULE_PATH}/lib/3rdlib/libuv)
