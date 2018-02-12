@@ -29,4 +29,4 @@ link_directories(${ELLOG_LINK_DIR} ${CMAKE_MODULE_PATH}/lib/3rdlib/libuv/lib)
 # 指定生成目标
 add_executable(mimer ${DIR_SRCS})
 target_link_libraries(mimer ellog mimp transmitter uv)
-
+install (TARGETS mimer DESTINATION bin)

@@ -38,6 +38,6 @@ add_library(mysqler_static STATIC ${DIR_SRCS})
 target_link_libraries(mysqler libmysqlclient.so ellog)
 set_target_properties(mysqler_static PROPERTIES OUTPUT_NAME "mysqler")
 set_target_properties(mysqler PROPERTIES VERSION 0.1 SOVERSION 1)
-
+install (TARGETS mysqler DESTINATION lib)
 # 启用测试
 enable_testing()
