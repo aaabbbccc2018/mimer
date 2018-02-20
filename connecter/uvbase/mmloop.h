@@ -6,7 +6,11 @@
 #include "platform.h"
 #include "uv.h"
 #include "ellog.h"
-
+#if EDOM > 0
+# define UV__ERR(x) (-(x))
+#else
+# define UV__ERR(x) (x)
+#endif
 namespace mm {
 namespace uvbase {
 	class MM_LOOP_API Loop;
