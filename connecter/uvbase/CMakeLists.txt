@@ -17,7 +17,7 @@ else()
 	set(UVBASE_LINK_DIR ${UVLIB_PATH})
 endif(NOT UV)
 
-link_directories(${UVBASE_LINK_DIR} ${CMAKE_MODULE_PATH}/lib)
+link_directories(${UVBASE_LINK_DIR} ${CMAKE_INSTALL_PREFIX}/lib)
 include_directories(${CMAKE_INSTALL_PREFIX}/include
 	               ${CMAKE_MODULE_PATH}/ellog)
 # 查找当前目录下的所有源文件
