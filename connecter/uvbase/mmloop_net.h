@@ -47,7 +47,7 @@ class MM_LOOP_API DNS;
 			// called after buffer has been written into the stream
 			virtual void OnWrote(mmerrno status) {}
 			// called after buffer has been read from the stream
-			virtual void OnRead(ssize_t nread, const char *buf) {} // TODO: uv_buf_t is unacceptable to appear here, must take a new manner known in this C++ wrapper level
+			virtual void OnRead(size_t nread, const char *buf) {} // TODO: uv_buf_t is unacceptable to appear here, must take a new manner known in this C++ wrapper level
 
 			virtual void* doAllocate(size_t suggested_size) { return malloc(suggested_size); }
 			virtual void doFree(void* buf) { free(buf); }
@@ -137,7 +137,7 @@ class MM_LOOP_API DNS;
 			// 
 			virtual void OnSent(mmerrno status) {}
 			//	virtual void OnAllocate(UDP *self, size_t suggested_size, uv_buf_t *buf) {}
-			virtual void OnReceived(ssize_t nread, const char *buf, const struct sockaddr *addr, unsigned flags) {}
+			virtual void OnReceived(size_t nread, const char *buf, const struct sockaddr *addr, unsigned flags) {}
 			int send(const char *buf, size_t length, const struct sockaddr *addr);
 			int try_send(const char *buf, size_t length, const struct sockaddr *addr);
 		private:

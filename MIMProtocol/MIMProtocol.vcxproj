@@ -136,6 +136,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\utils\stream\Stream.cpp" />
+    <ClCompile Include="Controller.cpp" />
     <ClCompile Include="List.cpp" />
     <ClCompile Include="memUtil.c" />
     <ClCompile Include="MIMInt.cpp" />
@@ -145,6 +146,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="comdefine.h" />
+    <ClInclude Include="Controller.h" />
     <ClInclude Include="List.h" />
     <ClInclude Include="memutil.h" />
     <ClInclude Include="MIMErr.h" />
@@ -152,6 +154,7 @@
     <ClInclude Include="MIMPacket.h" />
     <ClInclude Include="MIMProtocol.h" />
     <ClInclude Include="timeUtil.h" />
+    <ClInclude Include="Topic.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ellog\ellog.vcxproj">

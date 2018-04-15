@@ -69,6 +69,7 @@ namespace mm {
 					free(_buf);
 					_buf = NULL;
 				}
+                _isAlloc = true;
 				_buf = (char*)malloc(len);
 				_len = len;
 			}
@@ -104,6 +105,7 @@ namespace mm {
 
 		void File::clean()
 		{
+            _isAlloc = false;
 			free(_buf);
 			_buf = NULL;
 			_len = 0;

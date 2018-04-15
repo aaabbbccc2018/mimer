@@ -24,11 +24,11 @@ INITIALIZE_NULL_EASYLOGGINGPP
 int main(int argc, char *argv[])
 {
     if(argc < 3) {
-        printf("usege: %s msgTypes dried\n",argv[0]);
+        printf("usege: %s packetMsg dried\n",argv[0]);
         return -1;
     }
 
-    msgTypes ptype = (msgTypes)atoi(argv[1]);
+    packetTypes ptype = (packetTypes)atoi(argv[1]);
     int dried = atoi(argv[2]);
     switch (ptype)
     {

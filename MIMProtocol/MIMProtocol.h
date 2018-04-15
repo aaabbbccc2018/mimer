@@ -7,7 +7,40 @@
 #include "ellog.h"
 #include "comdefine.h"
 #include "MIMPacket.h"
+#include "Controller.h"
+/*
+    MIM1数据包解析，所有的处理操作以回调的方式，不向上层返回任何数据，数据只在该模块内流动
 
+    接收到数据包的处理流程
+
+                                                                    origin-data回调上层操作
+                                                                        _____________
+                                                                        |           |
+      输入数据             解析数据包           处理及响应      / ===>  | CallBack  |
+    _____________         _____________        _____________   |        |___________|
+    |           |         |           |        |           |   |
+    |  in-data  |   ===>  |  unpacket |   ===> |  InterFaceTransfer  | ==>        后续数据包处理
+    |___________|         |___________|        |___________|   |        _____________
+                                                               |        |           |
+                                                                \ ===>  |save/delete|
+                                                                        |___________|
+    
+    上层需要创建一种数据包，用于后续操作流程
+    
+                                                                    packet-data回调上层操作
+                                                                        _____________
+                                                                        |           |
+      原始数据             包装成数据包         处理及响应      / ===>  | CallBack  |
+    _____________         _____________        _____________   |        |___________|
+    |           |         |           |        |           |   |
+    |origin data|   ===>  |   packet  |   ===> |  InterFaceTransfer  | ==>        后续数据包处理
+    |___________|         |___________|        |___________|   |        _____________
+                                                               |        |           |
+                                                                \ ===>  |save/delete|
+                                                                        |___________|
+    
+
+*/
 namespace mimer {
 
 #define tFMT(PTYPE) ((PTYPE)(_mqData->_packet))
@@ -16,6 +49,14 @@ namespace mimer {
 #define CONNFLAG    (BITS(tFMT(pConnect)->flags))
 #define CONAFLAG    (BITS(tFMT(pConnAck)->flags))
 #define pVoid        reinterpret_cast<void*>
+
+#define DELETE(ptr) { if (ptr) { delete ptr; ptr = NULL; } }
+typedef struct {
+    void*   data;
+    size_t  size;
+    int     errcode;
+}CallBack;
+#define initCallBack(code) { NULL,code }
 
 struct cmp_str
 {
@@ -30,16 +71,19 @@ struct cmp_str
 #define LIST2     '3'
 static std::map<std::string, char> meta =
 {
+    /* All */
+    { "TYPE",      INTEGER },
     /* CONNECT */
     { "Protocol",  CHARS },
     { "version",   INTEGER },
     { "KAT",       INTEGER },
     { "clientID",  CHARS },
     { "username",  CHARS },
-    { "password",  CHARS },
+    { "password",  CHARS },    
     { "willTopic", CHARS },
     { "willMsg",   CHARS },
     { "willRetain",INTEGER },
+    { "passwordlen",INTEGER },
     /* CONNACK */
     { "clientID",  CHARS },
     { "sessionPresent", INTEGER },
@@ -52,7 +96,9 @@ static std::map<std::string, char> meta =
     { "cstatus",   INTEGER },
     /* PUBLISH */
     { "topic",     CHARS },
+    { "topiclen",  INTEGER },
     { "payload",   CHARS },
+    { "payloadlen",INTEGER },
     /* SUBSCRIBE SUBACK */
     { "qoss",      LIST2  }
 };
@@ -61,29 +107,42 @@ class PINGTimer;
 class MIMProtocol
 {
     typedef std::pair<std::string, void*> PAnalyzer;
-    typedef std::map<const char*, const void*>  Analyzer;
 public:
-    UTIL_API MIMProtocol(Type mtype = SERVER);
-    UTIL_API MIMProtocol(char* content, int mtype = 0);
-    UTIL_API MIMProtocol(int ptype, int mtype = 0, int dried = 0, int dup = 0,int qos = 0);
+    UTIL_API MIMProtocol(InterFaceTransfer* handler = NULL);
+    UTIL_API MIMProtocol(char* content);
+    UTIL_API MIMProtocol(int ptype, int dried = 0, int dup = 0,int qos = 0);
     UTIL_API ~MIMProtocol();
 public:
-    inline const void* operator[](const char* key)
+    inline const void* operator[](const char* key) const
     {
-        if(NULL != key){
-            return _ctrler[key];
-        }else{
+        if (NULL != key) {
+            const Analyzer::const_iterator it = _ctrler.find(key);
+            if (it != _ctrler.end()) {
+                return it->second;
+            }            
+        }
+        else {
             return NULL;
         }
     }
-    UTIL_API callback* request(void * data, ssize_t& size);
-    UTIL_API callback* response(void* data, ssize_t& size);
-    UTIL_API void  setPtype(int ptype) { _ptype = ptype; }
-    UTIL_API bool  analyzer(void* data, ssize_t& size);
-
+    UTIL_API void  request(void * data, size_t& size, packetTypes method);
+    UTIL_API void  response(void * data, size_t& size);
+    UTIL_API void  bind(InterFaceTransfer* h) { _user = h; }
+    UTIL_API Analyzer& getAnalyzer() { return _ctrler; }
+    UTIL_API const void* get(const char* key) const {
+        if (NULL != key) {
+            Analyzer::const_iterator it = _ctrler.find(key);
+            if (it != _ctrler.end()) {
+                return it->second;
+            }
+        }
+        else {
+            return NULL;
+        }
+    }
     friend std::ostream & operator<<(std::ostream &out, const MIMProtocol &mp)
     {
-        out << *(mp._mqData);
+        //out << *(mp._mqData);
         Analyzer::const_iterator iter;
         ListSub* sublist = NULL;
         Subitor  itlist;
@@ -97,7 +156,7 @@ public:
                 out << iter->first << " :\t" << (char*)iter->second << "\n";
                 break;
             case INTEGER:
-                out << iter->first << " :\t" << (int)iter->second << "\n";
+                out << iter->first << " :\t" << (long)iter->second << "\n";
                 break;
             case LIST1:
                 sublist = (ListSub*)(iter->second);
@@ -120,15 +179,17 @@ public:
         return out;
     }
 private:
+    bool analyzer(void* data, size_t& size);
     bool analyzer();
-    bool controller();
-    callback* ret(MIMPacket* pkt, void* data, ssize_t& size);
-    callback* ret_err(int ptype, int errcode, void* data);
+    CallBack* ret(MIMPacket* pkt, void* data, size_t& size);
+    CallBack* ret_err(int ptype, int errcode, void* data);
 private:
+    InterFaceTransfer* _user;
     MIMPacket*  _mqData;    // packet's data
     int         _ptype;     // packet's type
-    Type        _mtype;     // type
+    size_t      _packetId;  // packet id
     Analyzer    _ctrler;    // save each packet's controller
+    Controller* _monitor;
     bool        _dried;
     Stream*     _stream;
     mim::ellog* _loger;

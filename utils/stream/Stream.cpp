@@ -34,7 +34,7 @@ bool Stream::Rename(const char* oldname, const char* newname)
     return false;
 }
 
-bool Stream::Create(const char* filename, const char* mode)
+bool Stream::Bind(const char* filename, const char* mode)
 {
     FILE* fp = fopen(filename, mode);
     if(fp){

@@ -8,6 +8,15 @@
 #include "mmloop_net.h"
 #include "MIMProtocol.h"
 #include "comdefine.h"
+#include <map>
+#include <stdlib.h>
+#ifdef  __cplusplus
+extern "C" {
+#endif
+#include "memUtil.h"
+#ifdef  __cplusplus
+}
+#endif  /* end of __cplusplus */
 
 using namespace mm::uvbase;
 using namespace mimer;
@@ -24,56 +33,49 @@ namespace mm {
         */
         class clock;
         class Stdio;
-        class ITM
-        {
-            /*
-            protected:
-                ITM():_packer(NULL),_unpack(NULL) {}
-                ~ITM() {}
-            */
-        public:
-            typedef void* (packer)(void*, ssize_t&);
-            typedef void* (unpack)(void*, ssize_t&);
-        public:
-            /*
-            - 传输器接口
-            0. 联系 Relate   : 上层获取一个传输器
-            1. 打包 Packet   : 将上层的原数据打包，为发送准备(private)
-            2. 发送 Sendto   : 发送包装好的数据包
-            3. 接收 Recfrm   : 发送包装好的数据包
-            4. 拆包 Unpack   : 将上层的原数据打包，为发送准备(private)
-            5. 取关 Unlink   : 本次结束，取消与传输器的联系
-            */
-            virtual int   Relate(const char* addr, const int port, Type type = SERVER) = 0;
-            virtual bool  Create(const char* protocol = "MIM1") = 0;
-            virtual int   Unlink() = 0;
-            virtual void* Packer(void* data, ssize_t& size) {
-                if (_packer) {
-                    return _packer(data, size);
-                }
-                return data;
-            }
-            virtual void* Unpack(void* data, ssize_t& size) {
-                if (_unpack) {
-                    return _unpack(data, size);
-                }
-                return data;
-            }
-            virtual int   Sendto(void* buf, ssize_t& count) = 0;
-            virtual int   Recfrm(void* buf, ssize_t& count) = 0;
-        public:
-            void set_packer(packer* method) { _packer = method; }
-            void set_unpack(unpack* method) { _unpack = method; }
-        protected:
-            packer* _packer = NULL;
-            unpack* _unpack = NULL;
-            baseP * _monitor = NULL;
-            const char* _protocol = "";
-        };
 
-        class tTM :public ITM, public baseT
+        class tTM :public InterFaceTransfer, public baseT
         {
+            typedef enum MsgType {
+                DEFAULT = 0,
+                PROFILE,  // will used at  user list
+                PURE_TEXT, JSON_TEXT, HTML_TEXT, RICH_TEXT,
+                IMAGE, IMAGE3D, AUDIO, VIDEO // will used at chat list
+            };
+
+            struct message {
+                char*    _body;   // message body or content
+                size_t   _size;   // message body's size
+                MsgType  _type;   // message type, (Text, Json, Html, Picture, Audio, Video ...)
+            public:
+                message() :_body(NULL), _size(0), _type(MsgType::DEFAULT) {}
+                message(MsgType mt) :_body(NULL), _size(0), _type(mt) {}
+                message(char* body, size_t size, MsgType mt) :_size(size), _type(mt) {
+                    _body = (char*)_malloc(_size);
+                    _memcpy(_body, body, size);
+                }
+                ~message() { if (_body) { delete _body; _body = NULL; _size = 0; _type = MsgType::DEFAULT; } }
+            };
             /*
+                std::string: topic
+                message*   : message struct
+            */
+            typedef std::pair<std::string, message*> TopicPair;
+            
+            typedef std::list< TopicPair > TopicList;
+            /*
+                while is chatting ,message is save chat content, so, named chat list
+            */
+            typedef TopicList ChatList;
+            /*
+                while is get user list from server ,message is save each user's profile, so, named user list
+            */
+            typedef TopicList UserList;
+
+            typedef std::pair<std::string, tTM*> OnlinePair;
+            typedef std::map< std::string, OnlinePair > OnlineList;
+            /*
+
             public:
                 tTM() {}
                 ~tTM() {}
@@ -81,30 +83,41 @@ namespace mm {
             friend class clock;
             friend class Stdio;
         public:
+            virtual void SendHandle(void* buf, size_t& count);
+            virtual void RecvHandle(void* buf, size_t& count);
+        public:
             virtual int  Relate(const char* addr, const int port, Type type = Type::SERVER);
-            virtual bool Create(const char* protocol = "MIM1");
+            virtual bool Bind(const char* protocol = "MIM1");            
             virtual int  Unlink();
             /* post */
-            virtual int  Sendto(void* buf, ssize_t& count);
+            virtual int  Sendto(void* buf, size_t& count);
             /* get */
-            virtual int  Recfrm(void* buf, ssize_t& count);
+            virtual int  Recfrm(void* buf, size_t& count);
+        public:
+            void publisHandle(const Analyzer& ctrler, char* buf, size_t & count);
+            //void pubrecHandle(Analyzer& ctrler, char* buf, size_t & count);
         private:
             /* will be implement a client */
             virtual void OnConnected(mmerrno status);
             /* will be implement a server */
             virtual void doAccept(mmerrno status);
             /* I/O ,if read a data,will be save a buf*/
-            virtual void OnRead(ssize_t nread, const char *buf);
+            virtual void OnRead(size_t nread, const char *buf);
             /* I/O ,if write a data*/
             virtual void OnWrote(mmerrno status);
         private:
             Type userType;
             clock*  _pinger;
             Stdio*  _stder;
+            MIMProtocol* _monitor;
+            const char* _protocol = "";
+            ChatList    _chating;
+            UserList    _userlist;
+            static OnlineList  _onliners;
         };
         typedef tTM TTM;
 
-        class uTM :public ITM, public baseU
+        class uTM :public InterFaceTransfer, public baseU
         {
             /*
             public:
@@ -121,7 +134,7 @@ namespace mm {
         private:
             virtual void OnSent(mmerrno status);
             //    virtual void OnAllocate(UDP *self, size_t suggested_size, uv_buf_t *buf) {}
-            virtual void OnReceived(ssize_t nread, const char *buf, const struct sockaddr *addr, unsigned flags);
+            virtual void OnReceived(size_t nread, const char *buf, const struct sockaddr *addr, unsigned flags);
         private:
             Type userType;
             const char* _addr;
@@ -144,15 +157,8 @@ namespace mm {
             {
                 if (_tmer) {
                     void* data = NULL;
-                    ssize_t size = -1;
-                    _tmer->_monitor->setPtype(PINGREQ);
-                    callback* cbd = _tmer->_monitor->request(data, size);
-                    if (cbd->data) {
-                        _tmer->Sendto(cbd->data, cbd->size);
-                    }
-                    else {
-                        _tmer->_loger->error("tTM %v OnTimer failed code: %v!!!", user(_tmer->userType), cbd->errcode);
-                    }
+                    size_t size = -1;
+                    _tmer->_monitor->request(NULL, size, PINGREQ);
                 }
             }
         private:
@@ -188,21 +194,28 @@ namespace mm {
 
             virtual void OnRead(char* data, int len)
             {
-                if (_tmer && len > 0) {
-                    ssize_t size = len;
-                    void* postdata = (void*)data;
-                    _tmer->_monitor->setPtype(PUBLISH);
-                    callback* cbd = _tmer->_monitor->request(postdata, size);
-                    if (cbd->data) {
-                        _tmer->Sendto(cbd->data, size);
+                if (!_tmer) return;
+                if (len > 0) {
+                    if (data && data[0] != '\n' && data[0] != '\r') {                        
+                        void* postdata = (void*)data;
+                        mimTemp* pkt = new mimTemp();
+                        pkt->Payload(data, len);
+                        pkt->Topic("echo");
+                        size_t size = sizeof(mimTemp);
+                        _tmer->_monitor->request((void*)pkt, size, PUBLISH);
                     }
                     else {
-                        _tmer->_loger->error("tTM %v request failed code: %v!!!", user(_tmer->userType), cbd->errcode);
+                        memset(data, 0, len);
                     }
+                }
+                else {
+                    this->clean();
+                    this->close();
                 }
             }
         private:
             tTM * _tmer = NULL;
+            int _packetId = 0;
         };
     }
 

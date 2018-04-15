@@ -36,6 +36,7 @@
 #include "MIMInt.h"
 #include "MIMErr.h"
 #include "ellog.h"
+#include "comdefine.h"
 
 #ifdef  __cplusplus
 extern "C" {
@@ -60,40 +61,20 @@ namespace mimer {
 #define OFFICIAL_MIM   1
 #define OFFICIAL_MQTT  OFFICIAL_MIM
 #define REVERSED 1
-enum msgTypes
+enum packetTypes
 {
     CONNECT = 1, CONNACK, PUBLISH, PUBACK, PUBREC, PUBREL,
     PUBCOMP, SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK,
     PINGREQ, PINGRESP, DISCONNECT
 };
-const char msgTypestr[][16] = {
+const char packetTypestr[][16] = {
     "","CONNECT", "CONNACK", "PUBLISH", "PUBACK", "PUBREC", "PUBREL",
     "PUBCOMP", "SUBSCRIBE", "SUBACK", "UNSUBSCRIBE", "UNSUBACK",
     "PINGREQ", "PINGRESP", "DISCONNECT"
 };
 typedef short int  int16_t;
 typedef int        int32_t;
-typedef struct sub_s{
-    size_t _size;
-    char*  _content;
-    sub_s(size_t size,const char* content):_size(size){
-        _content = (char*)_malloc(_size);
-        memcpy(_content,content,_size);
-    }
-    sub_s():_size(0),_content(NULL){}
-    sub_s(const sub_s& rhs):_size(rhs._size){
-        _content = (char*)_malloc(_size);
-        memcpy(_content,rhs._content,_size);
-    }
-    ~sub_s(){if(_content){_free(_content);_content = NULL;}}
-    friend std::ostream & operator<<(std::ostream &out, const sub_s &sbs){
-        return out << sbs._content;
-    }
-}sub_t;
-typedef list<sub_t> ListSub;
-typedef ListSub::iterator Subitor;
-typedef list<char>  ListQos;
-typedef ListQos::iterator Qositor;
+
 const int encodeStep[16] =
 {
     /*  Reserved */
@@ -340,20 +321,6 @@ typedef struct
 } Connect;
 typedef Connect* pConnect;
 #define initCONNECT { initHeader(CONNECT), MIM_NAME, MIM_VER, initconnflags, 100, 0,NULL, 0,NULL, 0,NULL, 0,NULL, 0, NULL }
-
-/**
-* User login structure
-*/
-typedef struct
-{
-    char*         willTopic;            /* will topic */
-    char*         willMsg;              /* will message */
-    char*         userName;             /* client user name */
-    char*         passwd;               /* client password */
-    char*         userName2;            /* client user name */
-}Login;
-typedef Login* pLogin;
-#define initLogin(userName, passwd) { NULL, NULL, userName, passwd, NULL }
 
 /**
  * Data for a connack packet. 0x2
@@ -636,18 +603,18 @@ protected:
 public://get
     inline bool finish(){ return ( QND == _step || _step == encodeStep[_ptype]);}
     inline int size() {return _size;}
-    inline msgTypes type(){return (msgTypes)_ptype;}
+    inline packetTypes type(){return (packetTypes)_ptype;}
     inline const char* types(){return packet_names[_ptype];}
     void*  data(){return _packet;}
-    static msgTypes type(char header)
+    static packetTypes type(char header)
     {
 #if REVERSED
-        return (msgTypes)(header & 0x0F);
+        return (packetTypes)(header & 0x0F);
 #else
-        return (msgTypes)((header & 0xF0) >> 4);
+        return (packetTypes)((header & 0xF0) >> 4);
 #endif
     }
-    static const char* types(msgTypes ptype){return packet_names[ptype];}
+    static const char* types(packetTypes ptype){return packet_names[ptype];}
     static bool dried(char header){ return (1 == (header & 0x1)); }
 public://get
     inline char*  clientId()const{ return pFMT(pConnect)->clientID;}
@@ -675,7 +642,7 @@ public://get
         return payload;
     }
 public://set
-	void UTIL_API initer(msgTypes type);
+	void UTIL_API initer(packetTypes type);
     /**
      * @brief setKAT, use at CONNECT
      * @param kat
@@ -687,6 +654,7 @@ public://set
      * @param size default clientId is 16 byte
      */
     void UTIL_API setClientId(size_t size = 16);
+    void UTIL_API setClientId(char* clientId, size_t size = 16);
     /**
      * @brief setWill, use at CONNECT
      * @param willtopic

@@ -224,7 +224,7 @@ MIMPacket::~MIMPacket()
     }
 }
 
-void MIMPacket::initer(msgTypes type)
+void MIMPacket::initer(packetTypes type)
 {
 	Connect connect = INIT(CONNECT);
 	ConnAck connack = INIT(CONNACK);
@@ -293,7 +293,7 @@ void MIMPacket::initer(msgTypes type)
 
 std::ostream & operator<<(std::ostream &out, const MIMPacket &mp)
 {
-    msgTypes ptype = (msgTypes)mp._ptype;
+    packetTypes ptype = (packetTypes)mp._ptype;
     ListSub* sublist = NULL;
     Subitor  itlist;
     ListQos* subqoss = NULL;
@@ -382,6 +382,23 @@ void MIMPacket::setKAT(Int kat)
     this->addRLsize();
 }
 
+void MIMPacket::setClientId(char* clientId, size_t size)
+{
+    if (_ptype == CONNACK) {
+        if (signOk()) {
+            if (NULL == clientId || 0 == size) {
+                _step--;
+            }
+            else {
+                _size += 16;
+                pFMT(pConnAck)->clientIDlen = 16;
+                MQNEWS(pConnAck, clientID, clientId, 16);
+                /* clientIDlen is 16, so needn't add 1 Byte to measure clientID */
+            }
+        }
+    }
+}
+
 void MIMPacket::setClientId(size_t size)
 {
     char* clientId = uids(size);
@@ -398,17 +415,6 @@ void MIMPacket::setClientId(size_t size)
             MQNEWS(pConnect,clientID,clientId,size);
         }
         _step++;
-    }else if(_ptype == CONNACK){
-        if(signOk()){
-            if(NULL == clientId || 0 == size){
-                _step--;
-            }else{
-                _size += 16;
-                pFMT(pConnAck)->clientIDlen = 16;
-                MQNEWS(pConnAck,clientID,clientId,16);
-                /* clientIDlen is 16, so needn't add 1 Byte to measure clientID */
-            }
-        }
     }else{
         return;
     }
@@ -1011,7 +1017,7 @@ bool MIMPacket::encode(char* packet)
         memcpy(&packet[cursor], (char*)&packetId, 2);
         // itoa((int16_t)pFMT(pPubAck)->packetId,&packet[cursor++],10);
         cursor += 2;
-        _loger->debug("%v: packet ID: %v", msgTypestr[_ptype], packetId);
+        _loger->debug("%v: packet ID: %v", packetTypestr[_ptype], packetId);
         break;
     case UNSUBSCRIBE:// TODO
         /* Variable header */
@@ -1055,7 +1061,7 @@ bool MIMPacket::encode(char* packet)
     case PINGRESP:
     case DISCONNECT:
         //printf("packet type don't have Variable header && payload!\n");
-        _loger->debug("%v packet type don't have Variable header && payload!", msgTypestr[_ptype]);
+        _loger->debug("%v packet type don't have Variable header && payload!", packetTypestr[_ptype]);
         break;
     default:
         //printf("error packet type\n");
@@ -1360,7 +1366,7 @@ int  MIMPacket::decode(char* packet)
         memcpy(&packetID,&packet[cursor],2);
         pFMT(pAck)->packetId = packetID;
         cursor += 2; // packetId's size
-        _loger->debug("%v: packetID: %v", msgTypestr[_ptype], packetID);
+        _loger->debug("%v: packetID: %v", packetTypestr[_ptype], packetID);
         break;
     case UNSUBSCRIBE:
         /* Variable header */
@@ -1404,7 +1410,7 @@ int  MIMPacket::decode(char* packet)
     case PINGRESP:
     case DISCONNECT:
         //printf("packet type don't have Variable header && payload!\n");
-        _loger->debug("%v packet type don't have Variable header && payload!", msgTypestr[_ptype]);
+        _loger->debug("%v packet type don't have Variable header && payload!", packetTypestr[_ptype]);
         break;
     default:
         //printf("error packet type\n");

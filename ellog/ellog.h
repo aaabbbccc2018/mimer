@@ -60,7 +60,7 @@ public:
                 const char* defaultfile = "logs/myeasylog.log";
 #endif
                 idConf.setGlobally(el::ConfigurationType::Filename, path);
-                idConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
+                //idConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
 				el::Loggers::reconfigureLogger(id, idConf);
 				//_logger->configure(idConf);
             }

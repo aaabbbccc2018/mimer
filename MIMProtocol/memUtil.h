@@ -18,5 +18,7 @@ void  _free(void *mem);
 void *_malloc(size_t size);
 void *_realloc(void *ptr, size_t size);
 char *_strdup(const char *s);
+#define _memcpy memcpy;
+#define _memset memset;
 
 #endif // MEMUTIL_H

@@ -2,6 +2,7 @@
 #define ERRCODE_H
 
 /* CONNACK return code */
+#define CONNACK_DEFAULT  -1
 #define CONNACK_ACCEPTED 0x0
 #define CONNACK_REFUSED_PROTOCOL_VERSION 0x1
 #define CONNACK_REFUSED_IDENTIFIER_REJECTED 0x2
@@ -20,5 +21,7 @@
 /* PINGREQ client status flag */
 #define PING_WRITING  0x1
 #define PING_BUSYNESS 0x2
+
+#define INIT_PACKET_ID 0
 
 #endif // ERRCODE_H

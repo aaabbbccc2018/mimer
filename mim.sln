@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ellog", "ellog\ellog.vcxproj", "{CEA7F7C1-E5C9-4E0D-A1DD-F445A50B959A}"
 EndProject
@@ -32,6 +32,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testMimProt", "testMimProt\testMimProt.vcxproj", "{DB044C7E-AA73-4906-A4E6-2FC76457FF23}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mimer", "mimer\mimer.vcxproj", "{453705F5-45AB-4B80-AC19-46B55D1EAD2A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testSqliter", "sqler\sqliter\testSqliter\testSqliter.vcxproj", "{00C1D8B1-66D3-4CE1-8103-38C17419CC92}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqliter", "sqler\sqliter\sqliter.vcxproj", "{53BB084A-06BF-486B-A123-CB156E035A0B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -161,8 +165,27 @@ Global
 		{453705F5-45AB-4B80-AC19-46B55D1EAD2A}.Release|x64.Build.0 = Release|x64
 		{453705F5-45AB-4B80-AC19-46B55D1EAD2A}.Release|x86.ActiveCfg = Release|Win32
 		{453705F5-45AB-4B80-AC19-46B55D1EAD2A}.Release|x86.Build.0 = Release|Win32
+		{00C1D8B1-66D3-4CE1-8103-38C17419CC92}.Debug|x64.ActiveCfg = Debug|x64
+		{00C1D8B1-66D3-4CE1-8103-38C17419CC92}.Debug|x64.Build.0 = Debug|x64
+		{00C1D8B1-66D3-4CE1-8103-38C17419CC92}.Debug|x86.ActiveCfg = Debug|Win32
+		{00C1D8B1-66D3-4CE1-8103-38C17419CC92}.Debug|x86.Build.0 = Debug|Win32
+		{00C1D8B1-66D3-4CE1-8103-38C17419CC92}.Release|x64.ActiveCfg = Release|x64
+		{00C1D8B1-66D3-4CE1-8103-38C17419CC92}.Release|x64.Build.0 = Release|x64
+		{00C1D8B1-66D3-4CE1-8103-38C17419CC92}.Release|x86.ActiveCfg = Release|Win32
+		{00C1D8B1-66D3-4CE1-8103-38C17419CC92}.Release|x86.Build.0 = Release|Win32
+		{53BB084A-06BF-486B-A123-CB156E035A0B}.Debug|x64.ActiveCfg = Debug|x64
+		{53BB084A-06BF-486B-A123-CB156E035A0B}.Debug|x64.Build.0 = Debug|x64
+		{53BB084A-06BF-486B-A123-CB156E035A0B}.Debug|x86.ActiveCfg = Debug|Win32
+		{53BB084A-06BF-486B-A123-CB156E035A0B}.Debug|x86.Build.0 = Debug|Win32
+		{53BB084A-06BF-486B-A123-CB156E035A0B}.Release|x64.ActiveCfg = Release|x64
+		{53BB084A-06BF-486B-A123-CB156E035A0B}.Release|x64.Build.0 = Release|x64
+		{53BB084A-06BF-486B-A123-CB156E035A0B}.Release|x86.ActiveCfg = Release|Win32
+		{53BB084A-06BF-486B-A123-CB156E035A0B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {821C8642-D40E-4059-891C-27CC1F673FF1}
 	EndGlobalSection
 EndGlobal

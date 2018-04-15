@@ -16,7 +16,7 @@ public:
 public:
     bool Open(const char* filename, const char* mode);
     static bool Rename(const char* oldname, const char* newname);
-    static bool Create(const char* filename, const char* mode = "w+");
+    static bool Bind(const char* filename, const char* mode = "w+");
     static bool Remove(const char* filename);
     virtual bool Close();
     virtual size_t	Read(void *buffer, size_t size, size_t count);
@@ -41,7 +41,7 @@ protected:
 class charStream{
 private:
     char*  _stream;
-    int    _size;
+    size_t _size;
 public:
     charStream():_stream(NULL),_size(0){}
     charStream(char* data){
@@ -49,7 +49,7 @@ public:
         _stream = (char*)malloc(_size);
         memcpy(_stream,data,_size);
     }
-    charStream(char* data, int size):_size(size){
+    charStream(char* data, size_t size):_size(size){
         _stream = (char*)malloc(_size);
         memcpy(_stream,data,_size);
     }

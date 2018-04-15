@@ -164,6 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\connecter\transmitter\src\transmitter\transmitter.cpp" />
+    <ClCompile Include="..\MIMProtocol\memUtil.c" />
     <ClCompile Include="..\utils\stream\Stream.cpp" />
     <ClCompile Include="client.cpp" />
     <ClCompile Include="main.cpp" />

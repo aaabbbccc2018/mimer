@@ -4,7 +4,7 @@
 using namespace std;
 using namespace mimer;
 
-void test_ACK(msgTypes ptype, int dried)
+void test_ACK(packetMsg ptype, int dried)
 {
     MIMPacket pkt(ptype,dried);
     pkt.setPacketId(1000);
@@ -43,7 +43,7 @@ void test_ACK(msgTypes ptype, int dried)
     free(sendPacketf);
 }
 
-void test_onlyHeader(msgTypes ptype, int dried)
+void test_onlyHeader(packetMsg ptype, int dried)
 {
     MIMPacket pkt(ptype,dried);
     pPingReq cn = (pPingReq)pkt.data();
