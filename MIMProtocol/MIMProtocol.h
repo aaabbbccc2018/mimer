@@ -19,7 +19,7 @@
       输入数据             解析数据包           处理及响应      / ===>  | CallBack  |
     _____________         _____________        _____________   |        |___________|
     |           |         |           |        |           |   |
-    |  in-data  |   ===>  |  unpacket |   ===> |  InterFaceTransfer  | ==>        后续数据包处理
+    |  in-data  |   ===>  |  unpacket |   ===> | iTransfer | ==>        后续数据包处理
     |___________|         |___________|        |___________|   |        _____________
                                                                |        |           |
                                                                 \ ===>  |save/delete|
@@ -33,7 +33,7 @@
       原始数据             包装成数据包         处理及响应      / ===>  | CallBack  |
     _____________         _____________        _____________   |        |___________|
     |           |         |           |        |           |   |
-    |origin data|   ===>  |   packet  |   ===> |  InterFaceTransfer  | ==>        后续数据包处理
+    |origin data|   ===>  |   packet  |   ===> | iTransfer | ==>        后续数据包处理
     |___________|         |___________|        |___________|   |        _____________
                                                                |        |           |
                                                                 \ ===>  |save/delete|
@@ -108,7 +108,7 @@ class MIMProtocol
 {
     typedef std::pair<std::string, void*> PAnalyzer;
 public:
-    UTIL_API MIMProtocol(InterFaceTransfer* handler = NULL);
+    UTIL_API MIMProtocol(iTransfer* handler = NULL);
     UTIL_API MIMProtocol(char* content);
     UTIL_API MIMProtocol(int ptype, int dried = 0, int dup = 0,int qos = 0);
     UTIL_API ~MIMProtocol();
@@ -127,7 +127,7 @@ public:
     }
     UTIL_API void  request(void * data, size_t& size, packetTypes method);
     UTIL_API void  response(void * data, size_t& size);
-    UTIL_API void  bind(InterFaceTransfer* h) { _user = h; }
+    UTIL_API void  bind(iTransfer* h) { _user = h; }
     UTIL_API Analyzer& getAnalyzer() { return _ctrler; }
     UTIL_API const void* get(const char* key) const {
         if (NULL != key) {
@@ -184,7 +184,7 @@ private:
     CallBack* ret(MIMPacket* pkt, void* data, size_t& size);
     CallBack* ret_err(int ptype, int errcode, void* data);
 private:
-    InterFaceTransfer* _user;
+    iTransfer * _user;
     MIMPacket*  _mqData;    // packet's data
     int         _ptype;     // packet's type
     size_t      _packetId;  // packet id

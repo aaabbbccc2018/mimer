@@ -17,10 +17,8 @@ void* client_unpack(void * data, ssize_t& size)
 int client(int argc,char* argv[]) 
 {
 	tTM client;
-	client.set_packer(client_pack);
-	client.set_unpack(client_unpack);
 	//uTM client;
-	client.Relate("127.0.0.1", 9130, ITM::CLIENT);
+	client.Relate("127.0.0.1", 9130, CLIENT);
 	//client.Sendto();
 	return 0;
 }

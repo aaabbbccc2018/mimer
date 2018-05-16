@@ -147,15 +147,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\transmitter\transmitter.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="client.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="server.cpp" />
-    <ClCompile Include="src\transmitter\transmitter.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\ellog\ellog.vcxproj">
       <Project>{cea7f7c1-e5c9-4e0d-a1dd-f445a50b959a}</Project>
     </ProjectReference>
@@ -165,6 +156,16 @@
     <ProjectReference Include="..\uvbase\uvbase.vcxproj">
       <Project>{c07f4c8b-e01f-41d5-bd53-9e58833c08f5}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="interface.h" />
+    <ClInclude Include="transmitter.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\testransmitter\client.cpp" />
+    <ClCompile Include="..\testransmitter\main.cpp" />
+    <ClCompile Include="..\testransmitter\server.cpp" />
+    <ClCompile Include="transmitter.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

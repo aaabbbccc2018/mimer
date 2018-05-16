@@ -3,7 +3,7 @@
 
 namespace mimer {
 
-MIMProtocol::MIMProtocol(InterFaceTransfer* handler):
+MIMProtocol::MIMProtocol(iTransfer* handler):
     _user(handler),_mqData(NULL),_ptype(-1),_packetId(INIT_PACKET_ID),_dried(0),_stream(NULL)
 {
     _loger = new mim::ellog("MIMProtocol", "./logs");
@@ -264,7 +264,7 @@ void MIMProtocol::request(void * data, size_t& size, packetTypes method)
 req_next:
     cb = this->ret(reqpk, data, size);
     if (_user && cb) {        
-        _user->SendHandle(cb->data, cb->size);
+        _user->Sendto(cb->data, cb->size);
         DELETE(cb);
         _packetId++;
     }
@@ -355,7 +355,7 @@ rep_next:
         cb = this->ret(repk, data, size);
     }
     if (_user && cb) {
-        _user->RecvHandle(cb->data, cb->size);
+        _user->Recfrm(cb->data, cb->size);
         DELETE(cb);
     }
 }
