@@ -17,8 +17,8 @@ else()
 	set(UVBASE_LINK_DIR ${UVLIB_PATH})
 endif(NOT UV)
 
-link_directories(${UVBASE_LINK_DIR} ${CMAKE_MODULE_PATH}/lib)
-include_directories(${CMAKE_MODULE_PATH}/lib/3rdlib/libuv/include
+link_directories(${UVBASE_LINK_DIR} ${CMAKE_INSTALL_PREFIX}/lib)
+include_directories(${CMAKE_INSTALL_PREFIX}/include
 	               ${CMAKE_MODULE_PATH}/ellog)
 # 查找当前目录下的所有源文件
 # 并将名称保存到 DIR_SRCS 变量
@@ -29,3 +29,4 @@ add_library(uvbase_static STATIC ${DIR_LIB_SRCS})
 target_link_libraries(uvbase uv ellog)
 set_target_properties(uvbase_static PROPERTIES OUTPUT_NAME "uvbase")
 set_target_properties(uvbase PROPERTIES VERSION 0.1 SOVERSION 1)
+install (TARGETS uvbase DESTINATION lib)

@@ -1,10 +1,10 @@
-#Make 最低版本号要求
+#Make 鏈�浣庣増鏈彿瑕佹眰
 cmake_minimum_required (VERSION 2.8)
 project (transmitter)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 include(../../mimer.cmake)
 
-#uvbaseλ
+#uvbase位
 get_property(UVBASE_BUILED_MODULE GLOBAL PROPERTY "uvbase_build")
 find_library(UVBASE uvbase ${CMAKE_MODULE_PATH}/lib)
 if(NOT UVBASE AND NOT UVBASE_BUILED_MODULE)

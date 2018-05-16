@@ -19,7 +19,7 @@ endif(NOT ELLOG AND NOT ELLOG_BUILED_MODULE)
 
 include (CTest)
 # 指定include 路径
-include_directories(./ ../ellog/ ../utils/stream)
+include_directories(./ ../ellog/ ../utils/stream ${CMAKE_INSTALL_PREFIX}/include)
 # 查找当前目录下的所有源文件
 # 并将名称保存到 DIR_SRCS 变量
 aux_source_directory(. DIR_SRCS)
@@ -31,3 +31,4 @@ add_library(mimp_static STATIC ${DIR_SRCS})
 target_link_libraries(mimp ellog)
 set_target_properties(mimp_static PROPERTIES OUTPUT_NAME "mimp")
 set_target_properties(mimp PROPERTIES VERSION 0.1 SOVERSION 1)
+install (TARGETS mimp DESTINATION lib)
